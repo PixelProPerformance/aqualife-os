@@ -69,7 +69,7 @@
         ],
         "ok": [
           0.0,
-          1.5
+          1.0
         ],
         "critico_abaixo": null,
         "critico_acima": 2.0
@@ -167,7 +167,7 @@
         ],
         "ok": [
           0.0,
-          1.5
+          1.0
         ],
         "critico_abaixo": null,
         "critico_acima": 2.0
@@ -337,7 +337,7 @@
         ],
         "ok": [
           0.0,
-          1.5
+          1.0
         ],
         "critico_abaixo": null,
         "critico_acima": 2.0
