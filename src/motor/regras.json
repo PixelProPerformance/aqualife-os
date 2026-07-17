@@ -65,11 +65,11 @@
       "nitrito": {
         "ideal": [
           0.0,
-          0.0
+          0.5
         ],
         "ok": [
-          0.0,
-          1.0
+          0.5,
+          1.5
         ],
         "critico_abaixo": null,
         "critico_acima": 2.0
