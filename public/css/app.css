@@ -1,0 +1,127 @@
+/* ===========================================================================
+   AQUALIFE — identidade visual
+   Sóbrio, profissional. Empresa de aquarismo, não ferramenta genérica.
+   Paleta: azuis profundos de água + areia clara. Tipografia limpa.
+   =========================================================================== */
+:root{
+  --tinta:#12333F;        /* azul-petróleo escuro (texto, cabeçalhos) */
+  --corpo:#3A5561;        /* cinza-azulado (texto corrido) */
+  --suave:#6B8591;        /* legendas */
+  --linha:#DCE6EA;        /* bordas */
+  --papel:#F4F8F9;        /* fundo da página */
+  --branco:#FFFFFF;
+  --agua:#1B6E8C;         /* azul-água (marca, links) */
+  --agua-esc:#125265;
+  --agua-clr:#E8F2F5;     /* fundo suave azul */
+  --areia:#C9A227;        /* dourado discreto (detalhes) */
+  --ok:#2E7D55;
+  --atencao:#B8860B;
+  --alerta:#C05621;
+  --critico:#B23A2E;
+  --sombra:0 1px 3px rgba(18,51,63,.06), 0 8px 22px -12px rgba(18,51,63,.14);
+  --sombra-f:0 10px 34px -12px rgba(18,51,63,.24);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color:var(--corpo); background:var(--papel); line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{color:var(--tinta);font-weight:600;line-height:1.25;letter-spacing:-.01em}
+a{color:var(--agua);text-decoration:none}
+a:hover{color:var(--agua-esc)}
+img{max-width:100%;display:block}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* ── cabeçalho ── */
+.topo{
+  position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--linha);
+}
+.topo-in{height:68px;display:flex;align-items:center;gap:28px}
+.marca{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.marca-i{
+  width:38px;height:38px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(150deg,#2C93B5,var(--agua-esc));
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:19px;
+  font-family:Georgia,serif;
+}
+.marca-t{font-family:Georgia,'Times New Roman',serif;font-weight:600;
+  font-size:19px;color:var(--tinta);line-height:1}
+.marca-t small{display:block;font-family:'Inter',sans-serif;font-size:9px;
+  letter-spacing:.22em;color:var(--suave);font-weight:500;margin-top:2px}
+.nav{display:flex;gap:4px;margin-left:auto}
+.nav a{padding:9px 14px;border-radius:8px;color:var(--corpo);font-size:14.5px;
+  font-weight:500;transition:.15s}
+.nav a:hover{background:var(--agua-clr);color:var(--agua-esc)}
+.nav a.ativo{background:var(--agua-clr);color:var(--agua-esc);font-weight:600}
+
+/* ── botões ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:46px;padding:0 22px;border-radius:9px;font-size:15px;font-weight:600;
+  font-family:inherit;cursor:pointer;border:none;transition:.16s;white-space:nowrap}
+.btn-p{background:var(--agua);color:#fff}
+.btn-p:hover{background:var(--agua-esc)}
+.btn-c{background:var(--branco);color:var(--tinta);border:1.5px solid var(--linha)}
+.btn-c:hover{border-color:var(--agua)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{height:38px;padding:0 15px;font-size:13.5px}
+
+/* ── cartões ── */
+.cartao{background:var(--branco);border:1px solid var(--linha);border-radius:13px;
+  box-shadow:var(--sombra)}
+.cartao-p{padding:24px}
+
+/* ── formulários ── */
+.campo{margin-bottom:16px}
+.campo label{display:block;font-size:13.5px;font-weight:600;color:var(--tinta);margin-bottom:6px}
+.inp{width:100%;height:46px;border:1.5px solid var(--linha);border-radius:9px;
+  padding:0 14px;font-family:inherit;font-size:15px;color:var(--tinta);
+  background:var(--branco);transition:.15s}
+.inp:focus{outline:none;border-color:var(--agua);box-shadow:0 0 0 3px var(--agua-clr)}
+textarea.inp{height:auto;min-height:92px;padding:12px 14px;resize:vertical;line-height:1.55}
+select.inp{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%236B8591' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center}
+
+/* ── selo de saúde/urgência ── */
+.selo{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;padding:4px 10px;border-radius:6px}
+.selo-ok{background:#2E7D5514;color:var(--ok)}
+.selo-atencao{background:#B8860B14;color:var(--atencao)}
+.selo-alerta{background:#C0562114;color:var(--alerta)}
+.selo-critico{background:#B23A2E14;color:var(--critico)}
+
+/* ── nota grande (o número de saúde) ── */
+.nota-g{font-family:Georgia,serif;font-weight:700;line-height:1}
+
+/* ── mensagens de estado ── */
+.vazio{text-align:center;padding:50px 24px;color:var(--suave)}
+.erro-cx{background:#B23A2E0D;border-left:3px solid var(--critico);color:var(--critico);
+  padding:12px 14px;border-radius:8px;font-size:14px;margin-bottom:16px}
+
+/* ── rodapé ── */
+.rodape{background:var(--tinta);color:rgba(255,255,255,.6);margin-top:70px;
+  padding:40px 0;font-size:14px}
+.rodape a{color:rgba(255,255,255,.8)}
+
+@media(max-width:820px){
+  .nav{display:none}
+  .topo-in{gap:14px}
+}
+
+/* ── extensões Railway ── */
+.erro-cx{background:#B23A2E0D;border-left:3px solid var(--critico);color:var(--critico);
+  padding:12px 16px;border-radius:0 8px 8px 0;font-size:14px;margin-bottom:16px}
+.ok-cx{background:#2E7D550D;border-left:3px solid var(--ok);color:var(--ok);
+  padding:12px 16px;border-radius:0 8px 8px 0;font-size:14px;margin-bottom:16px}
+.spin{display:inline-block;width:18px;height:18px;border:2.5px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:giro .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes giro{to{transform:rotate(360deg)}}
+.badge-nota{display:inline-flex;align-items:center;justify-content:center;
+  width:54px;height:54px;border-radius:50%;font-family:Georgia,serif;font-weight:700;font-size:20px;
+  border:2.5px solid currentColor}
+.urgencia-ok     .badge-nota{color:var(--ok)}
+.urgencia-atencao .badge-nota{color:var(--atencao)}
+.urgencia-alerta  .badge-nota{color:var(--alerta)}
+.urgencia-critico .badge-nota{color:var(--critico)}
