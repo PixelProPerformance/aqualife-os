@@ -1,0 +1,143 @@
+# AQUALIFE OS — RAILWAY
+## Instruções de instalação (linguagem simples, passo a passo)
+
+---
+
+## O QUE É ISTO
+Sistema completo da Aqualife: login, painel do cliente, tela do técnico e admin.
+Banco de dados PostgreSQL no Railway. Sem Supabase, sem Replit.
+
+---
+
+## PASSO 1 — Criar o banco de dados no Railway
+
+1. Abra https://railway.com e faça login
+2. Clique em **"New Project"**
+3. Escolha **"Provision PostgreSQL"**
+4. Aguarde o banco criar (aparece um ícone roxo "Postgres")
+5. Clique no banco → aba **"Query"** (ou "Data" > "Query")
+6. Cole TODO o conteúdo do arquivo **migration.sql** no campo de texto
+7. Clique em **"Run Query"**
+8. Deve aparecer mensagens de sucesso. Se der erro de "já existe", ignore — é normal rodar 2x.
+
+---
+
+## PASSO 2 — Pegar a URL do banco
+
+1. No banco PostgreSQL, clique em **"Connect"**
+2. Copie o valor de **"DATABASE_URL"** (começa com `postgresql://...`)
+   — guarde, vai usar no passo 4.
+
+---
+
+## PASSO 3 — Subir o código
+
+### Opção A — GitHub (recomendado)
+1. Crie uma conta em https://github.com se não tiver
+2. Crie um repositório novo (pode ser privado)
+3. Faça upload de TODOS os arquivos desta pasta para o repositório
+4. No Railway: **"New Project"** → **"Deploy from GitHub"** → escolha o repositório
+5. O Railway vai detectar Node.js automaticamente e fazer o deploy
+
+### Opção B — arrastar para o Railway (se não usar GitHub)
+1. No Railway: **"New Project"** → **"Empty Project"**
+2. Clique em **"Add a service"** → **"GitHub Repo"** ou **"Empty Service"**
+3. Use o CLI do Railway: `railway up` na pasta do projeto
+
+---
+
+## PASSO 4 — Configurar as variáveis de ambiente
+
+No serviço Node.js do Railway:
+1. Clique no serviço → aba **"Variables"**
+2. Adicione estas variáveis (uma por vez):
+
+| Variável       | Valor                                    |
+|----------------|------------------------------------------|
+| DATABASE_URL   | (a URL que copiou no Passo 2)            |
+| JWT_SECRET     | (invente uma frase longa, ex: "Aqualife2024@RioLisboa!Secreto") |
+| PORT           | 3000                                     |
+| NODE_ENV       | production                               |
+| ANTHROPIC_API_KEY | (opcional — se tiver, ativa os laudos em linguagem simples) |
+
+---
+
+## PASSO 5 — Primeiro acesso
+
+**Login padrão criado pela migration:**
+- E-mail: `admin@aqualife.com.br`
+- Senha: `Aqualife@2024`
+
+**IMPORTANTE:** Troque a senha imediatamente após entrar!
+(Painel Admin → sua conta → alterar senha)
+
+**Endereço do sistema:** aparece no Railway depois do deploy.
+Exemplo: `https://aqualife-os-production.up.railway.app`
+
+Para acessar como equipe (discreto, sem link visível no menu):
+`https://seu-site.railway.app/entrar.html?equipe=1`
+
+---
+
+## ESTRUTURA DE ARQUIVOS
+
+```
+aqualife-railway/
+├── src/
+│   ├── server.js          ← servidor principal
+│   ├── auth.js            ← login JWT (sem Supabase)
+│   ├── db.js              ← conexão PostgreSQL Railway
+│   └── motor/
+│       ├── engine.mjs     ← motor de diagnóstico (a regra de ouro)
+│       └── regras.json    ← faixas validadas pela Aqualife v1.0
+├── public/
+│   ├── index.html         ← redireciona para entrar.html
+│   ├── entrar.html        ← tela de login
+│   ├── admin.html         ← painel administrativo
+│   ├── painel.html        ← painel do cliente
+│   ├── tecnico.html       ← tela de registro de visita
+│   ├── css/app.css        ← identidade visual
+│   └── js/
+│       ├── admin.js
+│       ├── tecnico.js
+│       ├── motor.js
+│       └── regras.js
+├── migration.sql          ← cola isto no Railway Query Editor
+├── package.json
+└── LEIA-ME.txt            ← este arquivo
+```
+
+---
+
+## PAPÉIS DE UTILIZADOR
+
+| Papel     | Tela             | O que pode fazer                              |
+|-----------|------------------|-----------------------------------------------|
+| admin     | /admin.html      | Criar clientes, técnicos, ver todos os laudos |
+| gestor    | /admin.html      | Idem ao admin                                 |
+| tecnico   | /tecnico.html    | Registrar visitas, inserir parâmetros         |
+| cliente   | /painel.html     | Ver laudos dos seus aquários                  |
+| aquarista | /tecnico.html    | Medir o próprio aquário (Care independente)   |
+
+---
+
+## SE ALGO DER ERRADO
+
+**"Cannot connect to database"**
+→ Verifique se DATABASE_URL está correto nas variáveis do Railway.
+
+**"token inválido"**
+→ O JWT_SECRET mudou. Faça logout e entre novamente.
+
+**Tela em branco / 404**
+→ O deploy ainda não terminou. Aguarde 1-2 minutos e atualize.
+
+**"usuário não encontrado"**
+→ A migration.sql não foi rodada ou deu erro. Rode novamente no Query Editor.
+
+---
+
+## SUPORTE
+Contacto via WhatsApp:
+- Brasil: +55 21 97106-4054
+- Portugal: +351 966 121 075
