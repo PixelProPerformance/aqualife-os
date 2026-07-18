@@ -444,6 +444,41 @@
 .footer-admin{color:rgba(255,255,255,.15);transition:.15s}
 .footer-admin:hover{color:rgba(255,255,255,.45)}
 </style>
+  <!-- Meta Pixel -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1306034691326511');
+  fbq('track', 'PageView');
+
+  // Eventos personalizados Aqualife
+  // Disparado quando o utilizador abre o agendamento
+  window._fbAgendamento = function(){ fbq('track', 'Lead'); };
+  // Disparado quando envia para WhatsApp
+  window._fbConversao = function(valor, moeda){
+    fbq('track', 'InitiateCheckout', {value: valor, currency: moeda||'BRL'});
+  };
+  </script>
+  <noscript>
+    <img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1306034691326511&ev=PageView&noscript=1"/>
+  </noscript>
+  <!-- Fim Meta Pixel -->
+  <meta property="og:title" content="Aqualife Aquarismo — Especialistas em Aquários e Lagos">
+  <meta property="og:description" content="Manutenção técnica profissional com diagnóstico digital após cada visita, no Brasil e Europa.">
+  <meta property="og:url" content="https://aqualifeaquarismo.com">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://aqualifeaquarismo.com/images/reef.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="robots" content="index, follow">
+  <meta name="keywords" content="manutenção aquário, aquário marinho, lago ornamental, reef, aquarismo, Rio de Janeiro, São Paulo, Portugal">
+  <link rel="canonical" href="https://aqualifeaquarismo.com">
 </head>
 <body>
 
@@ -1162,6 +1197,7 @@ async function abrirWpp(num, msg, q, s){
     });
   } catch(e){ /* se falhar, abre o WhatsApp de qualquer forma */ }
 
+  if(window._fbConversao) _fbConversao(q.valor_total||q.valor_visita||0, q.moeda||'BRL');
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`,'_blank');
 
   // Mostrar tela de sucesso
@@ -1199,7 +1235,7 @@ function initAgenda(){
 const _showSecOrig = showSec;
 window.showSec = function(s){
   _showSecOrig(s);
-  if(s==='agendamento') initAgenda();
+  if(s==='agendamento'){ initAgenda(); if(window._fbAgendamento) _fbAgendamento(); }
 };
 
 document.addEventListener('DOMContentLoaded', ()=>{
