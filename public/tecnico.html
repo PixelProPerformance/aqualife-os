@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registrar visita — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.sec{padding:32px 0}
+.pg-h{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:6px}
+.pg-h h1{font-size:24px}
+.grid-p{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.param{background:var(--branco);border:1px solid var(--linha);border-radius:10px;padding:13px}
+.param label{display:block;font-size:12.5px;font-weight:600;color:var(--tinta);margin-bottom:3px}
+.param .un{font-size:11px;color:var(--suave);font-weight:400}
+.param input{width:100%;height:40px;border:1.5px solid var(--linha);border-radius:7px;
+  padding:0 11px;font-family:inherit;font-size:15px;color:var(--tinta);margin-top:5px}
+.param input:focus{outline:none;border-color:var(--agua);box-shadow:0 0 0 3px var(--agua-clr)}
+.ideal{font-size:10.5px;color:var(--suave);margin-top:4px}
+.previa{position:sticky;top:84px}
+.cols{display:grid;grid-template-columns:1.5fr 1fr;gap:26px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}.previa{position:static}}
+
+/* ── GAUGE ──────────────────────────────────────────────── */
+.gauge-area{
+  background:linear-gradient(160deg,var(--tinta) 0%,#1A6080 100%);
+  border-radius:14px 14px 0 0;
+  padding:24px 16px 18px;
+  text-align:center;
+}
+.gauge-wrap{display:inline-flex;flex-direction:column;align-items:center;gap:4px}
+.gauge-svg{width:140px;height:105px}
+.gauge-arc{
+  transition:stroke-dasharray .6s cubic-bezier(.4,0,.2,1),
+             stroke .4s ease;
+  stroke-dasharray:none;
+}
+.gauge-urgencia{
+  font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  margin-top:2px;
+}
+.gauge-conf{font-size:11.5px;color:rgba(255,255,255,.5)}
+
+/* ── ALERTAS ─────────────────────────────────────────────── */
+.alertas-lista{padding:12px 16px;display:flex;flex-direction:column;gap:8px;
+  border-bottom:1px solid var(--linha)}
+.alerta-item{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:13px;color:var(--corpo);line-height:1.5;
+  padding:8px 10px;border-radius:8px;
+  border-left:3px solid currentColor;
+  background:rgba(0,0,0,.02);
+}
+.alerta-ic{font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+
+/* ── BARRAS ──────────────────────────────────────────────── */
+.params-barras{padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.pb-titulo{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--suave);margin-bottom:-2px;
+}
+.pb-wrap{display:flex;flex-direction:column;gap:5px}
+.pb-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pb-label{font-size:12.5px;font-weight:600;color:var(--tinta)}
+.pb-valor{
+  font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;
+  transition:color .3s,background .3s;
+}
+.pb-valor small{font-size:10px;font-weight:400;opacity:.8}
+.pb-vazio{color:var(--suave);background:var(--papel)}
+.pb-track{
+  position:relative;height:7px;background:#E2E8F0;border-radius:999px;overflow:visible;
+}
+.pb-fill{
+  height:100%;border-radius:999px;
+  transition:width .5s cubic-bezier(.4,0,.2,1), background .3s;
+  min-width:0;
+}
+.pb-fill-anim{will-change:width}
+.pb-zone-label{
+  position:absolute;top:9px;font-size:9px;color:var(--suave);
+  transform:translateX(-50%);white-space:nowrap;
+}
+.pb-meta{display:flex;align-items:center;justify-content:space-between;margin-top:1px}
+.pb-estado{font-size:11px;font-weight:700}
+.pb-ideal{font-size:10.5px;color:var(--suave)}
+
+/* ── AÇÕES ───────────────────────────────────────────────── */
+.acoes-lista{padding:14px 16px;display:flex;flex-direction:column;gap:8px;
+  border-top:1px solid var(--linha)}
+.acao-item{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:13px;color:var(--corpo);line-height:1.55;
+}
+.acao-ic{color:var(--agua);font-weight:700;flex-shrink:0;margin-top:1px}
+
+/* ── FOTOS ───────────────────────────────────────────────── */
+.fotos-area{border:2px dashed var(--linha);border-radius:10px;padding:16px;margin-top:18px;background:var(--papel)}
+.fotos-area h4{font-size:14px;margin-bottom:6px;color:var(--tinta)}
+.fotos-area p{font-size:12.5px;color:var(--suave);margin-bottom:10px}
+.btn-foto{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;
+  border:1.5px solid var(--agua);border-radius:8px;background:var(--branco);
+  color:var(--agua);font-size:13px;font-weight:600;cursor:pointer}
+#fotos-preview{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.foto-thumb{position:relative;width:72px}
+.foto-thumb img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--linha);display:block}
+.foto-nome{font-size:9px;color:var(--suave);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.foto-rm{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;
+  background:var(--critico);color:#fff;border:none;cursor:pointer;font-size:10px;
+  display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca">
+      <img src="/images/logo-azul.png" alt="Aqualife" style="height:36px"
+           onerror="this.outerHTML='<div class=\'marca-i\'>A</div><div class=\'marca-t\'>Aqualife<small>AQUARISMO</small></div>'">
+    </div>
+    <nav class="nav"><a href="/tecnico.html" class="ativo">Registrar visita</a></nav>
+    <button class="btn btn-c btn-sm" id="sair" style="margin-left:auto">Sair</button>
+  </div>
+</header>
+
+<main class="wrap sec">
+  <div class="pg-h">
+    <div>
+      <h1>Registrar visita</h1>
+      <p style="color:var(--suave);font-size:14px" id="quem">—</p>
+    </div>
+  </div>
+
+  <div class="campo" style="max-width:440px;margin:18px 0 24px">
+    <label>Aquário visitado</label>
+    <select class="inp" id="aquario"><option>Carregando…</option></select>
+  </div>
+
+  <div class="cols">
+    <!-- ESQUERDA: campos + fotos -->
+    <div>
+      <h3 style="font-size:15px;margin-bottom:14px">Parâmetros medidos</h3>
+      <div class="grid-p" id="params"></div>
+
+      <div class="fotos-area">
+        <h4>📷 Fotografias</h4>
+        <p>Até 10 fotos por visita — ficam no laudo do cliente.</p>
+        <label class="btn-foto">
+          ＋ Adicionar fotos
+          <input type="file" id="input-foto" accept="image/*" multiple style="display:none">
+        </label>
+        <div id="fotos-preview"></div>
+      </div>
+
+      <div class="campo" style="margin-top:18px">
+        <label>Observação (opcional)</label>
+        <textarea class="inp" id="obs" placeholder="Algo que o laudo não capture…"></textarea>
+      </div>
+
+      <button class="btn btn-p" id="salvar" style="margin-top:6px">
+        Salvar e enviar ao cliente
+      </button>
+    </div>
+
+    <!-- DIREITA: diagnóstico ao vivo -->
+    <div>
+      <h3 style="font-size:15px;margin-bottom:14px">Diagnóstico ao vivo</h3>
+      <div class="cartao previa" id="previa" style="padding:0;overflow:hidden">
+        <div style="padding:38px 20px;text-align:center;color:var(--suave)">
+          Preencha os parâmetros<br>para ver o diagnóstico.
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module" src="/js/tecnico.js"></script>
+</body>
+</html>
