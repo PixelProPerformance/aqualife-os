@@ -160,7 +160,7 @@ export function diagnosticar(valores, waterType, contexto = {}) {
     }
   }
 
-  // 3. urgência também sobe se algum parâmetro estourou o crítico
+  // 3. urgência sobe se parâmetro ultrapassou o limite CRÍTICO das faixas
   for (const p of parametros) {
     if (p.estado === "critico" && URGENCIA_ORDEM.critico > URGENCIA_ORDEM[urgencia])
       urgencia = "critico";
@@ -170,9 +170,16 @@ export function diagnosticar(valores, waterType, contexto = {}) {
 
   nota = Math.max(0, Math.min(100, Math.round(nota)));
 
-  // Escala de saúde baseada na nota
-  if (nota < 60 && URGENCIA_ORDEM[urgencia] < URGENCIA_ORDEM.critico) urgencia = "critico";
-  else if (nota < 80 && urgencia === "ok") urgencia = "atencao";
+  // Escala visual final baseada na nota — sobrepõe tudo excepto crítico real
+  if (nota >= 80) {
+    // Só mantém critico/alerta se veio de parâmetro realmente crítico
+    if (urgencia === "ok" || urgencia === "atencao") urgencia = "ok";
+  } else if (nota >= 60) {
+    if (urgencia === "ok" || urgencia === "atencao") urgencia = "atencao";
+  } else {
+    // Abaixo de 60 → sempre crítico
+    urgencia = "critico";
+  }
 
   // 4. confiança: quanto do peso total foi realmente medido
   const confianca = Math.round(
