@@ -5,7 +5,7 @@
       "temperatura": {
         "ideal": [
           24.0,
-          26.0
+          28.0
         ],
         "ok": [
           22.0,
@@ -53,26 +53,26 @@
       "amonia": {
         "ideal": [
           0.0,
-          0.0
+          0.5
         ],
         "ok": [
-          0.0,
-          0.02
+          0.5,
+          1.00
         ],
         "critico_abaixo": null,
-        "critico_acima": 0.05
+        "critico_acima": 1.00
       },
       "nitrito": {
         "ideal": [
           0.0,
-          0.0
+          0.5
         ],
         "ok": [
-          0.0,
-          1.0
+          0.5,
+          1.5
         ],
         "critico_abaixo": null,
-        "critico_acima": 2.0
+        "critico_acima": 1.5
       },
       "nitrato": {
         "ideal": [
