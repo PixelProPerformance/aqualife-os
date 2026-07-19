@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar — Aqualife Aquarismo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.entrar-tela{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}
+.entrar-lado{background:linear-gradient(155deg,var(--agua-esc),var(--tinta));
+  color:#fff;padding:56px 52px;display:flex;flex-direction:column;justify-content:space-between;
+  position:relative;overflow:hidden}
+.entrar-lado::after{content:"";position:absolute;right:-80px;bottom:-80px;
+  width:340px;height:340px;border-radius:50%;background:rgba(255,255,255,.04)}
+.entrar-lado .marca-t{color:#fff}
+.entrar-lado .marca-t small{color:rgba(255,255,255,.6)}
+.entrar-lema{max-width:30ch}
+.entrar-lema h2{color:#fff;font-family:Georgia,serif;font-size:29px;font-weight:600;
+  line-height:1.3;margin-bottom:14px}
+.entrar-lema p{color:rgba(255,255,255,.75);font-size:15.5px}
+.entrar-form{display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.entrar-cx{width:100%;max-width:380px}
+.entrar-cx h1{font-size:25px;margin-bottom:7px}
+.entrar-cx .sub{color:var(--suave);font-size:14.5px;margin-bottom:28px}
+@media(max-width:860px){
+  .entrar-tela{grid-template-columns:1fr}
+  .entrar-lado{display:none}
+}
+</style>
+</head>
+<body>
+<div class="entrar-tela">
+
+  <div class="entrar-lado">
+    <div class="marca">
+      <img src="/images/logo-azul.png" alt="Aqualife" style="height:36px" onerror="this.style.display='none'">
+    </div>
+    <div class="entrar-lema">
+      <h2>Cada visita, um laudo completo da sua água.</h2>
+      <p>Acompanhamento técnico de aquários e lagos no Brasil e Europa.</p>
+    </div>
+    <div style="color:rgba(255,255,255,.4);font-size:13px">© 2026 Aqualife Aquarismo</div>
+  </div>
+
+  <div class="entrar-form">
+    <div class="entrar-cx">
+      <h1>Entrar</h1>
+      <p class="sub" id="sub">Acesse seus relatórios de manutenção.</p>
+
+      <div class="erro-cx" id="erro" style="display:none"></div>
+
+      <div class="campo">
+        <label>E-mail</label>
+        <input class="inp" id="email" type="email" autocomplete="username" placeholder="voce@email.com">
+      </div>
+      <div class="campo">
+        <label>Senha</label>
+        <input class="inp" id="senha" type="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-p" id="btn" style="width:100%;margin-top:6px">Entrar</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search);
+// acesso da equipe é o mesmo login — o ?equipe=1 só ajusta o texto, discreto
+if(params.get("equipe")==="1") $("sub").textContent="Acesso da equipe Aqualife.";
+
+async function entrar(){
+  const btn=$("btn"), erro=$("erro");
+  erro.style.display="none";
+  btn.disabled=true; btn.textContent="Entrando…";
+  try{
+    // Forçar www. para evitar redirect do GoDaddy a quebrar o CORS
+    const r=await fetch("/api/login",{
+      method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({email:$("email").value.trim(), senha:$("senha").value}),
+    });
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.erro||"Não foi possível entrar.");
+    localStorage.setItem("aqualife_token", j.token);
+    localStorage.setItem("aqualife_user", JSON.stringify(j.usuario));
+    const p=j.usuario.role;
+    location.href =
+      (p==="admin"||p==="gestor") ? "/admin.html" :
+      (p==="tecnico")             ? "/tecnico.html" :
+      (p==="aquarista")           ? "/tecnico.html" :
+                                    "/painel.html";
+  }catch(e){
+    erro.textContent=e.message; erro.style.display="block";
+    btn.disabled=false; btn.textContent="Entrar";
+  }
+}
+$("btn").onclick=entrar;
+$("senha").addEventListener("keydown",e=>{if(e.key==="Enter")entrar()});
+$("email").addEventListener("keydown",e=>{if(e.key==="Enter")$("senha").focus()});
+</script>
+</body>
+</html>
