@@ -5,7 +5,7 @@
       "temperatura": {
         "ideal": [
           24.0,
-          27.0
+          26.0
         ],
         "ok": [
           22.0,
@@ -65,11 +65,11 @@
       "nitrito": {
         "ideal": [
           0.0,
-          0.5
+          0.0
         ],
         "ok": [
-          0.5,
-          1.5
+          0.0,
+          1.0
         ],
         "critico_abaixo": null,
         "critico_acima": 2.0
@@ -452,9 +452,9 @@
       "id": "NITRITO_PRESENTE",
       "aplica": "Todos",
       "se": "Nitrito > 0",
-      "entao": "Ciclagem incompleta ou colapso do filtro biológico. Bloqueia transporte de O2 no sangue.",
-      "urgencia": "CRÍTICO",
-      "penalidade": -30.0
+      "entao": "Nitrito detectado (>0 ppm). Monitorize — crítico acima de 2 ppm.",
+      "urgencia": "ATENÇÃO",
+      "penalidade": -8
     },
     {
       "id": "OD_BAIXO_TEMP_ALTA",
