@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Aquabook Aqualife — 286 espécies de peixes, corais e plantas aquáticas com parâmetros, compatibilidades e erros comuns.">
+<meta property="og:title" content="Aquabook Aqualife — Espécies Aquáticas">
+<meta property="og:url" content="https://app.aqualifeaquarismo.com/aquabook.html">
+<title>Aquabook — Aqualife Aquarismo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.aq-nav{position:fixed;top:0;left:0;right:0;z-index:100;height:60px;background:rgba(255,255,255,.97);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--linha);
+  display:flex;align-items:center;padding:0 24px;gap:16px}
+.aq-nav img{height:32px}
+.aq-nav .back{font-size:13.5px;color:var(--suave);text-decoration:none;font-weight:500}
+.aq-nav .back:hover{color:var(--agua)}
+.aq-nav .titulo{font-size:15px;font-weight:700;color:var(--tinta)}
+.aq-nav .busca-w{margin-left:auto;position:relative}
+.aq-nav .busca{width:240px;padding:7px 12px 7px 34px;border-radius:8px;border:1.5px solid var(--linha);
+  font-size:13.5px;font-family:inherit;color:var(--tinta);outline:none}
+.aq-nav .busca:focus{border-color:var(--agua);box-shadow:0 0 0 3px var(--agua-clr)}
+.aq-nav .bi{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--suave);pointer-events:none}
+
+.aq-hero{background:linear-gradient(135deg,var(--tinta) 0%,#1A6080 100%);
+  padding:80px 0 0;text-align:center;color:#fff}
+.aq-hero h1{font-size:clamp(1.5rem,3vw,2.2rem);margin-bottom:6px;color:#fff}
+.aq-hero p{color:rgba(255,255,255,.7);font-size:14.5px;margin-bottom:24px}
+.aq-filtros{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:0 24px 24px}
+.aq-filtro{padding:8px 18px;border-radius:999px;border:1.5px solid rgba(255,255,255,.25);
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:.15s}
+.aq-filtro:hover{background:rgba(255,255,255,.2);color:#fff}
+.aq-filtro.on{background:#fff;color:var(--tinta);border-color:#fff}
+.aq-stats{background:rgba(0,0,0,.18);padding:10px 0;
+  display:flex;justify-content:center;gap:28px;flex-wrap:wrap}
+.aq-stat{text-align:center;color:rgba(255,255,255,.65);font-size:12px}
+.aq-stat span{display:block;font-size:1.2rem;font-weight:700;color:#fff}
+
+.aq-main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
+.aq-subtit{font-size:11px;font-weight:700;color:var(--suave);letter-spacing:.1em;text-transform:uppercase;
+  margin:20px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--linha)}
+.aq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:6px}
+
+.esp-card{background:#fff;border:1px solid var(--linha);border-radius:12px;overflow:hidden;
+  cursor:pointer;transition:transform .2s,box-shadow .2s;text-decoration:none;display:block}
+.esp-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(18,51,63,.12)}
+.esp-img{height:128px;background:var(--agua-clr);position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+.esp-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.esp-card:hover .esp-img img{transform:scale(1.06)}
+.esp-img .ph{font-size:2.5rem;opacity:.4}
+.cat-badge{position:absolute;top:7px;left:7px;font-size:10px;font-weight:700;padding:2px 7px;
+  border-radius:5px;letter-spacing:.04em;text-transform:uppercase;backdrop-filter:blur(6px)}
+.cat-agua-doce{background:rgba(34,197,94,.85);color:#fff}
+.cat-marinho{background:rgba(59,130,246,.85);color:#fff}
+.cat-coral{background:rgba(245,158,11,.85);color:#fff}
+.cat-planta{background:rgba(16,185,129,.85);color:#fff}
+.esp-body{padding:10px 12px}
+.esp-nome{font-size:13.5px;font-weight:700;color:var(--tinta);margin-bottom:2px}
+.esp-cient{font-style:italic;font-size:11px;color:var(--suave);margin-bottom:7px}
+.esp-tags{display:flex;gap:4px;flex-wrap:wrap}
+.esp-tag{font-size:10px;font-weight:600;color:var(--suave);background:var(--papel);
+  padding:2px 6px;border-radius:4px}
+
+.sem-res{grid-column:1/-1;text-align:center;padding:48px;color:var(--suave)}
+
+/* DETALHE */
+#det{display:none;position:fixed;inset:0;z-index:200;overflow-y:auto;background:var(--papel)}
+#det.show{display:block}
+.det-nav{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.97);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--linha);
+  padding:12px 20px;display:flex;align-items:center;gap:10px}
+.det-back{display:flex;align-items:center;gap:6px;font-weight:600;font-size:13.5px;
+  color:var(--agua);background:none;border:none;cursor:pointer;font-family:inherit}
+.det-share{margin-left:auto;font-size:12px;color:var(--suave);cursor:pointer;
+  padding:6px 12px;border:1px solid var(--linha);border-radius:7px;background:#fff;font-family:inherit}
+.det-share:hover{border-color:var(--agua);color:var(--agua)}
+.det-wrap{max-width:800px;margin:0 auto;padding:0 20px 60px}
+
+.det-header{background:linear-gradient(135deg,var(--tinta),#1A6080);border-radius:14px;
+  padding:28px;margin:20px 0;display:grid;grid-template-columns:1fr 200px;gap:20px;align-items:start}
+@media(max-width:600px){.det-header{grid-template-columns:1fr}}
+.det-header h1{color:#fff;font-size:clamp(1.2rem,4vw,1.8rem);margin-bottom:4px}
+.det-cient{color:rgba(255,255,255,.6);font-style:italic;font-size:14px;margin-bottom:14px}
+.det-badges{display:flex;gap:7px;flex-wrap:wrap}
+.det-foto{border-radius:10px;overflow:hidden;height:160px;background:rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center}
+.det-foto img{width:100%;height:100%;object-fit:cover}
+.det-foto .ph{font-size:2.5rem;opacity:.3}
+.foto-credit{font-size:10px;color:rgba(255,255,255,.4);text-align:right;margin-top:4px}
+.foto-credit a{color:rgba(255,255,255,.5)}
+
+.temp-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;
+  font-size:12px;font-weight:600}
+.temp-pacifico{background:#D1FAE5;color:#065F46}
+.temp-semi_agressivo{background:#FEF3C7;color:#92400E}
+.temp-agressivo{background:#FEE2E2;color:#991B1B}
+.temp-solitario{background:#EDE9FE;color:#5B21B6}
+
+.param-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:16px}
+.param-card{background:#fff;border:1px solid var(--linha);border-radius:9px;padding:12px;text-align:center}
+.param-card .pk{font-size:10px;font-weight:700;color:var(--suave);text-transform:uppercase;
+  letter-spacing:.05em;margin-bottom:3px}
+.param-card .pv{font-size:1.15rem;font-weight:700;color:var(--tinta);line-height:1.2}
+.param-card .pu{font-size:10px;color:var(--suave);margin-top:2px}
+
+.det-sec{background:#fff;border:1px solid var(--linha);border-radius:11px;padding:18px;margin-bottom:14px}
+.det-sec h3{font-size:13.5px;font-weight:700;color:var(--tinta);margin-bottom:10px}
+.det-sec p{font-size:14px;color:var(--corpo);line-height:1.65}
+
+.incompat-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--linha)}
+.incompat-item:last-child{border:none;padding-bottom:0}
+.grav-badge{flex-shrink:0;width:68px;text-align:center;font-size:10px;font-weight:700;
+  padding:3px 0;border-radius:5px;text-transform:uppercase}
+.grav-critico{background:#FEE2E2;color:#991B1B}
+.grav-alerta{background:#FEF3C7;color:#92400E}
+.incompat-info h4{font-size:13px;font-weight:700;color:var(--tinta);margin-bottom:2px}
+.incompat-info p{font-size:12.5px;color:var(--suave);line-height:1.5}
+
+.spin{width:18px;height:18px;border:2.5px solid var(--linha);border-top-color:var(--agua);
+  border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;
+  color:var(--suave);font-size:13.5px}
+</style>
+</head>
+<body>
+
+<nav class="aq-nav">
+  <img src="/images/logo-azul.png" alt="Aqualife" onerror="this.style.display='none'">
+  <a href="/site.html" class="back">← Início</a>
+  <span class="titulo">Aquabook</span>
+  <div class="busca-w">
+    <svg class="bi" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="busca" id="busca" placeholder="Buscar espécie…" autocomplete="off">
+  </div>
+</nav>
+
+<div class="aq-hero">
+  <h1>Aquabook Aqualife</h1>
+  <p>286 espécies catalogadas com parâmetros validados em campo.</p>
+  <div class="aq-filtros">
+    <button class="aq-filtro on" data-cat="">🌊 Todas</button>
+    <button class="aq-filtro" data-cat="agua-doce">🐟 Água doce</button>
+    <button class="aq-filtro" data-cat="marinho">🐠 Marinhos</button>
+    <button class="aq-filtro" data-cat="coral">🪸 Corais</button>
+    <button class="aq-filtro" data-cat="planta">🌿 Plantas</button>
+  </div>
+  <div class="aq-stats">
+    <div class="aq-stat"><span id="cnt">286</span>espécies</div>
+    <div class="aq-stat"><span>38</span>incompatibilidades</div>
+    <div class="aq-stat"><span>4</span>categorias</div>
+    <div class="aq-stat"><span>12</span>parâmetros</div>
+  </div>
+</div>
+
+<div class="aq-main" id="aq-main">
+  <div class="loading"><div class="spin"></div> Carregando espécies…</div>
+</div>
+
+<!-- DETALHE -->
+<div id="det">
+  <div class="det-nav">
+    <button class="det-back" id="btn-back">← Voltar</button>
+    <button class="det-share" id="btn-share">🔗 Copiar link</button>
+  </div>
+  <div class="det-wrap" id="det-content"></div>
+</div>
+
+<script>
+const CAT_L = {"agua-doce":"Água doce","marinho":"Marinho","coral":"Coral","planta":"Planta"};
+const CAT_C = {"agua-doce":"cat-agua-doce","marinho":"cat-marinho","coral":"cat-coral","planta":"cat-planta"};
+const TMP_L = {"pacifico":"😊 Pacífico","semi_agressivo":"⚠️ Semi-agressivo","agressivo":"😡 Agressivo","solitario":"🔒 Solitário"};
+const TMP_C = {"pacifico":"temp-pacifico","semi_agressivo":"temp-semi_agressivo","agressivo":"temp-agressivo","solitario":"temp-solitario"};
+const UNI   = {temperatura:"°C",ph:"",kh:"dKH",gh:"dGH",amonia:"ppm",nitrito:"ppm",nitrato:"ppm",fosfato:"ppm",oxigenio:"mg/L",salinidade:"sg",calcio:"ppm",magnesio:"ppm"};
+const LBL   = {temperatura:"Temperatura",ph:"pH",kh:"KH",gh:"GH",amonia:"Amônia",nitrito:"Nitrito",nitrato:"Nitrato",fosfato:"Fosfato",oxigenio:"O₂",salinidade:"Salinidade",calcio:"Cálcio",magnesio:"Magnésio",tamanho_adulto:"Tamanho adulto",volume_min:"Volume mín.",cardume_min:"Cardume mín.",luz:"Luz",fluxo:"Fluxo",co2:"CO₂",dificuldade:"Dificuldade"};
+
+let TODAS = [], catAtiva = "", buscaTxt = "";
+let wikiCache = {};
+
+/* ── WIKIPEDIA FALLBACK ─── */
+async function wikiImg(nome) {
+  if (!nome) return null;
+  if (wikiCache[nome] !== undefined) return wikiCache[nome];
+  try {
+    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(nome.replace(/ /g,"_"))}`, {signal:AbortSignal.timeout(4000)});
+    if (!r.ok) { wikiCache[nome]=null; return null; }
+    const d = await r.json();
+    if (d.thumbnail?.source) {
+      const url = d.thumbnail.source.replace(/\/\d+px-/,"/400px-");
+      const credito = d.content_urls?.desktop?.page ? `<a href="${d.content_urls.desktop.page}" target="_blank">© Wikipedia</a> · CC` : "© Wikipedia · CC";
+      wikiCache[nome] = {url, credito};
+      return wikiCache[nome];
+    }
+  } catch {}
+  wikiCache[nome] = null; return null;
+}
+
+/* ── RENDER GRID ─── */
+function filtradas() {
+  let l = TODAS;
+  if (catAtiva) l = l.filter(e => e.categoria === catAtiva);
+  if (buscaTxt) { const q = buscaTxt.toLowerCase(); l = l.filter(e => e.nome_comum?.toLowerCase().includes(q) || e.nome_cientifico?.toLowerCase().includes(q)); }
+  return l;
+}
+
+function renderGrid() {
+  const lista = filtradas();
+  document.getElementById("cnt").textContent = lista.length;
+  const main = document.getElementById("aq-main");
+  if (!lista.length) { main.innerHTML = `<div class="sem-res"><h3>Nenhuma espécie encontrada</h3><p>Tenta outro termo ou remove os filtros.</p></div>`; return; }
+
+  const grupos = {};
+  for (const e of lista) { if (!grupos[e.categoria]) grupos[e.categoria]=[]; grupos[e.categoria].push(e); }
+  const ORD = ["agua-doce","marinho","coral","planta"];
+
+  let html = "";
+  for (const cat of ORD) {
+    if (!grupos[cat]) continue;
+    html += `<div class="aq-subtit">${CAT_L[cat]||cat} (${grupos[cat].length})</div><div class="aq-grid" data-cat="${cat}">`;
+    for (const e of grupos[cat]) {
+      html += `<div class="esp-card" data-id="${e.id}" onclick="abrirEspecie('${e.id}')">
+        <div class="esp-img" id="img-${e.id}">
+          <span class="ph">🐠</span>
+          <span class="cat-badge ${CAT_C[e.categoria]}">${CAT_L[e.categoria]}</span>
+        </div>
+        <div class="esp-body">
+          <div class="esp-nome">${e.nome_comum}</div>
+          <div class="esp-cient">${e.nome_cientifico||""}</div>
+          <div class="esp-tags">
+            ${e.ph_min?`<span class="esp-tag">pH ${e.ph_min}–${e.ph_max}</span>`:""}
+            ${e.temp_min?`<span class="esp-tag">${e.temp_min}–${e.temp_max}°C</span>`:""}
+            ${e.volume_min?`<span class="esp-tag">${e.volume_min}L mín.</span>`:""}
+            ${e.tamanho_adulto?`<span class="esp-tag">${e.tamanho_adulto}cm</span>`:""}
+          </div>
+        </div>
+      </div>`;
+    }
+    html += "</div>";
+  }
+  main.innerHTML = html;
+  carregarFotosLazy(lista);
+}
+
+function carregarFotosLazy(lista) {
+  const obs = new IntersectionObserver(entries => {
+    for (const en of entries) {
+      if (!en.isIntersecting) continue;
+      obs.unobserve(en.target);
+      const id = en.target.id.replace("img-","");
+      const e = lista.find(x => x.id === id);
+      if (e) carregarFotoCard(e);
+    }
+  }, {rootMargin:"200px"});
+  for (const e of lista) { const el = document.getElementById(`img-${e.id}`); if (el) obs.observe(el); }
+}
+
+async function carregarFotoCard(e) {
+  const c = document.getElementById(`img-${e.id}`);
+  if (!c) return;
+  let url = "", credito = "";
+  // Foto própria primeiro
+  if (e.foto_url && e.foto_url.trim()) {
+    url = e.foto_url.trim(); credito = "";
+  } else if (e.nome_cientifico) {
+    const w = await wikiImg(e.nome_cientifico);
+    if (w) { url = w.url; credito = w.credito; }
+  }
+  if (url) {
+    c.innerHTML = `<img src="${url}" alt="${e.nome_comum}" loading="lazy"
+      onerror="this.parentElement.innerHTML='<span class=\\'ph\\'>🐠</span>'">
+      <span class="cat-badge ${CAT_C[e.categoria]}">${CAT_L[e.categoria]}</span>`;
+  }
+}
+
+/* ── ABRIR ESPÉCIE ─── */
+async function abrirEspecie(id) {
+  const sp = TODAS.find(x => x.id === id);
+  if (!sp) return;
+
+  // URL única
+  const slug = sp.slug || id;
+  history.pushState({slug, id}, sp.nome_comum, `/aquabook.html?especie=${slug}`);
+  document.title = `${sp.nome_comum} — Aquabook Aqualife`;
+
+  document.getElementById("det-content").innerHTML = `<div class="loading"><div class="spin"></div> Carregando…</div>`;
+  document.getElementById("det").classList.add("show");
+  window.scrollTo(0,0);
+
+  try {
+    const e = await fetch(`/api/especies/${id}`).then(r=>r.json());
+    let fotoUrl = "", fotoCredito = "";
+    if (sp.foto_url && sp.foto_url.trim()) {
+      fotoUrl = sp.foto_url.trim(); fotoCredito = "© Aqualife Aquarismo";
+    } else if (e.nome_cientifico) {
+      const w = await wikiImg(e.nome_cientifico);
+      if (w) { fotoUrl = w.url; fotoCredito = w.credito; }
+    }
+    renderDetalhe(e, fotoUrl, fotoCredito);
+  } catch(err) {
+    document.getElementById("det-content").innerHTML = `<p style="padding:40px;color:var(--critico)">Erro ao carregar.</p>`;
+  }
+}
+
+function fecharDetalhe() {
+  document.getElementById("det").classList.remove("show");
+  history.pushState({}, "Aquabook — Aqualife", "/aquabook.html");
+  document.title = "Aquabook — Aqualife Aquarismo";
+}
+
+/* ── RENDER DETALHE ─── */
+function renderDetalhe(e, fotoUrl, fotoCredito) {
+  const params = [
+    {k:"Temperatura",v:e.temp_min&&e.temp_max?`${e.temp_min}–${e.temp_max}`:null,u:"°C"},
+    {k:"pH",v:e.ph_min&&e.ph_max?`${e.ph_min}–${e.ph_max}`:null,u:""},
+    {k:"KH",v:e.kh_min&&e.kh_max?`${e.kh_min}–${e.kh_max}`:null,u:"dKH"},
+    {k:"GH",v:e.gh_min&&e.gh_max?`${e.gh_min}–${e.gh_max}`:null,u:"dGH"},
+    {k:"Volume mín.",v:e.volume_min??null,u:"L"},
+    {k:"Tamanho adulto",v:e.tamanho_adulto??null,u:"cm"},
+    {k:"Cardume mín.",v:e.cardume_min??null,u:"peixes"},
+    {k:"Salinidade",v:e.salinidade_min&&e.salinidade_max?`${e.salinidade_min}–${e.salinidade_max}`:null,u:"sg"},
+    {k:"Cálcio",v:e.calcio_min&&e.calcio_max?`${e.calcio_min}–${e.calcio_max}`:null,u:"ppm"},
+    {k:"Magnésio",v:e.magnesio_min&&e.magnesio_max?`${e.magnesio_min}–${e.magnesio_max}`:null,u:"ppm"},
+    {k:"Dificuldade",v:e.dificuldade??null,u:""},
+    {k:"Luz",v:e.luz??null,u:""},
+  ].filter(p=>p.v!==null&&p.v!==undefined&&p.v!=="");
+
+  const incompats = e.incompatibilidades||[];
+
+  document.getElementById("det-content").innerHTML = `
+    <div class="det-header">
+      <div>
+        ${e.temperamento?`<span class="temp-badge ${TMP_C[e.temperamento]||''}" style="margin-bottom:12px">${TMP_L[e.temperamento]||e.temperamento}</span>`:""}
+        <h1>${e.nome_comum}</h1>
+        <div class="det-cient">${e.nome_cientifico||""}</div>
+        <div class="det-badges">
+          <span class="cat-badge ${CAT_C[e.categoria]}" style="position:static">${CAT_L[e.categoria]}</span>
+          ${e.dificuldade?`<span class="cat-badge" style="position:static;background:rgba(99,102,241,.85);color:#fff">${e.dificuldade}</span>`:""}
+        </div>
+      </div>
+      <div>
+        <div class="det-foto">
+          ${fotoUrl
+            ? `<img src="${fotoUrl}" alt="${e.nome_comum}" onerror="this.parentElement.innerHTML='<span class=\\'ph\\'>🐠</span>'">`
+            : `<span class="ph">🐠</span>`}
+        </div>
+        ${fotoCredito?`<div class="foto-credit">${fotoCredito}</div>`:""}
+      </div>
+    </div>
+
+    <div class="param-grid">
+      ${params.map(p=>`<div class="param-card"><div class="pk">${p.k}</div><div class="pv">${p.v}</div>${p.u?`<div class="pu">${p.u}</div>`:""}</div>`).join("")}
+    </div>
+
+    ${e.erros_comuns?`<div class="det-sec"><h3>⚠️ Erros mais comuns</h3><p>${e.erros_comuns}</p></div>`:""}
+    ${e.sinais_estresse?`<div class="det-sec"><h3>🔴 Sinais de estresse</h3><p>${e.sinais_estresse}</p></div>`:""}
+    ${e.notas?`<div class="det-sec"><h3>📋 Notas técnicas</h3><p>${e.notas}</p></div>`:""}
+
+    <div class="det-sec">
+      <h3>🚫 Incompatibilidades (${incompats.length})</h3>
+      ${incompats.length
+        ? incompats.map(i=>{
+            const outro = i.especie_a?.toLowerCase()===e.nome_comum?.toLowerCase() ? i.especie_b : i.especie_a;
+            return `<div class="incompat-item">
+              <span class="grav-badge grav-${i.gravidade}">${i.gravidade}</span>
+              <div class="incompat-info"><h4>${outro}</h4><p>${i.motivo||""}</p></div>
+            </div>`;
+          }).join("")
+        : `<p style="color:var(--suave);font-size:13.5px">Nenhuma incompatibilidade registada.</p>`}
+    </div>
+
+    <div style="text-align:center;padding:20px 0">
+      <a href="/site.html" class="btn btn-p" style="text-decoration:none">Agendar manutenção</a>
+    </div>`;
+}
+
+/* ── EVENTOS ─── */
+document.getElementById("btn-back").onclick = fecharDetalhe;
+
+document.getElementById("btn-share").onclick = () => {
+  navigator.clipboard.writeText(location.href).then(() => {
+    document.getElementById("btn-share").textContent = "✓ Link copiado!";
+    setTimeout(() => document.getElementById("btn-share").textContent = "🔗 Copiar link", 2000);
+  });
+};
+
+document.querySelectorAll(".aq-filtro").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".aq-filtro").forEach(b=>b.classList.remove("on"));
+    btn.classList.add("on"); catAtiva = btn.dataset.cat; renderGrid();
+  });
+});
+
+document.getElementById("busca").addEventListener("input", e => { buscaTxt = e.target.value.trim(); renderGrid(); });
+
+document.addEventListener("keydown", e => { if(e.key==="Escape") fecharDetalhe(); });
+
+window.addEventListener("popstate", e => {
+  if (e.state?.id) {
+    const sp = TODAS.find(x=>x.id===e.state.id);
+    if (sp) { document.getElementById("det").classList.add("show"); }
+  } else { fecharDetalhe(); }
+});
+
+/* ── INIT ─── */
+async function init() {
+  const r = await fetch("/api/especies?limit=300");
+  TODAS = await r.json();
+  renderGrid();
+  // URL directa: /aquabook.html?especie=neon-tetra
+  const slug = new URLSearchParams(location.search).get("especie");
+  if (slug) {
+    const sp = TODAS.find(x => x.slug === slug || x.id === slug);
+    if (sp) abrirEspecie(sp.id);
+  }
+}
+
+init().catch(err => {
+  document.getElementById("aq-main").innerHTML = `<div class="sem-res"><h3>Erro ao carregar</h3><p>${err.message}</p></div>`;
+});
+</script>
+</body>
+</html>
