@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curso — Aqualife Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:28px 0 60px;max-width:760px;margin:0 auto}
+.curso-topo h1{font-size:26px;font-weight:800;color:var(--tinta);margin-bottom:6px}
+.curso-topo .meta{font-size:13px;color:var(--suave);margin-bottom:6px}
+.prog-top{height:8px;background:var(--linha);border-radius:20px;margin:14px 0 26px;overflow:hidden}
+.prog-top i{display:block;height:100%;background:var(--ok);border-radius:20px;transition:width .3s}
+.aula{margin-bottom:14px;overflow:hidden}
+.aula-cab{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;cursor:pointer}
+.aula-num{width:28px;height:28px;border-radius:50%;background:var(--agua-clr);color:var(--agua-esc);
+  display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.aula-num.done{background:var(--ok);color:#fff}
+.aula-tit{font-weight:600;color:var(--tinta);font-size:15px;flex:1}
+.aula-corpo{display:none;padding:0 20px 20px;border-top:1px solid var(--linha)}
+.aula-corpo.on{display:block}
+.aula-texto{font-size:15px;line-height:1.7;color:var(--corpo);margin:16px 0}
+.video-wrap{position:relative;padding-bottom:56%;height:0;margin:14px 0;border-radius:10px;overflow:hidden}
+.video-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+/* Quiz */
+.quiz{margin-top:36px;padding-top:20px;border-top:2px solid var(--linha)}
+.quiz h2{font-size:20px;color:var(--tinta);margin-bottom:6px}
+.q{margin:18px 0;padding:18px 20px}
+.q .pg{font-weight:600;color:var(--tinta);margin-bottom:12px}
+.op{display:block;padding:11px 14px;border:1.5px solid var(--linha);border-radius:9px;margin-bottom:8px;cursor:pointer;font-size:14px}
+.op:hover{border-color:var(--agua)}
+.op.sel{border-color:var(--agua);background:var(--agua-clr)}
+.op.certa{border-color:var(--ok);background:#ecfdf5}
+.op.errada{border-color:var(--critico);background:#fef2f2}
+.op input{margin-right:8px}
+.expl{font-size:13px;color:var(--suave);margin-top:6px;padding-left:4px}
+.resultado{text-align:center;padding:22px;margin-top:16px}
+.resultado .nota{font-family:Georgia,serif;font-size:44px;font-weight:700}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca"><img src="/images/logo-azul.png" alt="Aqualife" style="height:36px" onerror="this.style.display='none'"></div>
+    <a href="/academy.html" class="btn btn-c btn-sm" style="margin-left:auto">← Todos os cursos</a>
+  </div>
+</header>
+<main class="wrap sec" id="main"><div class="vazio">Carregando…</div></main>
+
+<script>
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+if(!token){ location.href="/entrar.html"; }
+const cursoId=new URLSearchParams(location.search).get("id");
+if(!cursoId){ location.href="/academy.html"; }
+const NIVEL={iniciante:"Iniciante",intermediario:"Intermediário",avancado:"Avançado"};
+
+let DADOS=null, concluidas=new Set();
+
+async function api(c,o={}){
+  const r=await fetch(c,{...o,headers:{"content-type":"application/json",authorization:"Bearer "+token}});
+  if(r.status===402){ location.href="/planos.html"; return; }
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.erro||"HTTP "+r.status);}
+  return r.json();
+}
+
+function embedVideo(url){
+  if(!url) return "";
+  let id=null;
+  const yt=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([\w-]{11})/);
+  if(yt) id=yt[1];
+  if(id) return `<div class="video-wrap"><iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe></div>`;
+  return `<p><a href="${url}" target="_blank" style="color:var(--agua)">▶ Assistir ao vídeo</a></p>`;
+}
+
+async function carregar(){
+  try{
+    DADOS=await api("/api/academy/cursos/"+cursoId);
+    concluidas=new Set(DADOS.progresso?.aulas_concluidas||[]);
+    render();
+  }catch(e){ $("main").innerHTML=`<div class="vazio">Erro: ${e.message}</div>`; }
+}
+
+function render(){
+  const {curso,aulas,perguntas}=DADOS;
+  const pct=aulas.length?Math.round((concluidas.size/aulas.length)*100):0;
+  $("main").innerHTML=`
+    <div class="curso-topo">
+      <h1>${curso.titulo}</h1>
+      <div class="meta">${NIVEL[curso.nivel]||curso.nivel||""}${curso.categoria?" · "+curso.categoria:""}${curso.duracao_min?" · "+curso.duracao_min+" min":""}</div>
+      <p style="color:var(--corpo);font-size:14.5px">${curso.descricao||""}</p>
+      <div class="prog-top"><i id="progBar" style="width:${pct}%"></i></div>
+    </div>
+    <div id="aulas">${aulas.map((a,i)=>aulaHtml(a,i)).join("")}</div>
+    ${perguntas.length?quizHtml(perguntas):""}
+  `;
+  document.querySelectorAll("[data-toggle]").forEach(el=>el.onclick=()=>{
+    const corpo=$("corpo-"+el.dataset.toggle); corpo.classList.toggle("on");
+  });
+  document.querySelectorAll("[data-concluir]").forEach(b=>b.onclick=async(ev)=>{
+    ev.stopPropagation();
+    const aulaId=b.dataset.concluir;
+    try{
+      const r=await api(`/api/academy/cursos/${cursoId}/aula/${aulaId}/concluir`,{method:"POST"});
+      concluidas=new Set(r.aulas_concluidas);
+      render();
+    }catch(e){ alert("Erro: "+e.message); }
+  });
+  if(perguntas.length) $("enviarQuiz").onclick=enviarQuiz;
+}
+
+function aulaHtml(a,i){
+  const done=concluidas.has(a.id);
+  return `<div class="cartao aula">
+    <div class="aula-cab" data-toggle="${a.id}">
+      <span class="aula-num ${done?"done":""}">${done?"✓":i+1}</span>
+      <span class="aula-tit">${a.titulo}</span>
+      <span style="color:var(--suave);font-size:18px">⌄</span>
+    </div>
+    <div class="aula-corpo" id="corpo-${a.id}">
+      ${embedVideo(a.video_url)}
+      <div class="aula-texto">${(a.conteudo||"").replace(/\n/g,"<br>")}</div>
+      <button class="btn ${done?"btn-c":"btn-p"} btn-sm" data-concluir="${a.id}">
+        ${done?"✓ Aula concluída":"Marcar como concluída"}</button>
+    </div>
+  </div>`;
+}
+
+function quizHtml(perguntas){
+  return `<div class="quiz">
+    <h2>🧠 Quiz do curso</h2>
+    <p style="color:var(--suave);font-size:14px">Responda para testar o que aprendeu. Você precisa de 60% para aprovar.</p>
+    <div id="perguntas">${perguntas.map((p,i)=>`
+      <div class="cartao q" data-q="${p.id}">
+        <div class="pg">${i+1}. ${p.pergunta}</div>
+        ${p.opcoes.map((op,idx)=>`
+          <label class="op" data-op="${idx}">
+            <input type="radio" name="q-${p.id}" value="${idx}">${op}</label>`).join("")}
+        <div class="expl" id="expl-${p.id}" style="display:none"></div>
+      </div>`).join("")}
+    </div>
+    <button class="btn btn-p" id="enviarQuiz" style="margin-top:8px">Enviar respostas</button>
+    <div id="resultado"></div>
+  </div>`;
+}
+
+document.addEventListener("click",e=>{
+  const lab=e.target.closest(".op");
+  if(lab && !lab.classList.contains("certa") && !lab.classList.contains("errada")){
+    lab.parentElement.querySelectorAll(".op").forEach(o=>o.classList.remove("sel"));
+    lab.classList.add("sel");
+  }
+});
+
+async function enviarQuiz(){
+  const respostas={};
+  DADOS.perguntas.forEach(p=>{
+    const sel=document.querySelector(`input[name="q-${p.id}"]:checked`);
+    if(sel) respostas[p.id]=Number(sel.value);
+  });
+  if(Object.keys(respostas).length<DADOS.perguntas.length){
+    if(!confirm("Você não respondeu todas as perguntas. Enviar mesmo assim?")) return;
+  }
+  try{
+    const r=await api(`/api/academy/cursos/${cursoId}/quiz`,{method:"POST",body:JSON.stringify({respostas})});
+    // pinta gabarito
+    r.gabarito.forEach(g=>{
+      const card=document.querySelector(`[data-q="${g.id}"]`);
+      card.querySelectorAll(".op").forEach(op=>{
+        const idx=Number(op.dataset.op);
+        op.style.pointerEvents="none";
+        if(idx===g.correta) op.classList.add("certa");
+        else if(idx===g.escolhida) op.classList.add("errada");
+      });
+      if(g.explicacao){ const ex=$("expl-"+g.id); ex.textContent="💡 "+g.explicacao; ex.style.display="block"; }
+    });
+    const cor=r.aprovado?"var(--ok)":"var(--critico)";
+    $("resultado").innerHTML=`<div class="cartao resultado">
+      <div class="nota" style="color:${cor}">${r.percentual}%</div>
+      <p style="font-weight:600;color:${cor}">${r.aprovado?"Parabéns, você foi aprovado! 🎉":"Quase lá — revise e tente de novo."}</p>
+      <p style="color:var(--suave);font-size:13px">Você acertou ${r.acertos} de ${r.total}.</p>
+    </div>`;
+    $("resultado").scrollIntoView({behavior:"smooth"});
+  }catch(e){ alert("Erro: "+e.message); }
+}
+
+carregar();
+</script>
+</body>
+</html>
