@@ -1761,6 +1761,29 @@ document.addEventListener('DOMContentLoaded', ()=>{
   };
 })();
 </script>
-<!-- ══════════ FIM COOKIES ══════════ -->
+<!-- ══════════ FIM COOKIES ══════════ --><!-- ══════════ FRASE ALEATÓRIA DO HERO ══════════ -->
+<script>
+(function(){
+  var frases = [
+    "Manutenção profissional de aquários e lagos, com laudo técnico a cada visita.",
+    "Cuidamos do seu aquário para a água ficar sempre saudável.",
+    "Manutenção técnica de aquários e lagos no Brasil e Europa.",
+    "Seu aquário limpo, equilibrado e monitorado por especialistas.",
+    "Água saudável e peixes protegidos, com diagnóstico digital.",
+    "Manutenção de aquários e lagos com relatório de saúde da água.",
+    "Faz os testes mas não sabe o que fazer com o resultado?",
+    "Limpeza, ajuste dos parâmetros e laudo digital do seu aquário.",
+    "Aquários e lagos impecáveis, com acompanhamento técnico de verdade.",
+    "Deixe seu aquário nas mãos de quem entende."
+  ];
+  function aplicarFraseHero(){
+    var h1 = document.querySelector('.hero-content h1');
+    if(h1){ h1.textContent = frases[Math.floor(Math.random()*frases.length)]; }
+  }
+  if(document.readyState !== 'loading') aplicarFraseHero();
+  else document.addEventListener('DOMContentLoaded', aplicarFraseHero);
+})();
+</script>
+
 </body>
 </html>
