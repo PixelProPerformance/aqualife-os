@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Aqualife Aquarismo, Manutenção especializada de aquários e lagos no Brasil e Europa. Diagnóstico técnico digital após cada visita.">
+<title>Aqualife Aquarismo, Especialistas em Aquários e Lagos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+/* ── SITE PÚBLICO ───────────────────────────────────────────── */
+:root{
+  --hero-h:92vh;
+  --sec-py:76px;
+  --card-r:14px;
+}
+
+/* NAV PÚBLICA */
+.nav-pub{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  height:68px;
+  background:rgba(18,51,63,.0);
+  backdrop-filter:blur(0px);
+  border-bottom:1px solid transparent;
+  transition:all .3s ease;
+}
+.nav-pub.scrolled{
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(12px);
+  border-bottom-color:var(--linha);
+  box-shadow:0 1px 8px rgba(18,51,63,.06);
+}
+.nav-pub .nav-in{
+  max-width:1200px;margin:0 auto;padding:0 28px;
+  height:68px;display:flex;align-items:center;gap:32px;
+}
+.nav-pub .logo img{height:38px}
+.nav-pub .links{display:flex;gap:2px;margin-left:auto}
+.nav-pub .links a{
+  padding:8px 14px;border-radius:8px;font-size:14.5px;font-weight:500;
+  color:rgba(255,255,255,.88);transition:.15s;
+}
+.nav-pub.scrolled .links a{color:var(--corpo)}
+.nav-pub .links a:hover{background:rgba(255,255,255,.15)}
+.nav-pub.scrolled .links a:hover{background:var(--agua-clr);color:var(--agua)}
+.nav-pub .btn-agendar{
+  background:#F97316;color:#fff;font-weight:700;
+  padding:9px 20px;border-radius:9px;font-size:14px;border:none;cursor:pointer;
+  transition:.15s;white-space:nowrap;box-shadow:0 2px 8px rgba(249,115,22,.4);
+}
+.nav-pub.scrolled .btn-agendar{background:#F97316;color:#fff;box-shadow:0 2px 8px rgba(249,115,22,.4)}
+.nav-pub .btn-entrar{
+  color:rgba(255,255,255,.7);font-size:13.5px;font-weight:500;
+  padding:8px 12px;border-radius:8px;border:none;background:transparent;cursor:pointer;
+}
+.nav-pub.scrolled .btn-entrar{color:var(--suave)}
+.hamburger{
+  display:none;flex-direction:column;gap:5px;cursor:pointer;
+  background:none;border:none;padding:8px;flex-shrink:0;
+}
+@media(max-width:700px){
+  .nav-pub .links{display:none !important}
+  .nav-pub .btn-entrar{display:none !important}
+  .nav-pub .logo img{height:28px}
+  .nav-pub .nav-in{gap:8px;padding:0 14px}
+  .nav-pub .btn-agendar{padding:7px 12px;font-size:12.5px}
+  .hamburger{display:flex !important}
+}
+.hamburger span{
+  display:block;width:22px;height:2px;border-radius:2px;
+  background:#fff;transition:.3s;
+}
+.nav-pub.scrolled .hamburger span{background:var(--tinta)}
+.hamburger.on span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.hamburger.on span:nth-child(2){opacity:0}
+.hamburger.on span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.mobile-menu{
+  display:none;position:fixed;top:68px;left:0;right:0;z-index:99;
+  background:rgba(255,255,255,.98);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--linha);
+  flex-direction:column;padding:8px 0;
+  box-shadow:0 8px 24px rgba(0,0,0,.1);
+}
+.mobile-menu.show{display:flex}
+.mobile-menu a{
+  padding:14px 24px;font-size:15px;font-weight:500;color:var(--corpo);
+  border-bottom:1px solid var(--linha);text-decoration:none;
+}
+.mobile-menu a:last-child{border:none}
+.mobile-menu a:hover{background:var(--agua-clr);color:var(--agua)}
+.mobile-menu .mm-agendar{
+  margin:12px 16px;padding:13px;border-radius:10px;
+  background:#F97316;color:#fff;font-weight:700;
+  text-align:center;border:none;
+}
+
+/* HERO */
+.hero{
+  min-height:var(--hero-h);
+  position:relative;
+  display:flex;align-items:center;
+  overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background-image:url('/images/hero-bg.jpg');
+  background-size:cover;background-position:center;
+  overflow:hidden;
+}
+.hero-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,
+    rgba(10,38,55,.82) 0%,
+    rgba(18,80,101,.55) 60%,
+    rgba(24,110,140,.28) 100%);
+}
+/* fallback gradiente quando não há imagem */
+.hero-bg:not([style*="url"]){
+  background:linear-gradient(145deg,#0B2A3A 0%,#125265 50%,#1B6E8C 100%);
+}
+.hero-content{
+  position:relative;z-index:1;
+  max-width:1200px;margin:0 auto;padding:100px 28px 60px;
+  width:100%;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.22);
+  color:rgba(255,255,255,.92);
+  padding:7px 16px;border-radius:999px;
+  font-size:13px;font-weight:600;
+  margin-bottom:24px;
+  backdrop-filter:blur(8px);
+}
+.hero h1{
+  font-size:clamp(2rem,5vw,3.4rem);
+  font-weight:700;color:#fff;
+  max-width:16ch;line-height:1.18;
+  margin-bottom:18px;
+  text-shadow:0 2px 20px rgba(0,0,0,.3);
+}
+.hero p{
+  font-size:1.1rem;color:rgba(255,255,255,.82);
+  max-width:48ch;margin-bottom:36px;line-height:1.65;
+}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+.hero .btn-hero-p{
+  background:#fff;color:var(--tinta);font-weight:700;
+  padding:14px 28px;border-radius:10px;border:none;cursor:pointer;
+  font-size:15.5px;font-family:inherit;transition:.15s;
+}
+.hero .btn-hero-p:hover{background:var(--agua-clr);transform:translateY(-1px)}
+.hero .btn-hero-s{
+  background:transparent;color:#fff;font-weight:600;
+  padding:14px 28px;border-radius:10px;
+  border:1.5px solid rgba(255,255,255,.45);cursor:pointer;
+  font-size:15.5px;font-family:inherit;transition:.15s;
+}
+.hero .btn-hero-s:hover{background:rgba(255,255,255,.1)}
+.hero-stats{
+  display:flex;gap:40px;margin-top:56px;flex-wrap:wrap;
+}
+.hero-stat .n{
+  font-size:2rem;font-weight:700;color:#fff;line-height:1;
+}
+.hero-stat .l{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px}
+
+/* SECTIONS */
+.sec{padding:var(--sec-py) 0}
+.sec-alt{background:var(--agua-clr)}
+.sec-titulo{text-align:center;margin-bottom:52px}
+.sec-titulo h2{font-size:clamp(1.6rem,3vw,2.2rem);margin-bottom:10px}
+.sec-titulo p{color:var(--suave);font-size:1rem;max-width:52ch;margin:0 auto}
+.container{max-width:1200px;margin:0 auto;padding:0 28px}
+
+/* SERVIÇOS */
+.servicos-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:20px;
+}
+.servico-card{
+  background:var(--branco);border:1px solid var(--linha);
+  border-radius:var(--card-r);padding:28px;
+  transition:transform .2s,box-shadow .2s;
+}
+.servico-card:hover{transform:translateY(-3px);box-shadow:var(--sombra-f)}
+.servico-card .ic{
+  width:48px;height:48px;border-radius:12px;
+  background:var(--agua-clr);display:flex;align-items:center;
+  justify-content:center;font-size:1.5rem;margin-bottom:16px;
+}
+.servico-card .ic-img{
+  width:100%;height:160px;border-radius:10px;overflow:hidden;
+  margin-bottom:16px;background:var(--agua-clr);
+}
+.servico-card .ic-img img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform .4s ease;
+}
+.servico-card:hover .ic-img img{transform:scale(1.04)}
+.servico-card h3{font-size:1rem;margin-bottom:8px}
+.servico-card p{font-size:14px;color:var(--suave);line-height:1.6}
+
+/* COMO FUNCIONA */
+.como-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:32px;
+}
+.como-step{text-align:center}
+.como-step .num{
+  width:44px;height:44px;border-radius:50%;
+  background:var(--agua);color:#fff;
+  font-weight:700;font-size:1.1rem;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;
+}
+.como-step h3{font-size:15px;margin-bottom:6px}
+.como-step p{font-size:13.5px;color:var(--suave);line-height:1.55}
+.como-conector{
+  display:flex;align-items:center;justify-content:center;
+  padding-top:20px;
+  color:var(--linha);font-size:1.5rem;
+}
+
+/* CARE TEASER */
+.care-box{
+  background:linear-gradient(135deg,var(--tinta) 0%,var(--agua-esc) 100%);
+  border-radius:20px;padding:48px;
+  display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;
+  position:relative;overflow:hidden;
+}
+.care-box::after{
+  content:"";position:absolute;right:-60px;bottom:-60px;
+  width:260px;height:260px;border-radius:50%;
+  background:rgba(255,255,255,.04);
+}
+.care-box h2{color:#fff;font-size:clamp(1.4rem,3vw,2rem);margin-bottom:14px}
+.care-box p{color:rgba(255,255,255,.78);font-size:15px;line-height:1.65;margin-bottom:24px}
+.care-items{display:flex;flex-direction:column;gap:14px}
+.care-item{
+  background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:10px;padding:14px 16px;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.care-item .dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;
+}
+.care-item .dot-ok{background:#2ECC71}
+.care-item .dot-w{background:#F39C12}
+.care-item .dot-r{background:#E74C3C}
+.care-item .label{font-size:13px;font-weight:700;color:#fff;margin-bottom:2px}
+.care-item .desc{font-size:12.5px;color:rgba(255,255,255,.65)}
+@media(max-width:780px){.care-box{grid-template-columns:1fr}}
+
+/* BLOG */
+.blog-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:20px;
+}
+.blog-card{
+  background:var(--branco);border:1px solid var(--linha);
+  border-radius:var(--card-r);overflow:hidden;
+  transition:transform .2s,box-shadow .2s;cursor:pointer;
+}
+.blog-card:hover{transform:translateY(-3px);box-shadow:var(--sombra-f)}
+.blog-card-img{
+  height:160px;background:linear-gradient(135deg,var(--agua-clr),var(--linha));
+  display:flex;align-items:center;justify-content:center;font-size:2.5rem;
+  overflow:hidden;
+}
+.blog-card-img img{width:100%;height:100%;object-fit:cover}
+.blog-card-body{padding:18px}
+.blog-cat{
+  display:inline-block;font-size:11px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;
+  color:var(--agua);background:var(--agua-clr);
+  padding:3px 9px;border-radius:5px;margin-bottom:10px;
+}
+.blog-card-body h3{font-size:15.5px;margin-bottom:6px;line-height:1.35}
+.blog-card-body p{font-size:13.5px;color:var(--suave);line-height:1.55}
+.blog-card-body .data{font-size:12px;color:var(--suave);margin-top:10px}
+
+/* POST INDIVIDUAL */
+#sec-post{display:none}
+#sec-post.show{display:block}
+.post-wrap{max-width:720px;margin:0 auto;padding:0 28px}
+.post-header{padding:80px 0 40px;border-bottom:1px solid var(--linha);margin-bottom:36px}
+.post-header h1{font-size:clamp(1.6rem,4vw,2.4rem);margin-bottom:12px;line-height:1.25}
+.post-header .meta{font-size:13px;color:var(--suave)}
+.post-body{font-size:16px;line-height:1.8;color:var(--corpo)}
+.post-body h2{font-size:1.3rem;margin:32px 0 12px}
+.post-body p{margin-bottom:16px}
+.post-body img{border-radius:10px;margin:20px 0}
+
+/* AGENDAMENTO */
+#sec-agendamento{display:none}
+#sec-agendamento.show{display:block}
+.agenda-hero{
+  background:linear-gradient(135deg,var(--tinta),var(--agua-esc));
+  padding:72px 28px 40px;text-align:center;
+}
+.agenda-hero h1{color:#fff;font-size:clamp(1.6rem,3vw,2.2rem);margin-bottom:8px}
+.agenda-hero p{color:rgba(255,255,255,.78);font-size:15.5px}
+.agenda-pledge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.9);padding:7px 16px;border-radius:999px;
+  font-size:13px;font-weight:600;margin-top:16px;
+}
+.agenda-grid{
+  display:grid;grid-template-columns:1.15fr .9fr;gap:28px;
+  padding:36px 28px 60px;max-width:1000px;margin:0 auto;
+  align-items:start;
+}
+@media(max-width:820px){.agenda-grid{grid-template-columns:1fr}}
+
+/* FORM AGENDAMENTO */
+.af-card{
+  background:var(--branco);border:1px solid var(--linha);
+  border-radius:var(--card-r);padding:28px;
+  box-shadow:var(--sombra);
+}
+.af-sec{margin-bottom:26px}
+.af-sec:last-child{margin-bottom:0}
+.af-tit{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:16px;padding-bottom:12px;
+  border-bottom:1px solid var(--linha);
+}
+.af-num{
+  width:26px;height:26px;border-radius:7px;
+  background:var(--agua-clr);color:var(--agua);
+  font-weight:700;font-size:13px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.af-tit h3{font-size:14.5px;font-weight:700;color:var(--tinta)}
+.af-r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.af-r3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:500px){.af-r2,.af-r3{grid-template-columns:1fr}}
+
+/* Tipo de água selector */
+.tipo-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.tipo-seg label{cursor:pointer;position:relative}
+.tipo-seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.tipo-op{
+  border:1.5px solid var(--linha);border-radius:10px;
+  padding:11px 6px;text-align:center;
+  background:var(--papel);font-size:12.5px;font-weight:600;
+  color:var(--suave);transition:.15s;line-height:1.2;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  white-space:nowrap;
+}
+.tipo-op .tipo-icon{font-size:1.1rem;flex-shrink:0}
+.tipo-seg input:checked + .tipo-op{
+  border-color:var(--agua);background:var(--agua-clr);color:var(--agua);
+}
+
+/* QUOTE CARD */
+.q-sticky{position:sticky;top:84px}
+.q-card{
+  background:var(--branco);border:1px solid var(--linha);
+  border-radius:var(--card-r);overflow:hidden;box-shadow:var(--sombra);
+}
+.q-head{
+  padding:16px 20px;
+  background:var(--tinta);color:#fff;
+}
+.q-head .qt{font-weight:700;font-size:15px}
+.q-head .qs{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.q-empty{
+  padding:36px 20px;text-align:center;
+  color:var(--suave);font-size:13.5px;line-height:1.7;
+}
+.q-region{
+  padding:12px 20px;border-bottom:1px solid var(--linha);
+  display:flex;align-items:center;justify-content:space-between;font-size:13px;
+}
+.q-region .rn{font-weight:600;color:var(--tinta);display:flex;align-items:center;gap:7px}
+.q-region .rt{
+  font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:5px;background:#E4F5EC;color:var(--ok);
+}
+.q-region.fora .rt{background:#FBF4E5;color:var(--atencao)}
+.q-receipt{padding:16px 20px;font-size:12.5px}
+.q-row{
+  display:flex;justify-content:space-between;gap:10px;
+  padding:5px 0;color:var(--suave);
+}
+.q-row .rl{flex:1}
+.q-row .rl b{display:block;color:var(--corpo);font-weight:500}
+.q-row .rl i{font-style:normal;font-size:10.5px;color:var(--suave)}
+.q-row .rv{font-weight:700;color:var(--corpo);white-space:nowrap;font-family:monospace;font-size:13px}
+.q-row.verde .rv{color:var(--ok)}
+.q-row.tot{
+  border-top:1.5px solid var(--linha);margin-top:8px;padding-top:10px;
+}
+.q-row.tot .rl b{color:var(--tinta);font-weight:700;font-size:13.5px}
+.q-row.tot .rv{color:var(--tinta);font-size:18px}
+.q-mes{
+  padding:14px 20px;background:var(--agua-clr);
+  border-top:1px solid var(--linha);text-align:center;
+}
+.q-mes .mk{font-size:11.5px;color:var(--suave)}
+.q-mes .mv{font-size:24px;font-weight:700;color:var(--agua);line-height:1.2;font-family:monospace}
+.q-mes .ms{font-size:11.5px;color:var(--suave)}
+.q-plans{padding:14px 20px;border-top:1px solid var(--linha)}
+.q-plans-tit{
+  font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--suave);margin-bottom:8px;
+}
+.q-plan{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:8px 10px;border:1px solid var(--linha);border-radius:8px;
+  margin-bottom:6px;cursor:pointer;transition:.14s;font-size:13px;
+}
+.q-plan:hover{border-color:var(--agua)}
+.q-plan.on{border-color:var(--agua);background:var(--agua-clr)}
+.q-plan .pn{font-weight:600;color:var(--tinta)}
+.q-plan .pv{font-weight:700;color:var(--agua);font-family:monospace;font-size:13px;white-space:nowrap}
+.q-plan .save{font-size:10.5px;color:var(--ok);font-weight:600;margin-left:4px}
+
+/* BOTÃO WPP */
+.btn-wpp{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:14px;border-radius:10px;border:none;
+  background:#25D366;color:#fff;font-family:inherit;
+  font-weight:700;font-size:15px;cursor:pointer;
+  margin-top:12px;transition:.15s;
+}
+.btn-wpp:hover{background:#1EAD57;transform:translateY(-1px)}
+.btn-wpp:disabled{background:var(--linha);color:var(--suave);cursor:not-allowed;transform:none}
+.fine{font-size:11.5px;color:var(--suave);text-align:center;margin-top:8px;line-height:1.5}
+
+/* DONE */
+.done-box{
+  display:none;text-align:center;padding:48px 24px;
+}
+.done-box.show{display:block}
+.done-ic{
+  width:64px;height:64px;border-radius:50%;background:#E4F5EC;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;margin:0 auto 18px;color:var(--ok);
+}
+.done-box h2{font-size:1.4rem;margin-bottom:8px}
+.done-box p{color:var(--suave);max-width:38ch;margin:0 auto 6px}
+.done-os{
+  margin-top:18px;padding:14px;border-radius:10px;
+  background:var(--agua-clr);color:var(--agua);
+  font-size:13px;font-weight:600;
+}
+
+/* FOOTER */
+.footer{background:var(--tinta);padding:52px 0 28px}
+.footer-grid{
+  display:grid;grid-template-columns:2fr 1fr 1fr;
+  gap:44px;margin-bottom:44px;
+}
+@media(max-width:700px){.footer-grid{grid-template-columns:1fr}}
+.footer h4{color:#fff;font-size:13.5px;font-weight:700;margin-bottom:14px}
+.footer-links{list-style:none}
+.footer-links li{margin-bottom:8px}
+.footer-links a{color:rgba(255,255,255,.55);font-size:13.5px;transition:.15s}
+.footer-links a:hover{color:#fff}
+.footer-brand p{color:rgba(255,255,255,.5);font-size:13.5px;margin-top:12px;line-height:1.6}
+.footer-wpp{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 16px;border-radius:8px;margin-top:14px;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);
+  font-size:13px;font-weight:600;transition:.15s;
+  text-decoration:none;
+}
+.footer-wpp:hover{background:rgba(255,255,255,.15);color:#fff}
+.footer-bottom{
+  border-top:1px solid rgba(255,255,255,.08);
+  padding-top:20px;display:flex;
+  justify-content:space-between;align-items:center;
+  font-size:12.5px;color:rgba(255,255,255,.3);
+  flex-wrap:wrap;gap:8px;
+}
+.footer-admin{color:rgba(255,255,255,.15);transition:.15s}
+.footer-admin:hover{color:rgba(255,255,255,.45)}
+</style>
+  <!-- Meta Pixel -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1306034691326511');
+  fbq('track', 'PageView');
+
+  // Eventos personalizados Aqualife
+  // Disparado quando o utilizador abre o agendamento
+  window._fbAgendamento = function(){ fbq('track', 'Lead'); };
+  // Disparado quando envia para WhatsApp
+  window._fbConversao = function(valor, moeda){
+    fbq('track', 'InitiateCheckout', {value: valor, currency: moeda||'BRL'});
+  };
+  </script>
+  <noscript>
+    <img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1306034691326511&ev=PageView&noscript=1"/>
+  </noscript>
+  <!-- Fim Meta Pixel -->
+  <meta property="og:title" content="Aqualife Aquarismo — Especialistas em Aquários e Lagos">
+  <meta property="og:description" content="Manutenção técnica profissional com diagnóstico digital após cada visita, no Brasil e Europa.">
+  <meta property="og:url" content="https://aqualifeaquarismo.com">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://aqualifeaquarismo.com/images/reef.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="robots" content="index, follow">
+  <meta name="keywords" content="manutenção aquário, aquário marinho, lago ornamental, reef, aquarismo, Rio de Janeiro, São Paulo, Portugal">
+  <link rel="canonical" href="https://aqualifeaquarismo.com">
+</head>
+<body>
+
+<!-- ══════════ NAV ══════════ -->
+<nav class="nav-pub" id="navbar">
+  <div class="nav-in">
+    <a href="#" class="logo" onclick="showSec('home');return false">
+      <img src="/images/logo-branca.png" alt="Aqualife"
+           onerror="this.style.display='none'">
+    </a>
+    <div class="links">
+      <a href="#" onclick="showSec('home');return false">Início</a>
+      <a href="#" onclick="showSec('agendamento');return false">Agendamento</a>
+      <a href="/aquabook.html">Aquabook</a>
+      <a href="#" onclick="showSec('blog');return false">Blog</a>
+      <a href="#/care" onclick="showSec('care');return false">Aqualife Care</a>
+    </div>
+    <button class="btn-entrar" onclick="location.href='https://app.aqualifeaquarismo.com/entrar.html'">Entrar</button>
+    <button class="btn-agendar" onclick="showSec('agendamento')">Agendar agora →</button>
+    <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- MENU MOBILE -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#" onclick="showSec('home');toggleMenu();return false">Início</a>
+  <a href="#" onclick="showSec('agendamento');toggleMenu();return false">Agendamento</a>
+  <a href="/aquabook.html" onclick="toggleMenu()">Aquabook</a>
+  <a href="#" onclick="showSec('blog');toggleMenu();return false">Blog</a>
+  <a href="#/care" onclick="showSec('care');toggleMenu();return false">Aqualife Care</a>
+  <a href="https://app.aqualifeaquarismo.com/entrar.html" onclick="toggleMenu()" style="color:var(--suave)">Entrar na conta</a>
+  <a href="#" onclick="showSec('agendamento');toggleMenu();return false" style="margin:12px 16px;padding:13px;border-radius:10px;background:#F97316;color:#fff;font-weight:700;text-align:center">Agendar agora →</a>
+</div>
+
+<!-- ══════════ HOME ══════════ -->
+<div id="sec-home">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg">
+      <video autoplay muted loop playsinline
+        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0">
+        <source src="/images/hero-bg.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-badge">🐠 Especialistas em aquários e lagos há +7 anos</div>
+      <h1>Vida aquática no seu melhor estado.</h1>
+      <p><span style="color:#F97316;font-weight:600">Manutenção técnica</span> profissional com diagnóstico digital após cada visita, no Brasil e Europa.</p>
+      <div class="hero-btns">
+        <button class="btn-hero-p" onclick="showSec('agendamento')" style="background:#F97316;color:#fff;box-shadow:0 4px 16px rgba(249,115,22,.45)">Agendar agora →</button>
+        <button class="btn-hero-s" onclick="showSec('care')">Ver o Aqualife Care</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="n">+7</div><div class="l">anos de experiência</div></div>
+        <div class="hero-stat"><div class="n">286</div><div class="l">espécies catalogadas</div></div>
+        <div class="hero-stat"><div class="n">BR+EU</div><div class="l">Brasil e Europa</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVIÇOS -->
+  <section class="sec">
+    <div class="container">
+      <div class="sec-titulo">
+        <h2>O que fazemos</h2>
+        <p>Cuidamos do seu ecossistema aquático do início ao fim, com laudo técnico digital após cada visita.</p>
+      </div>
+      <div class="servicos-grid">
+        <div class="servico-card">
+          <div class="ic-img"><img src="/images/doce.png" alt="Aquário de água doce" loading="lazy"></div>
+          <h3>Aquários de água doce</h3>
+          <p>Manutenção completa: troca de água, limpeza, parâmetros, filtros. Laudo digital com nota de saúde após cada visita.</p>
+        </div>
+        <div class="servico-card">
+          <div class="ic-img"><img src="/images/reef.png" alt="Aquário marinho reef" loading="lazy"></div>
+          <h3>Aquários marinhos & Reef</h3>
+          <p>Controlo preciso de KH, cálcio, magnésio e salinidade. Cuidado especializado para corais e peixes marinhos.</p>
+        </div>
+        <div class="servico-card">
+          <div class="ic-img"><img src="/images/lago.png" alt="Lago ornamental com koi" loading="lazy"></div>
+          <h3>Lagos ornamentais</h3>
+          <p>Manutenção de lagos com koi, plantas e controlo de algas. Monitorização de oxigênio e saúde do ecossistema.</p>
+        </div>
+        <div class="servico-card">
+          <div class="ic-img"><img src="/images/tecnico.png" alt="Técnico Aqualife em ação" loading="lazy"></div>
+          <h3>Consultoria técnica</h3>
+          <p>Projetos personalizados, seleção de espécies compatíveis e setup inicial para aquários e lagos de qualquer porte.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section class="sec sec-alt">
+    <div class="container">
+      <div class="sec-titulo">
+        <h2>Como funciona</h2>
+        <p>Da visita ao laudo digital, tudo automatizado.</p>
+      </div>
+      <div class="como-grid">
+        <div class="como-step">
+          <div class="num">1</div>
+          <h3>Você agenda</h3>
+          <p>Preenche o formulário online. O preço aparece na hora, sem "consulte-nos".</p>
+        </div>
+        <div class="como-step">
+          <div class="num">2</div>
+          <h3>O técnico visita</h3>
+          <p>Mede os parâmetros da água diretamente no local e realiza os serviços necessários.</p>
+        </div>
+        <div class="como-step">
+          <div class="num">3</div>
+          <h3>O motor analisa</h3>
+          <p>O nosso sistema calcula a nota de saúde com base em regras técnicas validadas, não estimativas.</p>
+        </div>
+        <div class="como-step">
+          <div class="num">4</div>
+          <h3>Você recebe o laudo</h3>
+          <p>Acessa o painel do cliente e vê o diagnóstico completo com recomendações claras.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AQUALIFE CARE -->
+  <section class="sec" id="care-teaser">
+    <div class="container">
+      <div class="care-box">
+        <div>
+          <div style="display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;margin-bottom:18px">✦ Novidade, Aqualife Care</div>
+          <h2>Diagnóstico inteligente para o seu aquário</h2>
+          <p>O motor de regras avalia os parâmetros da água e devolve uma nota de saúde rastreável, 0 a 100. Cada recomendação vem de faixas técnicas validadas pela Aqualife, não de palpite de IA.</p>
+          <button class="btn btn-p" onclick="showSec('care')" style="background:#fff;color:var(--tinta);border:none;cursor:pointer;font-family:inherit">
+            Conhecer o Aqualife Care →
+          </button>
+        </div>
+        <div class="care-items">
+          <div class="care-item">
+            <div class="dot dot-ok"></div>
+            <div>
+              <div class="label">pH 7.2, Ideal ✓</div>
+              <div class="desc">Dentro da faixa 6.5–7.5 para aquário tropical.</div>
+            </div>
+          </div>
+          <div class="care-item">
+            <div class="dot dot-r"></div>
+            <div>
+              <div class="label">Amônia 0.1 + pH 8.0, CRÍTICO</div>
+              <div class="desc">Em pH alto, amônia é muito mais tóxica. Ação imediata.</div>
+            </div>
+          </div>
+          <div class="care-item">
+            <div class="dot dot-w"></div>
+            <div>
+              <div class="label">KH 2 dKH, Atenção</div>
+              <div class="desc">Amortecedor insuficiente. pH pode despencar.</div>
+            </div>
+          </div>
+          <div class="care-item">
+            <div class="dot dot-ok"></div>
+            <div>
+              <div class="label">Nota de saúde: 87/100</div>
+              <div class="desc">Calculado por regras auditáveis, não estimativa.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOG PREVIEW -->
+  <section class="sec sec-alt" id="sec-blog-preview">
+    <div class="container">
+      <div class="sec-titulo">
+        <h2>Blog Aqualife</h2>
+        <p>Artigos técnicos, dicas de manutenção e novidades do mundo aquático.</p>
+      </div>
+      <div class="blog-grid" id="blog-preview-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--suave)">A carregar artigos…</div>
+      </div>
+      <div style="text-align:center;margin-top:32px">
+        <button class="btn btn-c" onclick="showSec('blog')">Ver todos os artigos</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="/images/logo-branca.png" alt="Aqualife" style="height:36px"
+               onerror="this.style.display='none'">
+          <p>Especialistas em aquários e lagos ornamentais no Brasil e Europa. Manutenção técnica com laudo digital.</p>
+          <a href="https://wa.me/5521971064054" target="_blank" class="footer-wpp">🇧🇷 WhatsApp Brasil</a>
+          <a href="https://wa.me/351966121075" target="_blank" class="footer-wpp" style="margin-left:8px">🇵🇹 WhatsApp Portugal</a>
+        </div>
+        <div>
+          <h4>Serviços</h4>
+          <ul class="footer-links">
+            <li><a href="#" onclick="showSec('agendamento');return false">Agendar visita</a></li>
+            <li><a href="#" onclick="showSec('blog');return false">Blog</a></li>
+            <li><a href="https://app.aqualifeaquarismo.com/entrar.html">Painel do cliente</a></li>
+            <li><a href="https://app.aqualifeaquarismo.com/entrar.html?equipe=1">Área da equipa</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Contacto</h4>
+          <ul class="footer-links">
+            <li style="color:rgba(255,255,255,.5);font-size:13.5px">🇧🇷 +55 21 97106-4054</li>
+            <li style="color:rgba(255,255,255,.5);font-size:13.5px;margin-top:6px">🇵🇹 +351 966 121 075</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Aqualife Aquarismo.</span>
+        <a href="https://app.aqualifeaquarismo.com/entrar.html?admin=1" class="footer-admin">acesso restrito</a>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- /sec-home -->
+
+
+<!-- ══════════ AGENDAMENTO ══════════ -->
+<div id="sec-agendamento" style="display:none;padding-top:68px">
+  <div class="agenda-hero">
+    <h1>Orçamento na hora</h1>
+    <p>Preencha os dados do seu aquário, o preço aparece enquanto você digita.</p>
+    <div class="agenda-pledge">✓ Você vê exatamente como o preço é calculado</div>
+  </div>
+
+  <div id="agenda-main">
+    <!-- ═══ PASSO 1 · aquário + preço ═══ -->
+    <div id="agenda-step1">
+    <div class="agenda-grid">
+
+      <!-- FORM CURTO -->
+      <div class="af-card">
+        <div class="af-sec">
+          <div class="af-tit"><span class="af-num">1</span><h3>Seu aquário</h3></div>
+          <div class="tipo-seg">
+            <label>
+              <input type="radio" name="wt" value="freshwater" checked>
+              <span class="tipo-op"><span class="tipo-icon">🐟</span> Água doce</span>
+            </label>
+            <label>
+              <input type="radio" name="wt" value="marine">
+              <span class="tipo-op"><span class="tipo-icon">🐠</span> Marinho</span>
+            </label>
+            <label>
+              <input type="radio" name="wt" value="pond">
+              <span class="tipo-op"><span class="tipo-icon">🏞️</span> Lago</span>
+            </label>
+          </div>
+          <div class="campo">
+            <label>Volume aproximado (litros)</label>
+            <input class="inp" type="number" id="vol" placeholder="ex.: 200" value="200" min="1">
+          </div>
+        </div>
+
+        <div class="af-sec">
+          <div class="af-tit"><span class="af-num">2</span><h3>Onde fica</h3></div>
+          <div class="af-r2">
+            <div class="campo"><label>CEP *</label><input class="inp" type="text" id="cep" placeholder="00000-000"></div>
+            <div class="campo"><label>Cidade</label><input class="inp" type="text" id="cid" placeholder="Rio de Janeiro…"></div>
+          </div>
+          <p class="fine" style="margin-top:6px">Só isso já calcula o seu preço. Dados de contato só no próximo passo. 🔒</p>
+        </div>
+      </div>
+
+      <!-- QUOTE -->
+      <div class="q-sticky">
+        <div class="q-card">
+          <div class="q-head">
+            <div class="qt">Seu orçamento</div>
+            <div class="qs">Atualiza enquanto você preenche</div>
+          </div>
+          <div id="qbody">
+            <div class="q-empty">Informe o <b>volume</b> e o <b>CEP</b><br>para ver o preço.</div>
+          </div>
+        </div>
+        <button class="btn-wpp" id="btn-continuar" disabled style="background:#F97316">Informe o CEP para ver o preço</button>
+        <p class="fine">Sem compromisso. Você escolhe pagar online ou falar no WhatsApp.</p>
+      </div>
+    </div>
+    </div>
+
+    <!-- ═══ PASSO 2 · contato + pagamento ═══ -->
+    <div id="agenda-step2" style="display:none">
+    <div class="agenda-grid">
+      <div class="af-card">
+        <button type="button" onclick="voltarStep1()" style="background:none;border:none;color:var(--agua);cursor:pointer;font-size:14px;margin-bottom:14px;font-family:inherit">← Alterar aquário ou plano</button>
+        <div class="af-sec">
+          <div class="af-tit"><span class="af-num">3</span><h3>Seus dados</h3></div>
+          <div class="campo"><label>Nome completo *</label><input class="inp" type="text" id="nome" placeholder="Seu nome"></div>
+          <div class="af-r2" style="margin-top:0">
+            <div class="campo"><label>E-mail *</label><input class="inp" type="email" id="mail" placeholder="voce@email.com"></div>
+            <div class="campo"><label>Telefone / WhatsApp *</label><input class="inp" type="tel" id="tel" placeholder="(00) 00000-0000"></div>
+          </div>
+        </div>
+        <div class="af-sec" id="datas-wrap">
+          <div class="af-tit"><span class="af-num">4</span><h3>Quando prefere a visita</h3></div>
+          <div class="af-r2">
+            <div class="campo"><label>Data preferida 1</label><input class="inp" type="date" id="d1"></div>
+            <div class="campo"><label>Horário</label><input class="inp" type="time" id="h1" value="09:00"></div>
+          </div>
+          <div class="af-r2">
+            <div class="campo"><label>Data preferida 2 (opcional)</label><input class="inp" type="date" id="d2"></div>
+            <div class="campo"><label>Horário</label><input class="inp" type="time" id="h2" value="09:00"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="q-sticky">
+        <div class="q-card">
+          <div class="q-head"><div class="qt">Resumo</div></div>
+          <div id="resumo2"><div class="q-empty">—</div></div>
+        </div>
+        <button class="btn-wpp" id="btn-pagar" style="background:#0E7490;margin-bottom:10px">Pagar agora com Mercado Pago</button>
+        <button class="btn-wpp" id="btn-wpp2" style="background:#25D366">Agendar pelo WhatsApp 💬</button>
+        <p class="fine" id="fine2">Pagamento seguro via Mercado Pago · garantia de 7 dias.</p>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- DONE -->
+  <div class="container">
+    <div class="done-box" id="done-box">
+      <div class="done-ic">✓</div>
+      <h2>Solicitação enviada!</h2>
+      <p id="done-txt">—</p>
+      <div class="done-os" id="done-os">—</div>
+    </div>
+  </div>
+</div><!-- /sec-agendamento -->
+
+
+<!-- ══════════ AQUALIFE CARE (página de conversão) ══════════ -->
+<div id="sec-care" style="display:none;padding-top:68px">
+  <style>
+    #sec-care .care-wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+    #sec-care .care-hero{text-align:center;padding:40px 0 10px}
+    #sec-care .care-hero .eyebrow{font-family:Georgia,serif;font-style:italic;color:var(--agua);font-size:16px}
+    #sec-care .care-hero h1{font-size:34px;font-weight:800;color:var(--tinta);margin:8px 0;line-height:1.15}
+    #sec-care .care-hero p{color:var(--suave);font-size:16px;max-width:600px;margin:0 auto}
+    #sec-care .fm-banner{background:linear-gradient(135deg,#0E7490,#0B2A3A);color:#fff;border-radius:16px;padding:20px 24px;margin:26px 0;text-align:center}
+    #sec-care .fm-banner b{font-size:17px}
+    #sec-care .fm-bar{height:9px;background:rgba(255,255,255,.2);border-radius:20px;margin:12px auto 6px;max-width:440px;overflow:hidden}
+    #sec-care .fm-bar i{display:block;height:100%;background:#F97316;border-radius:20px}
+    #sec-care .care-benef{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:34px 0}
+    #sec-care .benef{background:#fff;border:1px solid var(--linha);border-radius:16px;padding:22px;overflow:hidden}
+    #sec-care .benef h3{font-size:18px;color:var(--tinta);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+    #sec-care .benef p{color:var(--suave);font-size:14px;line-height:1.55}
+    /* mockups */
+    #sec-care .mock{background:#F6F9FB;border:1px solid var(--linha);border-radius:12px;padding:16px;margin-top:14px}
+    #sec-care .mock-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    #sec-care .mock-nome{font-weight:700;color:var(--tinta);font-size:14px}
+    #sec-care .gauge{display:flex;align-items:center;gap:12px}
+    #sec-care .gauge .n{font-family:Georgia,serif;font-size:34px;font-weight:700;line-height:1}
+    #sec-care .selo{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+    #sec-care .param{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:6px 0;border-top:1px solid var(--linha)}
+    #sec-care .pill{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px}
+    #sec-care .aca-aula{display:flex;align-items:center;gap:10px;font-size:13px;padding:7px 0;border-top:1px solid var(--linha);color:var(--corpo)}
+    #sec-care .aca-check{width:20px;height:20px;border-radius:50%;background:#22C55E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+    #sec-care .aca-bar{height:6px;background:var(--linha);border-radius:20px;margin-top:10px;overflow:hidden}
+    #sec-care .aca-bar i{display:block;height:100%;width:66%;background:#0E7490;border-radius:20px}
+    #sec-care .chat{background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;margin-top:8px;border:1px solid var(--linha)}
+    #sec-care .chat.eq{background:#ECFEFF;border-color:#A5F3FC}
+    #sec-care .care-cta{background:#fff;border:2px solid var(--agua);border-radius:18px;padding:30px;text-align:center;margin:20px 0 50px}
+    #sec-care .care-cta .preco{font-family:Georgia,serif;font-size:40px;font-weight:800;color:var(--tinta)}
+    #sec-care .care-cta .preco small{font-size:16px;color:var(--suave);font-weight:400}
+    #sec-care .care-cta .de{color:var(--suave);text-decoration:line-through;font-size:15px}
+    #sec-care .lista-b{list-style:none;max-width:440px;margin:14px auto;text-align:left}
+    #sec-care .lista-b li{padding:6px 0;font-size:14.5px;display:flex;gap:10px}
+    #sec-care .lista-b li::before{content:"✅";flex-shrink:0}
+    #sec-care .btn-cta{display:inline-block;background:#F97316;color:#fff;text-decoration:none;padding:15px 34px;border-radius:12px;font-weight:700;font-size:16px;margin-top:8px}
+    #sec-care .garantia{font-size:13px;color:var(--suave);margin-top:12px}
+    @media(max-width:760px){ #sec-care .care-benef{grid-template-columns:1fr} #sec-care .care-hero h1{font-size:27px} }
+  </style>
+
+  <div class="care-wrap">
+    <div class="care-hero">
+      <div class="eyebrow">O primeiro ecossistema inteligente para aquaristas do Brasil</div>
+      <h1>Aqualife Care</h1>
+      <p>Seu aquário monitorado de verdade: laudos com nota de saúde, cursos, suporte prioritário e uma plataforma que evolui com você.</p>
+    </div>
+
+    <div id="care-fm"></div>
+
+    <div class="care-benef">
+      <!-- Relatório -->
+      <div class="benef">
+        <h3>📋 Laudos com nota de saúde</h3>
+        <p>Cada visita ou medição vira um relatório com nota de 0 a 100, calculada por regras técnicas validadas — não é palpite de IA. Você entende exatamente o que fazer.</p>
+        <div class="mock">
+          <div class="mock-top">
+            <div class="mock-nome">Reef da Sala · hoje</div>
+            <div class="gauge"><span class="selo" style="background:#DCFCE7;color:#166534">Saudável</span>
+              <span class="n" style="color:#22C55E">87</span></div>
+          </div>
+          <div class="param"><span>pH 8.1</span><span class="pill" style="background:#DCFCE7;color:#166534">ideal</span></div>
+          <div class="param"><span>KH 7.2 dKH</span><span class="pill" style="background:#DCFCE7;color:#166534">ideal</span></div>
+          <div class="param"><span>Nitrito 0.2</span><span class="pill" style="background:#FEF9C3;color:#854D0E">atenção</span></div>
+        </div>
+      </div>
+
+      <!-- Academy -->
+      <div class="benef">
+        <h3>🎓 Aqualife Academy</h3>
+        <p>Cursos práticos e quizzes para você dominar seu aquário. Aprenda no seu ritmo e acompanhe seu progresso.</p>
+        <div class="mock">
+          <div class="mock-nome" style="margin-bottom:8px">Fundamentos do Aquarismo</div>
+          <div class="aca-aula"><span class="aca-check">✓</span> O ciclo do nitrogênio</div>
+          <div class="aca-aula"><span class="aca-check">✓</span> Parâmetros essenciais da água</div>
+          <div class="aca-aula"><span class="aca-check" style="background:var(--linha);color:var(--suave)">3</span> Montagem e maturação</div>
+          <div class="aca-bar"><i></i></div>
+          <div style="font-size:12px;color:var(--suave);margin-top:6px">66% concluído</div>
+        </div>
+      </div>
+
+      <!-- Suporte -->
+      <div class="benef">
+        <h3>💬 Suporte prioritário</h3>
+        <p>Dúvida sobre a água? Abra um chamado com foto e receba orientação da equipe técnica, com prioridade de fundador.</p>
+        <div class="mock">
+          <div class="chat">Minha água ficou turva depois da troca. É normal?</div>
+          <div class="chat eq"><b>Equipe Aqualife:</b> É a floração bacteriana, normal em 24–48h. Não faça nova troca; reduza a ração. 👍</div>
+        </div>
+      </div>
+
+      <!-- Plataforma -->
+      <div class="benef">
+        <h3>🐠 Tudo num só lugar</h3>
+        <p>Cadastre seus aquários, veja o histórico de parâmetros em gráficos, baixe laudos em PDF e acompanhe a evolução ao longo do tempo.</p>
+        <div class="mock">
+          <div class="mock-nome" style="margin-bottom:10px">Evolução do pH</div>
+          <svg viewBox="0 0 240 60" style="width:100%;height:56px">
+            <polyline points="4,40 44,36 84,44 124,30 164,26 204,32 236,22" fill="none" stroke="#0E7490" stroke-width="2.5"/>
+          </svg>
+          <div style="font-size:12px;color:var(--suave)">últimas 7 medições · estável</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="care-cta">
+      <div id="care-preco">
+        <div class="preco">R$ 34,90<small>/mês</small></div>
+      </div>
+      <ul class="lista-b">
+        <li>Laudos com nota de saúde e histórico</li>
+        <li>Acesso à Aqualife Academy</li>
+        <li>Suporte prioritário</li>
+        <li>Acesso antecipado às novas funcionalidades</li>
+      </ul>
+      <a class="btn-cta" href="https://app.aqualifeaquarismo.com/planos.html">Assinar o Aqualife Care →</a>
+      <div class="garantia">🔒 Pagamento seguro · Garantia incondicional de 7 dias</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ BLOG ══════════ -->
+<div id="sec-blog" style="display:none;padding-top:68px">
+  <div style="background:var(--tinta);padding:52px 28px 36px">
+    <div class="container" style="max-width:900px">
+      <h1 style="color:#fff;font-size:clamp(1.6rem,3vw,2rem);margin-bottom:8px">Blog Aqualife</h1>
+      <p style="color:rgba(255,255,255,.65)">Artigos, dicas e novidades sobre aquarismo e manutenção de lagos.</p>
+    </div>
+  </div>
+  <div class="container" style="max-width:900px;padding-top:36px;padding-bottom:60px">
+    <div class="blog-grid" id="blog-full-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--suave)">A carregar artigos…</div>
+    </div>
+  </div>
+</div>
+
+<!-- POST -->
+<div id="sec-post" style="display:none;padding-top:68px">
+  <div class="post-wrap">
+    <button class="btn btn-c btn-sm" style="margin-top:28px" onclick="showSec('blog')">← Voltar ao blog</button>
+    <div id="post-content"></div>
+  </div>
+</div>
+
+
+<!-- ══════════ JS ══════════ -->
+<script>
+/* ── NAVEGAÇÃO ─────────────────────────────────────── */
+const SECS = ['home','agendamento','blog','post','care'];
+
+// Toggla a exibição das seções (uso interno)
+function showSecRaw(s){
+  SECS.forEach(id => {
+    const el = document.getElementById('sec-'+id);
+    if(!el) return;
+    el.style.display = id===s ? 'block' : 'none';
+  });
+  window.scrollTo({top:0});
+  updateNav(s);
+}
+
+// ── ROTEAMENTO POR URL (hash) — deep-links e botão voltar ──
+const ROTA_PARA_SEC = { '':'home', '/':'home', '/agendar':'agendamento', '/blog':'blog', '/care':'care' };
+const SEC_PARA_HASH = { home:'#/', agendamento:'#/agendar', blog:'#/blog', care:'#/care' };
+
+function parseHash(){
+  const h = location.hash.replace(/^#/,'');
+  const m = h.match(/^\/post\/(.+)$/);
+  if(m) return { sec:'post', id:decodeURIComponent(m[1]) };
+  return { sec: ROTA_PARA_SEC[h] ?? 'home' };
+}
+
+function router(){
+  const r = parseHash();
+  if(r.sec==='post'){ showSecRaw('post'); loadPost(r.id); }
+  else showSecRaw(r.sec);
+  if(r.sec==='agendamento'){ initAgenda(); if(window._fbAgendamento) _fbAgendamento(); }
+  if(r.sec==='care'){ carregarCareFM(); }
+  // Pixel: PageView por etapa (URLs distintas)
+  if(window.fbq){ try{ fbq('track','PageView'); }catch(e){} }
+}
+
+// Banner de Membros Fundadores + preço na página do Care
+let careFMcarregado=false;
+async function carregarCareFM(){
+  if(careFMcarregado) return; careFMcarregado=true;
+  try{
+    const f=await fetch('/api/founding-members/status').then(r=>r.json());
+    const fmt=c=>'R$ '+(c/100).toFixed(2).replace('.',',');
+    if(f.oferta_ativa){
+      const pct=Math.min(100,Math.round((f.vagas_usadas/f.vagas_totais)*100));
+      const prazo=f.prazo?new Date(f.prazo).toLocaleDateString('pt-BR'):null;
+      document.getElementById('care-fm').innerHTML=`<div class="fm-banner">
+        <b>🎉 Oferta de Membros Fundadores</b>
+        <div class="fm-bar"><i style="width:${pct}%"></i></div>
+        <div style="font-size:13px;opacity:.9">Restam <b>${f.vagas_restantes}</b> de ${f.vagas_totais} vagas${prazo?` · até ${prazo}`:''} — preço congelado enquanto ativo</div>
+      </div>`;
+      // preço com âncora
+      document.getElementById('care-preco').innerHTML=
+        `<div class="de">${fmt(f.preco_mensal_cents)}/mês</div>
+         <div class="preco">${fmt(f.preco_anual_pix_cents)}<small> /ano no Pix</small></div>
+         <div style="font-size:13px;color:var(--suave)">ou 12x de ${fmt(Math.round(f.preco_anual_12x_cents/12))} sem juros</div>`;
+    }
+  }catch(e){ /* mantém o preço padrão */ }
+}
+window.addEventListener('hashchange', router);
+
+// showSec agora só muda a URL; o router cuida de exibir (mantém compatível com os onclick existentes)
+function showSec(s){
+  const alvo = SEC_PARA_HASH[s] || '#/';
+  if(location.hash === alvo) router();   // se já estamos na rota, força re-render
+  else location.hash = alvo;
+}
+function updateNav(s){
+  const nav = document.getElementById('navbar');
+  if(s==='home'){
+    nav.classList.remove('scrolled');
+  } else {
+    nav.classList.add('scrolled');
+  }
+}
+
+function toggleMenu(){
+  const h=document.getElementById('hamburger');
+  const m=document.getElementById('mobile-menu');
+  h.classList.toggle('on');
+  m.classList.toggle('show');
+}
+// Fechar menu ao fazer scroll
+window.addEventListener('scroll', ()=>{
+  const home = document.getElementById('sec-home');
+  if(home && home.style.display !== 'none'){
+    document.getElementById('navbar').classList.toggle('scrolled', scrollY > 60);
+  }
+});
+
+/* ── BLOG ──────────────────────────────────────────── */
+const CAT_EMOJI = {
+  'agua-doce':'🐟', 'marinho':'🐠', 'coral':'🪸',
+  'planta':'🌿', 'lago':'🏞️', 'geral':'💧'
+};
+const CAT_IMG = {
+  'agua-doce':'/images/doce.png',
+  'marinho':  '/images/reef.png',
+  'coral':    '/images/reef.png',
+  'lago':     '/images/lago.png',
+  'planta':   '/images/doce.png',
+  'geral':    '/images/tecnico.png'
+};
+
+async function carregarBlog(){
+  try{
+    const posts = await fetch('/api/blog').then(r=>r.json());
+    renderBlogGrid('blog-preview-grid', posts.slice(0,3));
+    renderBlogGrid('blog-full-grid', posts);
+  } catch(e){
+    const placeholder = [
+      {id:'p1',titulo:'Como manter o KH estável no aquário marinho',categoria:'marinho',
+       descricao:'O KH é o parâmetro mais crítico em reef. Veja como estabilizá-lo sem oscilações perigosas.',
+       criado_em:'2026-06-15'},
+      {id:'p2',titulo:'Ciclagem do aquário: o guia completo',categoria:'agua-doce',
+       descricao:'Antes de colocar qualquer peixe, o filtro biológico precisa estar maduro. Entenda o processo.',
+       criado_em:'2026-06-01'},
+      {id:'p3',titulo:'Lagos ornamentais: controlo de algas na primavera',categoria:'lago',
+       descricao:'Com o aumento da temperatura, as algas proliferam. Estratégias preventivas para manter a água limpa.',
+       criado_em:'2026-05-20'},
+    ];
+    renderBlogGrid('blog-preview-grid', placeholder);
+    renderBlogGrid('blog-full-grid', placeholder);
+  }
+}
+
+function renderBlogGrid(gridId, posts){
+  const grid = document.getElementById(gridId);
+  if(!posts || !posts.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--suave)">Nenhum artigo publicado ainda.</div>';
+    return;
+  }
+  grid.innerHTML = posts.map(p => `
+    <div class="blog-card" onclick="abrirPost('${p.id}')">
+      <div class="blog-card-img">
+        ${(()=>{
+            const src = p.imagem_url || CAT_IMG[p.categoria] || '/images/tecnico.png';
+            return `<img src="${src}" alt="${p.titulo}" loading="lazy">`;
+          })()}
+      </div>
+      <div class="blog-card-body">
+        <span class="blog-cat">${p.categoria||'geral'}</span>
+        <h3>${p.titulo}</h3>
+        ${p.descricao ? `<p>${p.descricao}</p>` : ''}
+        <div class="data">${new Date(p.criado_em).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'})}</div>
+      </div>
+    </div>`).join('');
+}
+
+// clique num card do blog → muda a URL; o router chama loadPost
+function abrirPost(id){ location.hash = '#/post/'+encodeURIComponent(id); }
+
+async function loadPost(id){
+  try{
+    // tentar buscar o post completo
+    const post = await fetch(`/api/blog/${id}`).then(r=>r.json()).catch(()=>null);
+    const conteudo = post?.conteudo || post?.descricao || 'Conteúdo não disponível.';
+    document.getElementById('post-content').innerHTML = `
+      <div class="post-header">
+        <span class="blog-cat">${post?.categoria||'geral'}</span>
+        <h1>${post?.titulo||'—'}</h1>
+        <p class="meta">${new Date(post?.criado_em||Date.now()).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'})}</p>
+      </div>
+      <div class="post-body">${conteudo.split('\n').map(l=>`<p>${l}</p>`).join('')}</div>`;
+  } catch(e){
+    document.getElementById('post-content').innerHTML='<p style="padding:40px">Artigo não encontrado.</p>';
+  }
+  window.scrollTo({top:0});
+}
+
+/* ── MOTOR DE PREÇO (pricing v2.0) ─────────────────── */
+const REG={
+  PT:{nome:"Portugal",moeda:"EUR",sim:"€",pais:"PT"},
+  RJ:{nome:"Rio de Janeiro",moeda:"BRL",sim:"R$",pais:"BR"},
+  SP:{nome:"São Paulo",moeda:"BRL",sim:"R$",pais:"BR"}
+};
+const SC="sob_consulta";
+
+function rotear(cp,cidade){
+  const d=(cp||"").replace(/\D/g,"");
+  if(d.length===7) return "PT";
+  if(d.length===8){
+    const p=parseInt(d.slice(0,5),10);
+    if(p>=20000&&p<=28999) return "RJ";
+    if(p>=1000 &&p<=19999) return "SP";
+    return "outro";
+  }
+  const c=(cidade||"").toLowerCase();
+  if(/lisboa|porto|cascais|sintra|aveiro|ovar|braga|faro|coimbra/.test(c)) return "PT";
+  if(/rio de janeiro|niter|b[úu]zios|petr[oó]polis/.test(c)) return "RJ";
+  if(/s[ãa]o paulo|campinas|santos|guarulhos|osasco/.test(c)) return "SP";
+  return "outro";
+}
+
+const PRECOS={
+  BR:{
+    freshwater:[[200,270],[600,340],[1000,500],[null,SC]],
+    marine:    [[200,330],[600,400],[1000,600],[null,SC]],
+    pond:      [[2000,450],[4000,650],[10000,800],[null,SC]]
+  },
+  PT:{
+    freshwater:[[200,45],[600,65],[1000,100],[null,SC]],
+    marine:    [[200,70],[600,100],[1000,150],[null,SC]],
+    pond:      [[2000,120],[4000,180],[10000,270],[null,SC]]
+  }
+};
+const TNOME={freshwater:"Água doce",marine:"Marinho",pond:"Lago"};
+const PLANOS={
+  avulsa:    {nome:"Avulsa",             vm:1, m:0,  desc:0},
+  mensal:    {nome:"Mensal",             vm:1, m:1,  desc:.05},
+  mensal_2x: {nome:"Mensal · 2 visitas", vm:2, m:1,  desc:.07},
+  trimestral:{nome:"Trimestral",         vm:1, m:3,  desc:.12},
+  semestral: {nome:"Semestral",          vm:1, m:6,  desc:.18},
+  anual:     {nome:"Anual",              vm:1, m:12, desc:.25},
+};
+const PGTOS={
+  BR:{
+    pix:             {nome:"PIX",                    aj:-.05, tag:"mais barato"},
+    transferencia:   {nome:"Transferência / boleto",  aj:-.03},
+    cartao:          {nome:"Cartão à vista",           aj:0},
+    cartao_parcelado:{nome:"Cartão parcelado (2-6×)",  aj:.05}
+  },
+  PT:{
+    mbway:         {nome:"MB Way",              aj:-.05, tag:"mais barato"},
+    debito_direto: {nome:"Débito direto",        aj:-.04},
+    transferencia: {nome:"Transferência bancária",aj:-.03},
+    cartao:        {nome:"Cartão de crédito",    aj:0}
+  }
+};
+
+const fmtL=v=>v.toLocaleString("pt-BR");
+const fmtV=(sim,v)=>`${sim} ${v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+
+function faixa(pais,wt,vol){
+  const t=PRECOS[pais][wt]; let ant=0;
+  for(const [lim,pr] of t){
+    if(lim===null) return [SC,`acima de ${fmtL(ant)} L`];
+    if(vol<=lim) return [pr, ant===0?`até ${fmtL(lim)} L`:`${fmtL(ant)}–${fmtL(lim)} L`];
+    ant=lim;
+  }
+  return [SC,"acima da tabela"];
+}
+
+function orcar(cp,cidade,wt,vol,plano,pgto){
+  const r=rotear(cp,cidade);
+  if(!(r in REG)) return {atende:false, regiao:r};
+  const info=REG[r], pais=info.pais;
+  if(!pgto||!(pgto in PGTOS[pais])) pgto=pais==="BR"?"pix":"mbway";
+  const pg=PGTOS[pais][pgto], p=PLANOS[plano];
+  const [base,frot]=faixa(pais,wt,vol);
+
+  if(base===SC) return {
+    atende:true, sob_consulta:true, regiao:r, regiao_nome:info.nome,
+    pais, sim:info.sim, faixa:frot,
+    aviso:`${TNOME[wt]} ${frot}, projeto sob medida.`
+  };
+
+  const mem=[]; let acc=base;
+  mem.push({l:"Preço-base", i:`${TNOME[wt]} · ${frot} · ${info.nome}`, v:acc});
+  if(p.desc>0){
+    const d=-acc*p.desc; acc+=d;
+    mem.push({l:`Plano ${p.nome}`, i:`−${Math.round(p.desc*100)}% por compromisso`, v:d, neg:true});
+  }
+  if(pg.aj!==0){
+    const d=acc*pg.aj; acc+=d;
+    mem.push({l:pg.nome, i:`${pg.aj<0?"-":"+"}${Math.abs(Math.round(pg.aj*100))}%`, v:d, neg:pg.aj<0});
+  }
+  const visita=Math.round(acc*100)/100;
+  return {
+    atende:true, sob_consulta:false, regiao:r, regiao_nome:info.nome,
+    pais, moeda:info.moeda, sim:info.sim, faixa:frot, mem,
+    plano, plano_nome:p.nome, vm:p.vm, meses:p.m,
+    pagamento:pgto, pagamento_nome:pg.nome,
+    valor_visita:visita,
+    valor_mensal: p.m ? Math.round(visita*p.vm*100)/100 : 0,
+    valor_total:  p.m ? Math.round(visita*p.vm*p.m*100)/100 : visita,
+  };
+}
+
+/* ── RENDER QUOTE ───────────────────────────────────── */
+let plano="mensal_2x", pgto=null;
+
+function estado(){
+  return {
+    wt: document.querySelector('input[name=wt]:checked')?.value||"freshwater",
+    vol: parseFloat(document.getElementById("vol")?.value)||0,
+    cep: document.getElementById("cep")?.value||"",
+    cid: document.getElementById("cid")?.value||"",
+  };
+}
+
+function pintar(){
+  const s=estado(), box=document.getElementById("qbody");
+  if(!box) return;
+  const btn=document.getElementById("btn-continuar");
+
+  if(!s.vol||(!s.cep&&!s.cid)){
+    box.innerHTML='<div class="q-empty">Informe o <b>volume</b> e o <b>CEP</b><br>para ver o preço.</div>';
+    if(btn){ btn.disabled=true; btn.textContent="Informe o CEP para ver o preço"; } return;
+  }
+
+  const q=orcar(s.cep,s.cid,s.wt,s.vol,plano,pgto);
+
+  if(!q.atende){
+    box.innerHTML=`<div class="q-region fora">
+        <span class="rn">📍 Fora da área</span><span class="rt">não atendemos</span></div>
+      <div class="q-empty">A Aqualife atende <b>Rio de Janeiro</b>, <b>São Paulo</b> e <b>Portugal</b>.<br><br>
+      Deixe seu contato, avisamos quando chegarmos à sua região.</div>`;
+    window.Q_ATUAL=q; window.S_ATUAL=s;
+    btn.disabled=false; btn.textContent="Deixar meu contato →"; btn.onclick=irStep2; return;
+  }
+
+  if(q.sob_consulta){
+    box.innerHTML=`<div class="q-region"><span class="rn">📍 ${q.regiao_nome}</span><span class="rt">atendemos</span></div>
+      <div class="q-empty" style="color:var(--corpo)">
+        <b style="color:var(--tinta);font-size:15px">${TNOME[s.wt]} ${q.faixa}</b><br><br>
+        Projeto <b>sob medida</b>, o preço depende da estrutura e do acesso.<br><br>
+        Deixe seu contato: nossa equipe orça sem compromisso.
+      </div>`;
+    window.Q_ATUAL=q; window.S_ATUAL=s;
+    btn.disabled=false; btn.textContent="Continuar →"; btn.onclick=irStep2; return;
+  }
+
+  if(!pgto) pgto=q.pagamento;
+  const pgList=PGTOS[q.pais];
+
+  const rec=q.mem.map(m=>`<div class="q-row ${m.neg?'verde':''}">
+    <span class="rl"><b>${m.l}</b><i>${m.i}</i></span>
+    <span class="rv">${m.v<0?"−":""}${fmtV(q.sim,Math.abs(m.v))}</span></div>`).join("")
+  +`<div class="q-row tot"><span class="rl"><b>Por visita</b></span>
+    <span class="rv">${fmtV(q.sim,q.valor_visita)}</span></div>`;
+
+  // Calcular rótulo correcto para o bloco de destaque
+  let mesHtml;
+  if(!q.meses){
+    mesHtml=`<div class="q-mes">
+      <div class="mk">Valor da visita</div>
+      <div class="mv">${fmtV(q.sim,q.valor_visita)}</div>
+      <div class="ms">sem compromisso · ${q.pagamento_nome}</div></div>`;
+  } else {
+    // Planos com compromisso: mostrar TOTAL e "por visita" pequeno
+    mesHtml=`<div class="q-mes">
+      <div class="mk">Você paga (valor total do pacote)</div>
+      <div class="mv">${fmtV(q.sim,q.valor_total)}</div>
+      <div class="ms">${q.vm*q.meses} visita${q.vm*q.meses>1?'s':''} · ${fmtV(q.sim,q.valor_visita)}/visita · ${q.pagamento_nome}</div></div>`;
+  }
+  const mes=mesHtml;
+
+  const planOpts=Object.keys(PLANOS).map(k=>{
+    const o=orcar(s.cep,s.cid,s.wt,s.vol,k,pgto);
+    const eco=PLANOS[k].desc>0?`<span class="save">−${Math.round(PLANOS[k].desc*100)}% por visita</span>`:"";
+    // Para planos com compromisso: mostrar valor TOTAL (o que o cliente paga de vez)
+    const temMeses = PLANOS[k].m > 0;
+    const valorExibir = (o.atende&&!o.sob_consulta)
+      ? (temMeses ? o.valor_total : o.valor_visita)
+      : null;
+    const labelValor = temMeses ? "total" : "visita";
+    return `<div class="q-plan ${k===plano?'on':''}" data-p="${k}">
+      <span class="pn">${PLANOS[k].nome} ${eco}</span>
+      <span class="pv" title="${labelValor}">${valorExibir!==null?fmtV(o.sim,valorExibir):"—"}</span></div>`;
+  }).join("");
+
+  const pgOpts=Object.keys(pgList).map(k=>{
+    const o=orcar(s.cep,s.cid,s.wt,s.vol,plano,k);
+    const aj=pgList[k].aj;
+    const tag=pgList[k].tag?`<span class="save">${pgList[k].tag}</span>`
+              :aj>0?`<span class="save" style="color:var(--atencao)">+${Math.round(aj*100)}%</span>`:"";
+    // Mostrar sempre o valor TOTAL do período (mesmas regras dos planos)
+    const temMeses = PLANOS[plano].m > 0;
+    const valorExibir = (o.atende&&!o.sob_consulta)
+      ? (temMeses ? o.valor_total : o.valor_visita)
+      : null;
+    return `<div class="q-plan ${k===pgto?'on':''}" data-g="${k}">
+      <span class="pn">${pgList[k].nome} ${tag}</span>
+      <span class="pv">${valorExibir!==null?fmtV(o.sim,valorExibir):"—"}</span></div>`;
+  }).join("");
+
+  box.innerHTML=`
+    <div class="q-region"><span class="rn">📍 ${q.regiao_nome}</span><span class="rt">atendemos</span></div>
+    <div class="q-receipt">${rec}</div>
+    ${mes}
+    <div class="q-plans"><div class="q-plans-tit">Plano · preço por visita</div>${planOpts}</div>
+    <div class="q-plans"><div class="q-plans-tit">Forma de pagamento</div>${pgOpts}</div>`;
+
+  box.querySelectorAll("[data-p]").forEach(el=>el.onclick=()=>{plano=el.dataset.p;pintar()});
+  box.querySelectorAll("[data-g]").forEach(el=>el.onclick=()=>{pgto=el.dataset.g;pintar()});
+
+  // Guarda o orçamento atual e habilita o "Continuar"
+  window.Q_ATUAL=q; window.S_ATUAL=s;
+  btn.disabled=false;
+  btn.textContent = q.pais==="BR" ? "Continuar para pagamento →" : "Continuar →";
+  btn.onclick=irStep2;
+}
+
+/* ── PASSO 2 · contato + pagamento ─────────────────── */
+function irStep2(){
+  const q=window.Q_ATUAL, s=window.S_ATUAL;
+  document.getElementById("agenda-step1").style.display="none";
+  document.getElementById("agenda-step2").style.display="block";
+  window.scrollTo({top:0,behavior:"smooth"});
+  renderResumo2(q,s);
+  if(window._fbAgendamento) _fbAgendamento();
+}
+function voltarStep1(){
+  document.getElementById("agenda-step2").style.display="none";
+  document.getElementById("agenda-step1").style.display="block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function renderResumo2(q,s){
+  const box=document.getElementById("resumo2");
+  const btnPagar=document.getElementById("btn-pagar");
+  const fine=document.getElementById("fine2");
+  const podePagar = q.atende && !q.sob_consulta && q.pais==="BR";
+
+  let linhas="";
+  if(q.atende && !q.sob_consulta){
+    const rec=PLANOS[plano].recorrente;
+    const parc=PLANOS[plano].parcelas||1;
+    const valorLabel = rec ? "Assinatura mensal" : (q.meses ? "Total do período" : "Valor da visita");
+    const valor = rec ? q.valor_mensal : q.valor_total;
+    linhas=`
+      <div class="q-row"><span class="rl"><b>${TNOME[s.wt]}</b><i>${s.vol} L · ${q.regiao_nome}</i></span></div>
+      <div class="q-row"><span class="rl"><b>Plano ${PLANOS[plano].nome}</b><i>${q.pagamento_nome}</i></span></div>
+      <div class="q-row tot"><span class="rl"><b>${valorLabel}</b></span><span class="rv">${fmtV(q.sim,valor)}</span></div>
+      ${rec?`<p class="fine" style="margin-top:8px">Cobrança automática todo mês. Cancele quando quiser.</p>`
+           :parc>1?`<p class="fine" style="margin-top:8px">Em até ${parc}x sem juros no cartão.</p>`:""}`;
+  } else {
+    linhas=`<div class="q-empty" style="color:var(--corpo)">${TNOME[s.wt]} · ${q.regiao_nome||"sua região"}<br><br>
+      Vamos combinar tudo pelo WhatsApp, sem compromisso.</div>`;
+  }
+  box.innerHTML=linhas;
+
+  if(podePagar){
+    btnPagar.style.display="block";
+    fine.textContent="Pagamento seguro via Mercado Pago · garantia de 7 dias.";
+  } else {
+    btnPagar.style.display="none";
+    fine.textContent = q.pais==="PT"
+      ? "Em Portugal, o agendamento é combinado pelo WhatsApp."
+      : "Deixe seu contato e retornamos rapidinho.";
+  }
+}
+
+async function pagarAgora(){
+  const q=window.Q_ATUAL, s=window.S_ATUAL;
+  const nome=document.getElementById("nome").value.trim();
+  const email=document.getElementById("mail").value.trim();
+  const tel=document.getElementById("tel").value.trim();
+  if(!nome||!email||!tel){ alert("Preencha nome, e-mail e telefone para pagar."); return; }
+  const btn=document.getElementById("btn-pagar");
+  btn.disabled=true; const txt=btn.textContent; btn.textContent="Redirecionando ao Mercado Pago…";
+  try{
+    const r=await fetch("/api/agendamento/checkout",{
+      method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify({
+        nome, email, telefone:tel,
+        cidade:s.cid, cep:s.cep, water_type:s.wt, volume_litros:s.vol,
+        plano, forma_pagamento: pgto||"pix",
+        data_opcao1: document.getElementById("d1").value||null,
+        data_opcao2: document.getElementById("d2").value||null,
+      })
+    });
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.erro||"Não foi possível iniciar o pagamento.");
+    if(window._fbConversao) _fbConversao((j.valor_cobrado_cents||0)/100, "BRL");
+    location.href=j.init_point;
+  }catch(e){
+    alert("Erro: "+e.message+"\n\nVocê pode agendar pelo WhatsApp.");
+    btn.disabled=false; btn.textContent=txt;
+  }
+}
+
+function gerarMsgWpp(q, s){
+  const n=document.getElementById("nome")?.value||"";
+  const m=document.getElementById("mail")?.value||"";
+  const t=document.getElementById("tel")?.value||"";
+  const d1=document.getElementById("d1")?.value||"";
+  const vol=document.getElementById("vol")?.value||"";
+  const wt={freshwater:"água doce",marine:"marinho/reef",pond:"lago ornamental"}[s.wt]||s.wt;
+  const cid=document.getElementById("cid")?.value||"";
+  const cep=document.getElementById("cep")?.value||"";
+
+  let msg=`Olá, Aqualife! 👋\n\nMeu nome é *${n}* e gostaria de agendar uma visita.\n\n`;
+  msg+=`🐠 *Ambiente:* ${TNOME[s.wt]}, ${vol}L\n`;
+  msg+=`📍 *Local:* ${cid||cep} (${q.regiao_nome})\n`;
+  if(d1) msg+=`📅 *Data preferida:* ${d1}\n`;
+  msg+=`📋 *Plano:* ${PLANOS[plano].nome}\n`;
+  if(!q.sob_consulta) msg+=`💰 *Orçamento calculado:* ${fmtV(q.sim,q.valor_visita)}/visita\n`;
+  msg+=`\n📧 E-mail: ${m}\n📱 Telefone: ${t}\n`;
+  msg+=`\nAguardo confirmação. Obrigado!`;
+  return msg;
+}
+
+async function abrirWpp(num, msg, q, s){
+  // Gravar no banco
+  try{
+    await fetch('/api/agendamento',{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body: JSON.stringify({
+        nome: document.getElementById("nome").value,
+        email: document.getElementById("mail").value,
+        telefone: document.getElementById("tel").value,
+        pais: q.pais, cidade: document.getElementById("cid").value,
+        cep: document.getElementById("cep").value,
+        water_type: s.wt,
+        volume_litros: parseFloat(document.getElementById("vol").value)||0,
+        plano, forma_pagamento: pgto||"pix",
+        data_opcao1: document.getElementById("d1").value||null,
+        data_opcao2: document.getElementById("d2").value||null,
+        valor_visita: q.valor_visita||null,
+        moeda: q.moeda||"BRL",
+        regiao: q.regiao,
+        pricing_version: "p2.0",
+      })
+    });
+  } catch(e){ /* se falhar, abre o WhatsApp de qualquer forma */ }
+
+  if(window._fbConversao) _fbConversao(q.valor_total||q.valor_visita||0, q.moeda||'BRL');
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`,'_blank');
+
+  // Mostrar tela de sucesso
+  document.getElementById("agenda-main").style.display="none";
+  const done=document.getElementById("done-box");
+  done.classList.add("show");
+  document.getElementById("done-txt").textContent=
+    `Recebemos seu pedido para o ${TNOME[s.wt].toLowerCase()} em ${q.regiao_nome}. Confirmamos em até 24h úteis.`;
+  document.getElementById("done-os").innerHTML=
+    "O WhatsApp foi aberto com tudo preenchido. Se não abriu, <a href='https://wa.me/"+num+"' target='_blank'>clique aqui</a>.";
+}
+
+/* ── INIT ──────────────────────────────────────────── */
+// Inicializar formulário de agendamento (chamado na 1ª vez que se mostra)
+let agendaIniciado = false;
+function initAgenda(){
+  if(agendaIniciado) return;
+  agendaIniciado = true;
+  document.querySelectorAll('#sec-agendamento input').forEach(el=>{
+    el.addEventListener('input', pintar);
+    el.addEventListener('change', pintar);
+  });
+  document.querySelectorAll('input[name=wt]').forEach(el=>{
+    el.addEventListener('change', ()=>{ pgto=null; pintar(); });
+  });
+  const cepEl = document.getElementById('cep');
+  if(cepEl) cepEl.addEventListener('input', ()=>{ pgto=null; pintar(); });
+  const d=new Date(Date.now()+3*864e5);
+  const di=document.getElementById("d1");
+  if(di) di.value=d.toISOString().slice(0,10);
+
+  // Passo 2 — botões
+  const bp=document.getElementById("btn-pagar");
+  if(bp) bp.onclick=pagarAgora;
+  const bw=document.getElementById("btn-wpp2");
+  if(bw) bw.onclick=()=>{
+    const q=window.Q_ATUAL, s=window.S_ATUAL;
+    const nome=document.getElementById("nome").value.trim();
+    const tel=document.getElementById("tel").value.trim();
+    if(!nome||!tel){ alert("Preencha ao menos nome e telefone para agendar pelo WhatsApp."); return; }
+    const num = q.pais==="PT" ? "351966121075" : "5521971064054";
+    abrirWpp(num, gerarMsgWpp(q,s), q, s);
+  };
+
+  pintar();
+}
+
+// Retorno do Mercado Pago (?ag=ok|pendente|falha)
+function mostrarRetornoPagamento(st){
+  location.hash = '#/agendar';
+  setTimeout(()=>{
+    const main=document.getElementById('agenda-main'); if(main) main.style.display='none';
+    const done=document.getElementById('done-box'); if(!done) return;
+    done.classList.add('show');
+    const h=done.querySelector('h2'), t=document.getElementById('done-txt'), o=document.getElementById('done-os');
+    if(st==='ok'){ h.textContent='Pagamento confirmado! 🎉';
+      t.textContent='Recebemos seu pagamento. Enviamos a confirmação por e-mail e nossa equipe vai combinar a data da visita com você.'; o.innerHTML=''; }
+    else if(st==='pendente'){ h.textContent='Pagamento em processamento';
+      t.textContent='Seu pagamento está sendo processado (normal no Pix/boleto). Assim que confirmar, avisamos por e-mail.'; o.innerHTML=''; }
+    else { h.textContent='Pagamento não concluído';
+      t.textContent='O pagamento não foi concluído. Você pode tentar de novo ou agendar pelo WhatsApp.';
+      o.innerHTML='<a href="/site.html#/agendar" onclick="setTimeout(()=>location.reload(),10)">Tentar novamente</a>'; }
+  },60);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  carregarBlog();
+  const p = new URLSearchParams(location.search);
+  const ag = p.get('ag');
+  if(ag){ mostrarRetornoPagamento(ag); }
+  else { router(); }  // roteia pela URL inicial (deep-link direto p/ #/agendar, #/care, etc.)
+});
+</script>
+
+<!-- ══════════ BANNER COOKIES ══════════ -->
+<div id="cookie-banner" style="
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:#0B2A3A;color:#fff;padding:16px 24px;
+  box-shadow:0 -4px 20px rgba(0,0,0,.3);
+  font-family:'Inter',sans-serif;
+">
+  <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <div style="flex:1;min-width:260px">
+      <p style="margin:0;font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.85)">
+        🍪 Usamos cookies para melhorar a sua experiência, analisar o tráfego e personalizar conteúdos.
+        Ao continuar, concorda com a nossa
+        <a href="#" style="color:#38BDF8;text-decoration:underline">Política de Privacidade</a>.
+      </p>
+    </div>
+    <div style="display:flex;gap:10px;flex-shrink:0">
+      <button id="cookie-rejeitar" style="
+        padding:9px 18px;border-radius:8px;border:1.5px solid rgba(255,255,255,.25);
+        background:transparent;color:rgba(255,255,255,.7);font-size:13px;
+        cursor:pointer;font-family:inherit;transition:.15s;
+      ">Só essenciais</button>
+      <button id="cookie-aceitar" style="
+        padding:9px 18px;border-radius:8px;border:none;
+        background:#F97316;color:#fff;font-size:13px;font-weight:700;
+        cursor:pointer;font-family:inherit;transition:.15s;
+      ">Aceitar tudo</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const CHAVE = 'aq_cookie_consent';
+  const banner = document.getElementById('cookie-banner');
+  if(!localStorage.getItem(CHAVE)) banner.style.display='block';
+  document.getElementById('cookie-aceitar').onclick = function(){
+    localStorage.setItem(CHAVE,'all');
+    banner.style.display='none';
+  };
+  document.getElementById('cookie-rejeitar').onclick = function(){
+    localStorage.setItem(CHAVE,'essential');
+    banner.style.display='none';
+    // Desactivar eventos Meta Pixel opcionais
+    if(window.fbq) fbq('consent','revoke');
+  };
+})();
+</script>
+<!-- ══════════ FIM COOKIES ══════════ -->
+</body>
+</html>
