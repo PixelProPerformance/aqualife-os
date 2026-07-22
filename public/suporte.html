@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suporte — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:32px 0}
+.ticket-item{padding:16px 20px;border-bottom:1px solid var(--linha)}
+.ticket-item:last-child{border-bottom:none}
+.ticket-topo{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.status{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.status-aberto{background:#FEF3C7;color:#92400E}
+.status-respondido{background:#D1FAE5;color:#065F46}
+.status-fechado{background:#E5E7EB;color:#374151}
+.resposta{margin-top:10px;padding:10px 14px;background:var(--agua-clr);border-radius:8px;font-size:13.5px}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca"><img src="/images/logo-azul.png" alt="Aqualife" style="height:36px" onerror="this.style.display='none'"></div>
+    <a href="/dashboard.html" class="btn btn-c btn-sm" style="margin-left:auto">Voltar ao painel</a>
+  </div>
+</header>
+<main class="wrap sec">
+  <h1 style="font-size:24px;margin-bottom:20px">Suporte</h1>
+
+  <div class="cartao" style="padding:20px 24px;margin-bottom:24px">
+    <h2 style="font-size:16px;margin-bottom:14px">Abrir novo chamado</h2>
+    <div class="erro-cx" id="erro" style="display:none"></div>
+    <div class="campo"><label>Assunto</label><input class="inp" id="assunto" placeholder="Resuma o problema"></div>
+    <div class="campo"><label>Mensagem</label><textarea class="inp" id="mensagem" rows="4" placeholder="Descreva com detalhes"></textarea></div>
+    <div class="campo"><label>Fotos/vídeos (opcional)</label><input type="file" id="arquivos" multiple accept="image/*,video/*"></div>
+    <button class="btn btn-p" id="btnEnviar">Enviar chamado</button>
+  </div>
+
+  <h2 style="font-size:16px;margin-bottom:12px">Meus chamados</h2>
+  <div class="cartao" id="lista"><div class="vazio">Carregando…</div></div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+if(!token){ location.href="/entrar.html"; }
+
+async function api(c,o={}){
+  const r=await fetch(c,{...o,headers:{...(o.body&&!(o.body instanceof FormData)?{"content-type":"application/json"}:{}),authorization:"Bearer "+token}});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.erro||"HTTP "+r.status);}
+  return r.json();
+}
+function dt(s){return new Date(s).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})}
+
+async function carregar(){
+  try{
+    const lista=await api("/api/tickets");
+    $("lista").innerHTML = lista.length ? lista.map(t=>`
+      <div class="ticket-item">
+        <div class="ticket-topo">
+          <b>${t.assunto}</b>
+          <span class="status status-${t.status}">${t.status}</span>
+        </div>
+        <p style="font-size:13.5px;color:var(--suave);margin-top:4px">${t.mensagem}</p>
+        <div style="font-size:12px;color:var(--suave);margin-top:4px">${dt(t.created_at)}</div>
+        ${t.resposta?`<div class="resposta"><b>Resposta da equipe:</b><br>${t.resposta}</div>`:""}
+      </div>`).join("") : `<div class="vazio" style="padding:20px">Nenhum chamado aberto ainda.</div>`;
+  }catch(e){ $("lista").innerHTML=`<div class="vazio">Não foi possível carregar.</div>`; }
+}
+
+$("btnEnviar").onclick=async()=>{
+  const erro=$("erro"); erro.style.display="none";
+  const assunto=$("assunto").value.trim(), mensagem=$("mensagem").value.trim();
+  if(!assunto||!mensagem){ erro.textContent="Preencha assunto e mensagem."; erro.style.display="block"; return; }
+  try{
+    const t=await api("/api/tickets",{method:"POST",body:JSON.stringify({assunto,mensagem})});
+    const arquivos=$("arquivos").files;
+    if(arquivos.length){
+      const fd=new FormData();
+      for(const f of arquivos) fd.append("arquivos",f);
+      await api(`/api/tickets/${t.id}/anexos`,{method:"POST",body:fd});
+    }
+    $("assunto").value=""; $("mensagem").value=""; $("arquivos").value="";
+    carregar();
+  }catch(e){ erro.textContent=e.message; erro.style.display="block"; }
+};
+
+carregar();
+</script>
+</body>
+</html>

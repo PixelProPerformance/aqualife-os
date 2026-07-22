@@ -60,6 +60,9 @@
         <input class="inp" id="senha" type="password" autocomplete="current-password" placeholder="••••••••">
       </div>
       <button class="btn btn-p" id="btn" style="width:100%;margin-top:6px">Entrar</button>
+      <div style="text-align:center;margin-top:16px">
+        <a href="/esqueci-senha.html" style="font-size:13.5px;color:var(--agua)">Esqueci minha senha</a>
+      </div>
     </div>
   </div>
 
@@ -90,7 +93,7 @@ async function entrar(){
       (p==="admin"||p==="gestor") ? "/admin.html" :
       (p==="tecnico")             ? "/tecnico.html" :
       (p==="aquarista")           ? "/tecnico.html" :
-                                    "/painel.html";
+                                    "/dashboard.html";
   }catch(e){
     erro.textContent=e.message; erro.style.display="block";
     btn.disabled=false; btn.textContent="Entrar";

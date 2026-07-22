@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redefinir senha — Aqualife Aquarismo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.entrar-form{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px}
+.entrar-cx{width:100%;max-width:380px}
+.entrar-cx h1{font-size:25px;margin-bottom:7px}
+.entrar-cx .sub{color:var(--suave);font-size:14.5px;margin-bottom:28px}
+</style>
+</head>
+<body>
+<div class="entrar-form">
+  <div class="entrar-cx">
+    <h1>Definir nova senha</h1>
+    <p class="sub">Escolha uma nova senha para sua conta.</p>
+    <div class="erro-cx" id="erro" style="display:none"></div>
+    <div class="erro-cx" id="ok" style="display:none;background:#ecfdf5;color:#065f46"></div>
+    <div class="campo">
+      <label>Nova senha</label>
+      <input class="inp" id="senha" type="password" placeholder="mínimo 8 caracteres">
+    </div>
+    <div class="campo">
+      <label>Confirmar nova senha</label>
+      <input class="inp" id="senha2" type="password" placeholder="repita a senha">
+    </div>
+    <button class="btn btn-p" id="btn" style="width:100%;margin-top:6px">Salvar nova senha</button>
+    <div style="text-align:center;margin-top:16px">
+      <a href="/entrar.html" style="font-size:13.5px;color:var(--agua)">Voltar ao login</a>
+    </div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const token=new URLSearchParams(location.search).get("token");
+if(!token){ $("erro").textContent="Link inválido ou expirado. Solicite uma nova recuperação."; $("erro").style.display="block"; }
+
+async function salvar(){
+  const btn=$("btn"), erro=$("erro"), ok=$("ok");
+  erro.style.display="none"; ok.style.display="none";
+  if(!token){ erro.textContent="Link inválido."; erro.style.display="block"; return; }
+  if($("senha").value.length<8){ erro.textContent="A senha deve ter pelo menos 8 caracteres."; erro.style.display="block"; return; }
+  if($("senha").value!==$("senha2").value){ erro.textContent="As senhas não coincidem."; erro.style.display="block"; return; }
+  btn.disabled=true; btn.textContent="Salvando…";
+  try{
+    const r=await fetch("/api/auth/redefinir-senha",{
+      method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({token, novaSenha:$("senha").value}),
+    });
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.erro||"Não foi possível redefinir a senha.");
+    ok.textContent="Senha alterada com sucesso! Redirecionando para o login…";
+    ok.style.display="block";
+    setTimeout(()=>location.href="/entrar.html",1800);
+  }catch(e){
+    erro.textContent=e.message; erro.style.display="block";
+    btn.disabled=false; btn.textContent="Salvar nova senha";
+  }
+}
+$("btn").onclick=salvar;
+</script>
+</body>
+</html>

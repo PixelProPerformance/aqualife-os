@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recuperar senha — Aqualife Aquarismo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.entrar-form{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px}
+.entrar-cx{width:100%;max-width:380px}
+.entrar-cx h1{font-size:25px;margin-bottom:7px}
+.entrar-cx .sub{color:var(--suave);font-size:14.5px;margin-bottom:28px}
+</style>
+</head>
+<body>
+<div class="entrar-form">
+  <div class="entrar-cx">
+    <h1>Recuperar senha</h1>
+    <p class="sub">Informe seu e-mail e enviaremos as instruções de recuperação.</p>
+    <div class="erro-cx" id="erro" style="display:none"></div>
+    <div class="erro-cx" id="ok" style="display:none;background:#ecfdf5;color:#065f46"></div>
+    <div class="campo">
+      <label>E-mail</label>
+      <input class="inp" id="email" type="email" placeholder="voce@email.com">
+    </div>
+    <button class="btn btn-p" id="btn" style="width:100%;margin-top:6px">Enviar instruções</button>
+    <div style="text-align:center;margin-top:16px">
+      <a href="/entrar.html" style="font-size:13.5px;color:var(--agua)">Voltar ao login</a>
+    </div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+async function enviar(){
+  const btn=$("btn"), erro=$("erro"), ok=$("ok");
+  erro.style.display="none"; ok.style.display="none";
+  btn.disabled=true; btn.textContent="Enviando…";
+  try{
+    const r=await fetch("/api/auth/esqueci-senha",{
+      method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({email:$("email").value.trim()}),
+    });
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.erro||"Não foi possível processar o pedido.");
+    ok.textContent="Se o e-mail existir na nossa base, enviaremos as instruções em instantes.";
+    ok.style.display="block";
+  }catch(e){
+    erro.textContent=e.message; erro.style.display="block";
+  }finally{
+    btn.disabled=false; btn.textContent="Enviar instruções";
+  }
+}
+$("btn").onclick=enviar;
+$("email").addEventListener("keydown",e=>{if(e.key==="Enter")enviar()});
+</script>
+</body>
+</html>
