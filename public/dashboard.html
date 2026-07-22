@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Georgia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:32px 0}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-bottom:28px}
+.stat-card{padding:20px 22px}
+.stat-card .n{font-family:Georgia,serif;font-size:32px;font-weight:700;color:var(--tinta)}
+.stat-card .l{font-size:13px;color:var(--suave);margin-top:4px}
+.atalhos{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px}
+.atalho{padding:18px;text-align:center;text-decoration:none;color:var(--tinta);font-weight:600;font-size:14px;
+  transition:transform .15s}
+.atalho:hover{transform:translateY(-2px)}
+.atalho .ic{font-size:26px;display:block;margin-bottom:8px}
+.aviso-item{padding:12px 16px;border-left:3px solid var(--agua);margin-bottom:8px;font-size:13.5px;background:var(--agua-clr)}
+.aviso-item b{display:block;margin-bottom:2px}
+.rel-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--linha);font-size:14px}
+.founding-banner{background:linear-gradient(135deg,var(--agua),var(--tinta));color:#fff;padding:20px 24px;
+  border-radius:12px;margin-bottom:28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.founding-banner .txt b{display:block;font-size:16px;margin-bottom:3px}
+.founding-banner .txt span{font-size:13px;opacity:.85}
+.founding-banner .btn{background:#F97316;border:none;color:#fff}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca">
+      <img src="/images/logo-azul.png" alt="Aqualife" style="height:36px" onerror="this.style.display='none'">
+    </div>
+    <button class="btn btn-c btn-sm" id="sair" style="margin-left:auto">Sair</button>
+  </div>
+</header>
+
+<main class="wrap sec">
+  <h1 style="font-size:24px;margin-bottom:5px" id="saudacao">Olá!</h1>
+  <p style="color:var(--suave);font-size:14.5px;margin-bottom:26px">Aqui está um resumo da sua conta.</p>
+
+  <div id="foundingBanner"></div>
+
+  <div class="grid-cards">
+    <div class="cartao stat-card">
+      <div class="n" id="totalAquarios">—</div>
+      <div class="l">aquários/lagos cadastrados</div>
+    </div>
+    <div class="cartao stat-card">
+      <div class="n" id="totalRelatorios">—</div>
+      <div class="l">relatórios recentes</div>
+    </div>
+    <div class="cartao stat-card">
+      <div class="n" id="totalAvisos">—</div>
+      <div class="l">avisos não lidos</div>
+    </div>
+  </div>
+
+  <div class="atalhos">
+    <a class="cartao atalho" href="/aquarios.html"><span class="ic">🐠</span>Meus Aquários</a>
+    <a class="cartao atalho" href="/painel.html"><span class="ic">📋</span>Relatórios</a>
+    <a class="cartao atalho" href="/aquabook.html"><span class="ic">📖</span>Aquabook</a>
+    <a class="cartao atalho" href="/academy.html"><span class="ic">🎓</span>Aqualife Academy</a>
+    <a class="cartao atalho" href="/suporte.html"><span class="ic">💬</span>Suporte</a>
+    <a class="cartao atalho" href="/conta.html"><span class="ic">⚙️</span>Minha Conta</a>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px" id="colunas">
+    <div>
+      <h2 style="font-size:17px;margin-bottom:12px">Últimos relatórios</h2>
+      <div class="cartao" style="padding:8px 20px" id="listaRelatorios"><div class="vazio">Carregando…</div></div>
+    </div>
+    <div>
+      <h2 style="font-size:17px;margin-bottom:12px">Avisos e novidades</h2>
+      <div id="listaAvisos"><div class="vazio">Carregando…</div></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+const user=JSON.parse(localStorage.getItem("aqualife_user")||"null");
+if(!token||!user){ location.href="/entrar.html"; }
+$("sair").onclick=()=>{ localStorage.clear(); location.href="/entrar.html"; };
+
+const URG={ok:["Saudável","#2E7D55"],atencao:["Atenção","#B8860B"],alerta:["Alerta","#C05621"],critico:["Crítico","#B23A2E"]};
+
+async function api(c){
+  const r=await fetch(c,{headers:{authorization:"Bearer "+token}});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.erro||"HTTP "+r.status);}
+  return r.json();
+}
+
+function dt(s){return new Date(s).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})}
+
+async function carregarDashboard(){
+  try{
+    const d=await api("/api/dashboard");
+    $("saudacao").textContent=d.saudacao;
+    $("totalAquarios").textContent=d.resumo_aquarios.total;
+    $("totalRelatorios").textContent=d.ultimos_relatorios.length;
+    $("totalAvisos").textContent=d.avisos.length;
+
+    $("listaRelatorios").innerHTML = d.ultimos_relatorios.length
+      ? d.ultimos_relatorios.map(r=>{
+          const [lbl,cor]=URG[r.urgency]||URG.ok;
+          return `<div class="rel-item"><span>${r.aquario_nome||"Aquário"} — ${dt(r.created_at)}</span>
+            <span style="color:${cor};font-weight:600">${lbl} (${r.health_score})</span></div>`;
+        }).join("")
+      : `<div class="vazio" style="padding:16px 0">Nenhum relatório ainda.</div>`;
+
+    $("listaAvisos").innerHTML = d.avisos.length
+      ? d.avisos.map(a=>`<div class="aviso-item"><b>${a.titulo}</b>${a.mensagem||""}</div>`).join("")
+      : `<div class="vazio" style="padding:16px 0">Nenhum aviso no momento.</div>`;
+  }catch(e){
+    $("listaRelatorios").innerHTML=`<div class="vazio">Não foi possível carregar agora.</div>`;
+  }
+}
+
+async function carregarFounding(){
+  try{
+    const r=await fetch("/api/founding-members/status");
+    const f=await r.json();
+    if(!f.oferta_ativa){ $("foundingBanner").innerHTML=""; return; }
+    const precoFundador=(f.preco_fundador_cents/100).toFixed(2).replace(".",",");
+    const precoOficial=(f.preco_oficial_cents/100).toFixed(2).replace(".",",");
+    $("foundingBanner").innerHTML=`<div class="founding-banner">
+      <div class="txt"><b>🎉 Membros Fundadores — restam ${f.vagas_restantes} de ${f.vagas_totais} vagas</b>
+      <span>R$ ${precoFundador}/mês (de R$ ${precoOficial}) — preço congelado enquanto ativo${f.prazo?` · válido até ${dt(f.prazo)}`:""}</span></div>
+      <a class="btn" href="/planos.html">Quero ser fundador</a>
+    </div>`;
+  }catch(e){ $("foundingBanner").innerHTML=""; }
+}
+
+carregarDashboard();
+carregarFounding();
+</script>
+</body>
+</html>

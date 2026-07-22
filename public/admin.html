@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administração — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Georgia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:32px 0}
+.abas{display:flex;gap:2px;border-bottom:1px solid var(--linha);margin-bottom:24px}
+.aba{padding:12px 18px;font-size:14.5px;font-weight:500;color:var(--suave);
+  border-bottom:2px solid transparent;cursor:pointer;transition:.15s}
+.aba:hover{color:var(--tinta)}
+.aba.on{color:var(--agua-esc);border-bottom-color:var(--agua);font-weight:600}
+.pane{display:none}.pane.on{display:block}
+.barra{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.barra h2{font-size:18px}
+.tbl{width:100%;border-collapse:collapse;background:var(--branco);border:1px solid var(--linha);
+  border-radius:11px;overflow:hidden}
+.tbl th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--suave);font-weight:600;padding:12px 16px;border-bottom:1px solid var(--linha);background:var(--papel)}
+.tbl td{padding:13px 16px;border-bottom:1px solid var(--linha);font-size:14px}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--papel)}
+.papel-b{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;
+  background:var(--agua-clr);color:var(--agua-esc)}
+.cli-card{background:var(--branco);border:1px solid var(--linha);border-radius:11px;
+  padding:18px;margin-bottom:12px}
+.cli-top{display:flex;justify-content:space-between;align-items:start;margin-bottom:10px}
+.cli-nome{font-size:16px;font-weight:600;color:var(--tinta)}
+.cli-meta{font-size:13px;color:var(--suave)}
+.aq-chip{display:inline-flex;gap:6px;align-items:center;background:var(--papel);
+  border:1px solid var(--linha);border-radius:7px;padding:6px 11px;font-size:13px;margin:3px 3px 0 0}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(18,51,63,.45);display:none;
+  align-items:center;justify-content:center;padding:20px;z-index:60}
+.modal.on{display:flex}
+.modal-cx{background:var(--branco);border-radius:14px;padding:26px;max-width:440px;width:100%;
+  max-height:90vh;overflow:auto;box-shadow:var(--sombra-f)}
+.modal-cx h3{font-size:19px;margin-bottom:18px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-acoes{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.rm{color:var(--critico);font-size:13px;cursor:pointer;font-weight:500}
+.rm:hover{text-decoration:underline}
+.ticket-card{background:var(--branco);border:1px solid var(--linha);border-radius:11px;padding:16px 18px;margin-bottom:10px}
+.ticket-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.status{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
+.status-aberto{background:#FEF3C7;color:#92400E}
+.status-respondido{background:#D1FAE5;color:#065F46}
+.status-fechado{background:#E5E7EB;color:#374151}
+.sug-card{background:var(--branco);border:1px solid var(--linha);border-radius:11px;padding:16px 18px;margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center;gap:14px}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca"><img src="/images/logo-azul.png" alt="Aqualife" style="height:36px" onerror="this.style.display='none'"></div>
+    <nav class="nav"><a href="https://app.aqualifeaquarismo.com/admin.html" class="ativo">Administração</a></nav>
+    <button class="btn btn-c btn-sm" id="sair" style="margin-left:auto">Sair</button>
+  </div>
+</header>
+
+<main class="wrap sec">
+  <h1 style="font-size:24px;margin-bottom:20px">Administração</h1>
+  <div class="abas">
+    <div class="aba on" data-aba="clientes">Clientes e aquários</div>
+    <div class="aba" data-aba="pessoas">Equipe e acessos</div>
+    <div class="aba" data-aba="laudos">Laudos recentes</div>
+    <div class="aba" data-aba="suporte">Suporte</div>
+    <div class="aba" data-aba="aquabook">Aquabook — sugestões</div>
+    <div class="aba" data-aba="assinaturas">Assinaturas & Mercado Pago</div>
+  </div>
+
+  <div class="pane on" id="pane-clientes">
+    <div class="barra"><h2>Clientes</h2>
+      <button class="btn btn-p btn-sm" id="novoCliente">+ Novo cliente</button></div>
+    <div id="listaClientes"><div class="vazio">Carregando…</div></div>
+  </div>
+
+  <div class="pane" id="pane-pessoas">
+    <div class="barra"><h2>Equipe e acessos</h2>
+      <button class="btn btn-p btn-sm" id="novaPessoa">+ Nova pessoa</button></div>
+    <div id="listaPessoas"><div class="vazio">Carregando…</div></div>
+  </div>
+
+  <div class="pane" id="pane-laudos">
+    <div class="barra"><h2>Laudos recentes</h2></div>
+    <div id="listaLaudos"><div class="vazio">Carregando…</div></div>
+  </div>
+
+  <div class="pane" id="pane-suporte">
+    <div class="barra"><h2>Chamados de suporte</h2></div>
+    <div id="listaTickets"><div class="vazio">Carregando…</div></div>
+  </div>
+
+  <div class="pane" id="pane-aquabook">
+    <div class="barra"><h2>Sugestões de novas espécies</h2></div>
+    <div id="listaSugestoes"><div class="vazio">Carregando…</div></div>
+  </div>
+
+  <div class="pane" id="pane-assinaturas">
+    <div class="barra"><h2>Oferta de Membros Fundadores</h2></div>
+    <div class="cli-card" style="max-width:640px">
+      <div id="ofertaResumo" style="font-size:14px;color:var(--suave);margin-bottom:14px">Carregando…</div>
+      <div class="duo">
+        <div class="campo"><label>Máximo de vagas</label><input class="inp" id="fMax" type="number"></div>
+        <div class="campo"><label>Data limite</label><input class="inp" id="fPrazo" type="date"></div>
+      </div>
+      <div class="duo">
+        <div class="campo"><label>Preço mensal (R$)</label><input class="inp" id="fMensal" type="number" step="0.01"></div>
+        <div class="campo"><label>Oferta ativa?</label>
+          <select class="inp" id="fAtivo"><option value="true">Sim</option><option value="false">Não</option></select></div>
+      </div>
+      <div class="duo">
+        <div class="campo"><label>Anual 12x — total (R$)</label><input class="inp" id="fAnual12x" type="number" step="0.01"></div>
+        <div class="campo"><label>Anual Pix — total (R$)</label><input class="inp" id="fAnualPix" type="number" step="0.01"></div>
+      </div>
+      <button class="btn btn-p btn-sm" id="salvarOferta">Salvar oferta</button>
+    </div>
+
+    <div class="barra" style="margin-top:32px"><h2>Credenciais Mercado Pago</h2></div>
+    <div class="cli-card" style="max-width:640px">
+      <div id="mpStatus" style="font-size:14px;margin-bottom:14px">Carregando…</div>
+      <p style="font-size:13px;color:var(--suave);margin-bottom:14px">
+        As credenciais ficam guardadas no banco (nunca no código). Deixe um campo em branco para mantê-lo como está.
+        Configure o Webhook no painel do Mercado Pago apontando para:
+        <code style="background:var(--papel);padding:2px 6px;border-radius:5px">/api/webhooks/mercadopago</code></p>
+      <div class="campo"><label>Access Token (produção)</label><input class="inp" id="mpToken" type="password" placeholder="APP_USR-..."></div>
+      <div class="campo"><label>Public Key</label><input class="inp" id="mpPub" placeholder="APP_USR-..."></div>
+      <div class="campo"><label>Webhook Secret (opcional)</label><input class="inp" id="mpSecret" type="password"></div>
+      <button class="btn btn-p btn-sm" id="salvarMP">Salvar credenciais</button>
+    </div>
+  </div>
+</main>
+
+<!-- modal pessoa -->
+<div class="modal" id="modalPessoa"><div class="modal-cx">
+  <h3>Nova pessoa</h3>
+  <div class="campo"><label>Nome</label><input class="inp" id="pNome"></div>
+  <div class="campo"><label>E-mail</label><input class="inp" id="pEmail" type="email"></div>
+  <div class="campo"><label>Senha provisória</label><input class="inp" id="pSenha" type="text"></div>
+  <div class="campo"><label>Função</label>
+    <select class="inp" id="pPapel">
+      <option value="tecnico">Técnico</option>
+      <option value="cliente">Cliente</option>
+      <option value="gestor">Gestor</option>
+      <option value="admin">Administrador</option>
+    </select></div>
+  <div class="campo" id="pClienteCampo" style="display:none"><label>Vincular ao cliente</label>
+    <select class="inp" id="pCliente"></select></div>
+  <div class="modal-acoes">
+    <button class="btn btn-c" onclick="fecharModal('modalPessoa')">Cancelar</button>
+    <button class="btn btn-p" id="salvarPessoa">Criar acesso</button></div>
+</div></div>
+
+<!-- modal cliente -->
+<div class="modal" id="modalCliente"><div class="modal-cx">
+  <h3>Novo cliente</h3>
+  <div class="campo"><label>Nome do cliente</label><input class="inp" id="cNome" placeholder="Hotel Mar / João Silva"></div>
+  <div class="duo">
+    <div class="campo"><label>Tipo</label>
+      <select class="inp" id="cTipo">
+        <option value="residential">Residência</option>
+        <option value="corporate">Empresa</option></select></div>
+    <div class="campo"><label>Cidade</label><input class="inp" id="cCidade"></div>
+  </div>
+  <div style="border-top:1px solid var(--linha);margin:8px 0 16px"></div>
+  <p style="font-size:13px;color:var(--suave);margin-bottom:12px">Primeiro aquário (opcional)</p>
+  <div class="campo"><label>Nome do aquário</label><input class="inp" id="cAqNome" placeholder="Reef do Lobby"></div>
+  <div class="duo">
+    <div class="campo"><label>Tipo de água</label>
+      <select class="inp" id="cAqTipo">
+        <option value="">—</option>
+        <option value="freshwater">Água doce</option>
+        <option value="marine">Marinho</option>
+        <option value="pond">Lago</option></select></div>
+    <div class="campo"><label>Volume (L)</label><input class="inp" id="cAqVol" type="number"></div>
+  </div>
+  <div class="modal-acoes">
+    <button class="btn btn-c" onclick="fecharModal('modalCliente')">Cancelar</button>
+    <button class="btn btn-p" id="salvarCliente">Criar cliente</button></div>
+</div></div>
+
+<!-- modal aquário -->
+<div class="modal" id="modalAquario"><div class="modal-cx">
+  <h3>Adicionar aquário</h3>
+  <input type="hidden" id="aqOrgId">
+  <div class="campo"><label>Nome do aquário</label><input class="inp" id="aqNome"></div>
+  <div class="duo">
+    <div class="campo"><label>Tipo de água</label>
+      <select class="inp" id="aqTipo">
+        <option value="freshwater">Água doce</option>
+        <option value="marine">Marinho</option>
+        <option value="pond">Lago</option></select></div>
+    <div class="campo"><label>Volume (L)</label><input class="inp" id="aqVol" type="number"></div>
+  </div>
+  <div class="modal-acoes">
+    <button class="btn btn-c" onclick="fecharModal('modalAquario')">Cancelar</button>
+    <button class="btn btn-p" id="salvarAquario">Adicionar</button></div>
+</div></div>
+
+<!-- modal responder ticket -->
+<div class="modal" id="modalTicket"><div class="modal-cx">
+  <h3>Responder chamado</h3>
+  <input type="hidden" id="tkId">
+  <p id="tkResumo" style="font-size:13.5px;color:var(--suave);margin-bottom:14px"></p>
+  <div class="campo"><label>Resposta</label><textarea class="inp" id="tkResposta" rows="4"></textarea></div>
+  <div class="campo"><label>Status</label>
+    <select class="inp" id="tkStatus">
+      <option value="respondido">Respondido</option>
+      <option value="fechado">Fechado</option>
+      <option value="aberto">Aberto</option>
+    </select></div>
+  <div class="modal-acoes">
+    <button class="btn btn-c" onclick="fecharModal('modalTicket')">Cancelar</button>
+    <button class="btn btn-p" id="salvarTicket">Enviar resposta</button></div>
+</div></div>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>

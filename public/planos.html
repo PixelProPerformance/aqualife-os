@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aqualife Care — Planos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:32px 0 60px}
+.hero-p{text-align:center;max-width:640px;margin:0 auto 10px}
+.hero-p h1{font-size:30px;font-weight:800;color:var(--tinta);margin-bottom:8px}
+.hero-p .eco{font-family:Georgia,serif;font-size:16px;color:var(--agua-esc);font-style:italic;margin-bottom:6px}
+.hero-p p{color:var(--suave);font-size:15px}
+.founding-banner{background:linear-gradient(135deg,var(--agua),var(--tinta));color:#fff;padding:18px 24px;
+  border-radius:14px;margin:26px auto;max-width:760px;text-align:center}
+.founding-banner b{font-size:16px}
+.founding-banner .barra-vagas{height:8px;background:rgba(255,255,255,.2);border-radius:20px;margin:12px auto 6px;max-width:420px;overflow:hidden}
+.founding-banner .barra-vagas i{display:block;height:100%;background:#F97316;border-radius:20px}
+.founding-banner small{opacity:.85;font-size:12.5px}
+.planos{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;max-width:900px;margin:30px auto 0}
+.plano{padding:26px 24px;display:flex;flex-direction:column;position:relative;border:1.5px solid var(--linha)}
+.plano.destaque{border-color:var(--agua);box-shadow:0 8px 28px rgba(14,116,144,.14)}
+.plano .selo-top{position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  background:#F97316;color:#fff;font-size:11.5px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
+.plano h3{font-size:17px;color:var(--tinta);margin-bottom:4px}
+.plano .desc{font-size:13px;color:var(--suave);min-height:34px}
+.plano .preco{font-family:Georgia,serif;font-size:34px;font-weight:700;color:var(--tinta);margin:12px 0 2px}
+.plano .preco small{font-size:15px;color:var(--suave);font-weight:400}
+.plano .de{font-size:13px;color:var(--suave);text-decoration:line-through}
+.plano .obs{font-size:12.5px;color:var(--agua-esc);margin-top:6px;min-height:32px}
+.plano .btn{margin-top:auto;width:100%}
+.beneficios{max-width:640px;margin:44px auto 0;background:var(--papel);border-radius:14px;padding:26px 28px}
+.beneficios h2{font-size:17px;margin-bottom:14px;color:var(--tinta)}
+.beneficios ul{list-style:none}
+.beneficios li{padding:7px 0;font-size:14px;display:flex;gap:10px}
+.beneficios li::before{content:"✅";flex-shrink:0}
+.aviso{max-width:640px;margin:20px auto 0;font-size:12.5px;color:var(--suave);text-align:center}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca"><img src="/images/logo-azul.png" alt="Aqualife" style="height:36px" onerror="this.style.display='none'"></div>
+    <a href="/dashboard.html" class="btn btn-c btn-sm" style="margin-left:auto" id="linkPainel">Painel</a>
+  </div>
+</header>
+
+<main class="wrap sec">
+  <div class="hero-p">
+    <div class="eco">O primeiro ecossistema inteligente para aquaristas do Brasil.</div>
+    <h1>Aqualife Care</h1>
+    <p>Acompanhe seus aquários, receba laudos, aprenda na Academy e evolua com a plataforma.</p>
+  </div>
+
+  <div id="foundingBanner"></div>
+
+  <div class="planos" id="planos"><div class="vazio" style="grid-column:1/-1">Carregando planos…</div></div>
+
+  <div class="beneficios">
+    <h2>Benefícios dos Membros Fundadores</h2>
+    <ul>
+      <li>Preço congelado enquanto a assinatura permanecer ativa</li>
+      <li>Acesso antecipado às novas funcionalidades</li>
+      <li>Badge exclusivo "Founding Member" no seu perfil</li>
+      <li>Prioridade no suporte</li>
+      <li>Participação na construção da plataforma e convites para testes beta</li>
+    </ul>
+  </div>
+  <p class="aviso">Pagamento processado com segurança pelo Mercado Pago. Garantia incondicional de 7 dias.</p>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+const fmt=c=>"R$ "+(c/100).toFixed(2).replace(".",",");
+function dt(s){return new Date(s).toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"})}
+
+async function carregar(){
+  const f=await (await fetch("/api/founding-members/status")).json();
+
+  // Banner de fundador
+  if(f.oferta_ativa){
+    const pct=Math.min(100, Math.round((f.vagas_usadas/f.vagas_totais)*100));
+    $("foundingBanner").innerHTML=`<div class="founding-banner">
+      <b>🎉 Oferta de Membros Fundadores</b>
+      <div class="barra-vagas"><i style="width:${pct}%"></i></div>
+      <small>Restam <b>${f.vagas_restantes}</b> de ${f.vagas_totais} vagas${f.prazo?` · válida até ${dt(f.prazo)} ou enquanto houver vagas`:""}</small>
+    </div>`;
+  }
+
+  // Cartões de plano
+  const anualPixMes = Math.round(f.preco_anual_pix_cents/12);
+  const cards=[];
+
+  // Anual Pix — melhor oferta
+  cards.push(plano({
+    destaque:true, selo:"MELHOR OFERTA", titulo:"Anual no Pix",
+    desc:"Pague uma vez no ano, no Pix, e garanta o menor preço.",
+    de: f.oferta_ativa? fmt(f.preco_oficial_cents*12) : null,
+    preco: fmt(f.preco_anual_pix_cents), unidade:"/ano",
+    obs:`equivale a ${fmt(anualPixMes)}/mês`,
+    metodo:"anual-pix", ativa:f.oferta_ativa,
+  }));
+
+  // Anual 12x
+  cards.push(plano({
+    selo: f.oferta_ativa?"FUNDADOR":null, titulo:"Anual em 12x",
+    desc:"Parcele no cartão em 12x sem juros.",
+    de:null,
+    preco: fmt(Math.round(f.preco_anual_12x_cents/12)), unidade:"/mês",
+    obs:`12x de ${fmt(Math.round(f.preco_anual_12x_cents/12))} = ${fmt(f.preco_anual_12x_cents)}/ano`,
+    metodo:"anual-12x", ativa:f.oferta_ativa,
+  }));
+
+  // Mensal recorrente (oficial)
+  cards.push(plano({
+    titulo:"Mensal", desc:"Assinatura recorrente no cartão, cancele quando quiser.",
+    de:null,
+    preco: fmt(f.preco_mensal_cents), unidade:"/mês",
+    obs:"cobrança automática mensal",
+    metodo:"mensal", ativa:true,
+  }));
+
+  $("planos").innerHTML=cards.join("");
+  document.querySelectorAll("[data-metodo]").forEach(b=>b.onclick=()=>assinar(b.dataset.metodo,b));
+}
+
+function plano(p){
+  return `<div class="cartao plano ${p.destaque?"destaque":""}">
+    ${p.selo?`<span class="selo-top">${p.selo}</span>`:""}
+    <h3>${p.titulo}</h3>
+    <div class="desc">${p.desc}</div>
+    ${p.de?`<div class="de">${p.de}</div>`:""}
+    <div class="preco">${p.preco}<small>${p.unidade}</small></div>
+    <div class="obs">${p.obs||""}</div>
+    <button class="btn ${p.destaque?"btn-p":"btn-c"}" data-metodo="${p.metodo}" ${p.ativa?"":"disabled"}>
+      ${p.ativa?"Assinar":"Oferta encerrada"}</button>
+  </div>`;
+}
+
+async function assinar(metodo,btn){
+  if(!token){ location.href="/entrar.html?next=/planos.html"; return; }
+  btn.disabled=true; const txt=btn.textContent; btn.textContent="Aguarde…";
+  try{
+    const r=await fetch(`/api/checkout/${metodo}`,{
+      method:"POST", headers:{"content-type":"application/json",authorization:"Bearer "+token},
+    });
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.erro||"Não foi possível iniciar o pagamento.");
+    location.href=j.init_point; // redireciona para o Mercado Pago
+  }catch(e){
+    alert("Erro: "+e.message);
+    btn.disabled=false; btn.textContent=txt;
+  }
+}
+
+if(!token) $("linkPainel").style.display="none";
+carregar().catch(e=>{ $("planos").innerHTML=`<div class="vazio" style="grid-column:1/-1">Não foi possível carregar os planos agora.</div>`; });
+</script>
+</body>
+</html>
