@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meus Aquários — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Georgia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:32px 0}
+.barra{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.grid-aq{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.aq-card{overflow:hidden}
+.aq-foto{height:150px;background:var(--papel) center/cover no-repeat;position:relative}
+.aq-foto-vazia{display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--linha)}
+.aq-body{padding:16px 18px}
+.aq-nome{font-size:16px;font-weight:600;color:var(--tinta)}
+.aq-meta{font-size:13px;color:var(--suave);margin-top:2px}
+.aq-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.aq-tag{font-size:11.5px;background:var(--agua-clr);color:var(--agua-esc);padding:3px 9px;border-radius:20px}
+.aq-acoes{display:flex;gap:8px;margin-top:14px}
+.modal{position:fixed;inset:0;background:rgba(18,51,63,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+.modal.on{display:flex}
+.modal-cx{background:var(--branco);border-radius:14px;padding:26px;max-width:480px;width:100%;max-height:90vh;overflow:auto}
+.modal-cx h3{font-size:19px;margin-bottom:18px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-acoes{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.rm{color:var(--critico);font-size:13px;cursor:pointer;font-weight:500}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca"><img src="/images/logo-azul.png" alt="Aqualife" style="height:36px" onerror="this.style.display='none'"></div>
+    <a href="/dashboard.html" class="btn btn-c btn-sm" style="margin-left:auto">Voltar ao painel</a>
+  </div>
+</header>
+<main class="wrap sec">
+  <div class="barra">
+    <h1 style="font-size:24px">Meus Aquários</h1>
+    <button class="btn btn-p btn-sm" id="novoBtn">+ Novo aquário/lago</button>
+  </div>
+  <div class="grid-aq" id="lista"><div class="vazio">Carregando…</div></div>
+</main>
+
+<div class="modal" id="modal"><div class="modal-cx">
+  <h3 id="modalTitulo">Novo aquário</h3>
+  <input type="hidden" id="aqId">
+  <div class="campo"><label>Nome</label><input class="inp" id="aqNome" placeholder="Reef da sala"></div>
+  <div class="duo">
+    <div class="campo"><label>Tipo</label>
+      <select class="inp" id="aqTipo">
+        <option value="freshwater">Água doce</option>
+        <option value="marine">Marinho</option>
+        <option value="pond">Lago</option></select></div>
+    <div class="campo"><label>Volume (L)</label><input class="inp" id="aqVol" type="number"></div>
+  </div>
+  <div class="campo"><label>Sistema de filtragem</label><input class="inp" id="aqFiltro" placeholder="Canister, HOB, sump..."></div>
+  <div class="campo"><label>Fauna (separe por vírgula)</label><input class="inp" id="aqFauna" placeholder="Neon-tetra, Cascudo..."></div>
+  <div class="campo"><label>Flora (separe por vírgula)</label><input class="inp" id="aqFlora" placeholder="Anubias, Musgo de java..."></div>
+  <div class="campo"><label>Data de montagem</label><input class="inp" id="aqData" type="date"></div>
+  <div class="campo"><label>Observações</label><textarea class="inp" id="aqObs" rows="3"></textarea></div>
+  <div class="campo"><label>Foto</label><input type="file" id="aqFoto" accept="image/*"></div>
+  <div class="modal-acoes">
+    <button class="btn btn-c" onclick="fecharModal()">Cancelar</button>
+    <button class="btn btn-p" id="salvarBtn">Salvar</button></div>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+if(!token){ location.href="/entrar.html"; }
+const TIPO={freshwater:"Água doce",marine:"Marinho",pond:"Lago"};
+
+async function api(c,o={}){
+  const r=await fetch(c,{...o,headers:{...(o.body&&!(o.body instanceof FormData)?{"content-type":"application/json"}:{}),authorization:"Bearer "+token}});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.erro||"HTTP "+r.status);}
+  return r.status===204?null:r.json();
+}
+function abrir(){$("modal").classList.add("on")}
+function fecharModal(){$("modal").classList.remove("on")}
+window.fecharModal=fecharModal;
+
+async function carregar(){
+  try{
+    const aq=await api("/api/aquarios");
+    $("lista").innerHTML = aq.length ? aq.map(a=>`
+      <div class="cartao aq-card">
+        ${a.foto_url?`<div class="aq-foto" style="background-image:url('${a.foto_url}')"></div>`
+                     :`<div class="aq-foto aq-foto-vazia">🐠</div>`}
+        <div class="aq-body">
+          <div class="aq-nome">${a.name||a.label}</div>
+          <div class="aq-meta">${TIPO[a.water_type]} · ${a.volume_liters||"—"} L${a.data_montagem?` · desde ${new Date(a.data_montagem).toLocaleDateString("pt-BR")}`:""}</div>
+          ${a.sistema_filtragem?`<div class="aq-meta">Filtragem: ${a.sistema_filtragem}</div>`:""}
+          <div class="aq-tags">
+            ${(a.fauna||[]).map(f=>`<span class="aq-tag">🐟 ${f}</span>`).join("")}
+            ${(a.flora||[]).map(f=>`<span class="aq-tag">🌿 ${f}</span>`).join("")}
+          </div>
+          ${a.observacoes?`<p style="font-size:13px;color:var(--suave);margin-top:10px">${a.observacoes}</p>`:""}
+          <div class="aq-acoes">
+            <button class="btn btn-c btn-sm" data-editar='${JSON.stringify(a).replace(/'/g,"&apos;")}'>Editar</button>
+            <span class="rm" data-apagar="${a.id}">apagar</span>
+          </div>
+        </div>
+      </div>`).join("") : `<div class="vazio">Você ainda não cadastrou nenhum aquário.<br>Clique em "Novo aquário" para começar.</div>`;
+
+    document.querySelectorAll("[data-editar]").forEach(b=>b.onclick=()=>abrirEdicao(JSON.parse(b.dataset.editar.replace(/&apos;/g,"'"))));
+    document.querySelectorAll("[data-apagar]").forEach(b=>b.onclick=async()=>{
+      if(!confirm("Apagar este aquário?")) return;
+      try{await api("/api/aquarios/"+b.dataset.apagar,{method:"DELETE"});carregar();}
+      catch(e){alert("Erro: "+e.message);}
+    });
+  }catch(e){$("lista").innerHTML=`<div class="vazio">Erro ao carregar: ${e.message}</div>`;}
+}
+
+function limparForm(){
+  $("aqId").value=""; $("aqNome").value=""; $("aqTipo").value="freshwater"; $("aqVol").value="";
+  $("aqFiltro").value=""; $("aqFauna").value=""; $("aqFlora").value=""; $("aqData").value="";
+  $("aqObs").value=""; $("aqFoto").value="";
+}
+$("novoBtn").onclick=()=>{ limparForm(); $("modalTitulo").textContent="Novo aquário"; abrir(); };
+
+function abrirEdicao(a){
+  $("aqId").value=a.id; $("aqNome").value=a.name||a.label||""; $("aqTipo").value=a.water_type||"freshwater";
+  $("aqVol").value=a.volume_liters||""; $("aqFiltro").value=a.sistema_filtragem||"";
+  $("aqFauna").value=(a.fauna||[]).join(", "); $("aqFlora").value=(a.flora||[]).join(", ");
+  $("aqData").value=a.data_montagem?a.data_montagem.slice(0,10):""; $("aqObs").value=a.observacoes||"";
+  $("modalTitulo").textContent="Editar aquário"; abrir();
+}
+
+$("salvarBtn").onclick=async()=>{
+  const b=$("salvarBtn"); b.disabled=true;
+  try{
+    const payload={
+      name:$("aqNome").value.trim(), water_type:$("aqTipo").value,
+      volume_liters:parseFloat($("aqVol").value)||null, sistema_filtragem:$("aqFiltro").value.trim()||null,
+      fauna:$("aqFauna").value.split(",").map(s=>s.trim()).filter(Boolean),
+      flora:$("aqFlora").value.split(",").map(s=>s.trim()).filter(Boolean),
+      data_montagem:$("aqData").value||null, observacoes:$("aqObs").value.trim()||null,
+    };
+    if(!payload.name){ alert("Informe o nome do aquário."); return; }
+    const id=$("aqId").value;
+    const salvo = id ? await api(`/api/aquarios/${id}`,{method:"PUT",body:JSON.stringify(payload)})
+                      : await api("/api/aquarios",{method:"POST",body:JSON.stringify(payload)});
+    const foto=$("aqFoto").files[0];
+    if(foto){
+      const fd=new FormData(); fd.append("foto",foto);
+      await api(`/api/aquarios/${salvo.id}/foto`,{method:"POST",body:fd});
+    }
+    fecharModal(); carregar();
+  }catch(e){ alert("Erro: "+e.message); }finally{ b.disabled=false; }
+};
+
+carregar();
+</script>
+</body>
+</html>
