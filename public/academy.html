@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aqualife Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Georgia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:32px 0}
+.hero-a{text-align:center;max-width:600px;margin:0 auto 30px}
+.hero-a .ic{font-size:40px}
+.hero-a h1{font-size:28px;font-weight:800;color:var(--tinta);margin:6px 0}
+.hero-a p{color:var(--suave);font-size:15px}
+.trilha{margin-bottom:38px}
+.trilha-tit{font-size:19px;color:var(--tinta);margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--agua-clr)}
+.grid-c{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.curso{overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:transform .15s}
+.curso:hover{transform:translateY(-3px)}
+.curso-capa{height:120px;background:linear-gradient(135deg,var(--agua),var(--tinta));display:flex;align-items:center;justify-content:center;font-size:40px}
+.curso-body{padding:16px 18px;display:flex;flex-direction:column;flex:1}
+.curso-nivel{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--agua-esc)}
+.curso h3{font-size:16px;color:var(--tinta);margin:4px 0 6px}
+.curso p{font-size:13px;color:var(--suave);flex:1}
+.curso-meta{font-size:12px;color:var(--suave);margin-top:10px;display:flex;gap:10px;align-items:center}
+.prog{height:6px;background:var(--linha);border-radius:20px;margin-top:10px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--ok);border-radius:20px}
+.badge-ok{font-size:11px;color:var(--ok);font-weight:600}
+.bloqueio{max-width:460px;margin:40px auto;text-align:center;padding:36px 28px}
+.bloqueio .ic{font-size:44px}
+.bloqueio h2{font-size:20px;color:var(--tinta);margin:10px 0}
+.bloqueio p{color:var(--suave);font-size:14.5px;margin-bottom:18px}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca"><img src="/images/logo-azul.png" alt="Aqualife" style="height:36px" onerror="this.style.display='none'"></div>
+    <a href="/dashboard.html" class="btn btn-c btn-sm" style="margin-left:auto">Voltar ao painel</a>
+  </div>
+</header>
+<main class="wrap sec">
+  <div class="hero-a">
+    <div class="ic">🎓</div>
+    <h1>Aqualife Academy</h1>
+    <p>Aprenda a cuidar dos seus aquários com cursos práticos e teste seus conhecimentos.</p>
+  </div>
+  <div id="conteudo"><div class="vazio">Carregando…</div></div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+if(!token){ location.href="/entrar.html"; }
+const NIVEL={iniciante:"Iniciante",intermediario:"Intermediário",avancado:"Avançado"};
+
+async function carregar(){
+  try{
+    const r=await fetch("/api/academy/cursos",{headers:{authorization:"Bearer "+token}});
+    if(r.status===402){ mostrarBloqueio(); return; }
+    if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.erro||"HTTP "+r.status); }
+    const cursos=await r.json();
+    if(!cursos.length){ $("conteudo").innerHTML=`<div class="vazio">Nenhum curso disponível ainda. Volte em breve!</div>`; return; }
+    // Agrupa por trilha (categoria)
+    const trilhas={};
+    cursos.forEach(c=>{ const t=c.categoria||"Cursos"; (trilhas[t]=trilhas[t]||[]).push(c); });
+    const ordem=Object.keys(trilhas).sort();
+    $("conteudo").innerHTML=ordem.map(t=>`
+      <div class="trilha">
+        <h2 class="trilha-tit">${t}</h2>
+        <div class="grid-c">${trilhas[t].map(card).join("")}</div>
+      </div>`).join("");
+    document.querySelectorAll("[data-curso]").forEach(el=>el.onclick=()=>location.href="/curso.html?id="+el.dataset.curso);
+  }catch(e){ $("conteudo").innerHTML=`<div class="vazio">Erro ao carregar: ${e.message}</div>`; }
+}
+
+function card(c){
+  const pct=c.percentual||0;
+  return `<div class="cartao curso" data-curso="${c.id}">
+    <div class="curso-capa">${c.concluido?"✅":"🐠"}</div>
+    <div class="curso-body">
+      <div class="curso-nivel">${NIVEL[c.nivel]||c.nivel||""}${c.categoria?" · "+c.categoria:""}</div>
+      <h3>${c.titulo}</h3>
+      <p>${c.resumo||""}</p>
+      <div class="curso-meta">
+        <span>📚 ${c.total_aulas} aula(s)</span>
+        ${c.duracao_min?`<span>⏱ ${c.duracao_min} min</span>`:""}
+        ${c.concluido?`<span class="badge-ok">Concluído</span>`:""}
+      </div>
+      ${pct>0&&!c.concluido?`<div class="prog"><i style="width:${pct}%"></i></div>`:""}
+    </div>
+  </div>`;
+}
+
+function mostrarBloqueio(){
+  $("conteudo").innerHTML=`<div class="cartao bloqueio">
+    <div class="ic">🔒</div>
+    <h2>Conteúdo exclusivo para assinantes</h2>
+    <p>A Aqualife Academy faz parte do <b>Aqualife Care</b>. Assine para ter acesso a todos os cursos, quizzes e novidades.</p>
+    <a href="/planos.html" class="btn btn-p">Ver planos e assinar</a>
+  </div>`;
+}
+
+carregar();
+</script>
+</body>
+</html>
