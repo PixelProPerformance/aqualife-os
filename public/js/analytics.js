@@ -22,8 +22,17 @@
   function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {} }
   function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) {} }
 
-  var consent = getCookie(COOKIE);
-  var ativo = consent === "accept";
+  // Consentimento: usamos o MESMO banner do site (não criamos outro).
+  // O banner do site grava localStorage['aq_cookie_consent'] = 'all' | 'essential'.
+  var CONSENT_KEY = "aq_cookie_consent";
+  function consentido() {
+    try {
+      if (localStorage.getItem(CONSENT_KEY) === "all") return true;
+      if (getCookie(COOKIE) === "accept") return true; // compatibilidade com versão anterior
+    } catch (e) {}
+    return false;
+  }
+  var ativo = false;
 
   // ---------- identidade ----------
   function anonId() {
@@ -186,23 +195,21 @@
 
   function iniciar() { pageView(); conversoesPorUrl(); }
 
-  // ---------- consentimento LGPD ----------
-  function ativar() { ativo = true; setCookie(COOKIE, "accept", 365); iniciar(); }
-  function recusar() { ativo = false; setCookie(COOKIE, "reject", 365); }
-
-  function banner() {
-    if (getCookie(COOKIE)) { if (consent === "accept") iniciar(); return; }
-    var css = document.createElement("style");
-    css.textContent = ".aqc{position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;max-width:560px;margin:0 auto;background:#12333F;color:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 12px 34px -10px rgba(0,0,0,.45);font-family:Inter,system-ui,sans-serif;font-size:13.5px;line-height:1.5}.aqc b{color:#fff}.aqc-a{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.aqc button{border:0;border-radius:9px;padding:9px 16px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}.aqc .ok{background:#F2792B;color:#fff}.aqc .no{background:transparent;color:#cfe0e6;border:1px solid rgba(255,255,255,.3)}.aqc a{color:#7fd0e6}";
-    document.head.appendChild(css);
-    var d = document.createElement("div");
-    d.className = "aqc";
-    d.innerHTML = '<b>🐠 Sua privacidade</b><br>Usamos cookies para entender como você usa o Aqualife e melhorar sua experiência. Seu IP é anonimizado. <div class="aqc-a"><button class="ok">Aceitar</button><button class="no">Recusar</button></div>';
-    document.body.appendChild(d);
-    d.querySelector(".ok").onclick = function () { ativar(); d.remove(); };
-    d.querySelector(".no").onclick = function () { recusar(); d.remove(); };
+  // ---------- ativação (reaproveita o consentimento do banner do site) ----------
+  function start() {
+    if (ativo) return;
+    if (!consentido()) return;
+    ativo = true;
+    iniciar();
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", banner);
-  else banner();
+  start();
+  if (!ativo) {
+    // Aguarda o usuário decidir no banner do PRÓPRIO site (mesma aba, sem reload).
+    var watch = setInterval(function () {
+      if (consentido()) { clearInterval(watch); start(); }
+    }, 1500);
+    // e reage a mudanças de outras abas
+    window.addEventListener("storage", function (e) { if (e.key === CONSENT_KEY) start(); });
+  }
 })();
