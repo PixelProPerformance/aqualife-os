@@ -2681,12 +2681,58 @@ app.get("*", (req, res) => {
 // ============================================================
 const PORT = process.env.PORT || 3000;
 
+// ============================================================
+// AUTO-REPARO DE SCHEMA (roda no boot; idempotente e seguro)
+// Garante que colunas/tabelas usadas pelas telas do cliente existam,
+// mesmo que alguma migração não tenha sido aplicada manualmente.
+// ============================================================
+async function garantirSchema() {
+  const passos = [
+    // Colunas de "Meus Aquários" / Dashboard na tabela asset
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS name              TEXT`,
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS foto_url          TEXT`,
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS sistema_filtragem TEXT`,
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS fauna             JSONB DEFAULT '[]'`,
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS flora             JSONB DEFAULT '[]'`,
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS data_montagem     DATE`,
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS observacoes       TEXT`,
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS owner_user_id     UUID`,
+    `ALTER TABLE asset ADD COLUMN IF NOT EXISTS ativo             BOOLEAN DEFAULT true`,
+    // Backfill: aquários existentes precisam ficar ativos e com nome
+    `UPDATE asset SET ativo = true WHERE ativo IS NULL`,
+    `UPDATE asset SET name = label WHERE (name IS NULL OR name = '') AND label IS NOT NULL`,
+    // Coluna usada pelo Dashboard em reading
+    `ALTER TABLE reading ADD COLUMN IF NOT EXISTS organization_id UUID`,
+    // Tabela de avisos do Dashboard
+    `CREATE TABLE IF NOT EXISTS notificacao (
+       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       organization_id UUID, user_id UUID,
+       titulo TEXT NOT NULL, mensagem TEXT, tipo TEXT DEFAULT 'info',
+       lida BOOLEAN DEFAULT false, created_at TIMESTAMPTZ DEFAULT NOW())`,
+    // Tabela de captura de leads (landing page)
+    `CREATE TABLE IF NOT EXISTS lead (
+       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+       email TEXT NOT NULL, nome TEXT, origem TEXT, utm JSONB DEFAULT '{}'::jsonb,
+       convertido BOOLEAN DEFAULT false,
+       criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+       atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW())`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_lead_email ON lead (lower(email))`,
+  ];
+  let okc = 0;
+  for (const sql of passos) {
+    try { await query(sql); okc++; }
+    catch (e) { console.warn("[schema] passo ignorado:", e.message.slice(0, 90)); }
+  }
+  console.log(`[schema] auto-reparo concluído (${okc}/${passos.length} passos).`);
+}
+
 async function start() {
   const ok = await testarConexao();
   if (!ok) {
     console.error("[FATAL] sem conexão com o banco. Verifique DATABASE_URL.");
     process.exit(1);
   }
+  await garantirSchema();
   app.listen(PORT, "0.0.0.0", () =>
     console.log(`🌊 Aqualife OS — Railway — porta ${PORT} — IA: ${Boolean(IA_KEY)}`)
   );
