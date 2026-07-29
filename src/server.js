@@ -452,7 +452,7 @@ app.use((req, res, next) => {
 // SAÚDE
 // ============================================================
 app.get("/api/saude", (_, res) =>
-  res.json({ ok: true, ruleset: RULESET_VERSION, ia: Boolean(IA_KEY), db: "railway-pg" })
+  res.json({ ok: true, versao: "2026-07-29-aquarios-resiliente", ruleset: RULESET_VERSION, ia: Boolean(IA_KEY), db: "railway-pg" })
 );
 
 // ============================================================
@@ -1566,27 +1566,43 @@ app.get("/api/dashboard", exigeLogin, async (req, res) => {
     const uid = req.usuario.id;
     const orgId = req.usuario.organization_id;
 
-    const aquarios = await query(
-      `SELECT id, name, label, water_type, volume_liters, foto_url, data_montagem
-       FROM asset WHERE organization_id=$1 AND ativo IS DISTINCT FROM false
-       ORDER BY criado_em DESC`,
-      [orgId]
-    );
+    let aquarios;
+    try {
+      aquarios = await query(
+        `SELECT id, name, label, water_type, volume_liters, foto_url, data_montagem
+         FROM asset WHERE organization_id=$1 AND ativo IS DISTINCT FROM false
+         ORDER BY criado_em DESC`,
+        [orgId]
+      );
+    } catch (e) {
+      console.error("[dashboard:aquarios] fallback:", e.message);
+      aquarios = await query(
+        `SELECT id, label, water_type, volume_liters FROM asset WHERE organization_id=$1 ORDER BY label`,
+        [orgId]
+      );
+    }
 
-    const relatorios = await query(
-      `SELECT r.id, r.asset_id, a.name as aquario_nome, r.health_score, r.urgency, r.created_at
-       FROM reading r JOIN asset a ON a.id = r.asset_id
-       WHERE r.organization_id=$1
-       ORDER BY r.created_at DESC LIMIT 5`,
-      [orgId]
-    );
+    // Relatórios e avisos são secundários: se falharem, o painel ainda carrega.
+    let relatorios = { rows: [] };
+    try {
+      relatorios = await query(
+        `SELECT r.id, r.asset_id, a.name as aquario_nome, r.health_score, r.urgency, r.created_at
+         FROM reading r JOIN asset a ON a.id = r.asset_id
+         WHERE r.organization_id=$1
+         ORDER BY r.created_at DESC LIMIT 5`,
+        [orgId]
+      );
+    } catch (e) { console.error("[dashboard:relatorios]", e.message); }
 
-    const avisos = await query(
-      `SELECT id, titulo, mensagem, tipo, lida, created_at FROM notificacao
-       WHERE (user_id=$1 OR (user_id IS NULL AND organization_id=$2)) AND lida=false
-       ORDER BY created_at DESC LIMIT 10`,
-      [uid, orgId]
-    );
+    let avisos = { rows: [] };
+    try {
+      avisos = await query(
+        `SELECT id, titulo, mensagem, tipo, lida, created_at FROM notificacao
+         WHERE (user_id=$1 OR (user_id IS NULL AND organization_id=$2)) AND lida=false
+         ORDER BY created_at DESC LIMIT 10`,
+        [uid, orgId]
+      );
+    } catch (e) { console.error("[dashboard:avisos]", e.message); }
 
     res.json({
       saudacao: `Olá, ${req.usuario.name?.split(" ")[0] || ""}!`,
@@ -1605,16 +1621,29 @@ app.get("/api/dashboard", exigeLogin, async (req, res) => {
 // MEUS AQUÁRIOS — CRUD
 // ============================================================
 app.get("/api/aquarios", exigeLogin, async (req, res) => {
+  const org = req.usuario.organization_id;
+  // 1) Tenta a consulta completa. "ativo IS DISTINCT FROM false" mostra ativos E os
+  //    com ativo NULL (criados antes da coluna ganhar default); só esconde os excluídos.
   try {
     const r = await query(
-      // "ativo IS DISTINCT FROM false" mostra ativos E os que estão com ativo NULL
-      // (aquários criados antes da coluna ganhar default). Só esconde os EXCLUÍDOS (false).
       `SELECT * FROM asset WHERE organization_id=$1 AND ativo IS DISTINCT FROM false ORDER BY criado_em DESC`,
-      [req.usuario.organization_id]
+      [org]
     );
-    res.json(r.rows);
+    return res.json(r.rows);
   } catch (err) {
-    res.status(500).json({ erro: "erro interno" });
+    console.error("[aquarios:get] consulta completa falhou, usando fallback:", err.message);
+  }
+  // 2) Fallback à prova de falhas: só colunas da tabela base (sempre existem).
+  //    Garante que o cliente veja os aquários mesmo se alguma migração não rodou.
+  try {
+    const r = await query(
+      `SELECT id, label, water_type, volume_liters FROM asset WHERE organization_id=$1 ORDER BY label`,
+      [org]
+    );
+    return res.json(r.rows);
+  } catch (err2) {
+    console.error("[aquarios:get] fallback falhou:", err2.message);
+    return res.status(500).json({ erro: "erro interno" });
   }
 });
 
