@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aqualife Care, o técnico do seu aquário, na palma da mão | R$ 17,90/mês</title>
+<meta name="description" content="Você faz os testes da água, o Aqualife Care entrega o laudo técnico na hora: nota de saúde, riscos e o que fazer. Diagnóstico profissional para água doce, marinho e lago por R$ 17,90/mês.">
+<meta property="og:title" content="Aqualife Care, o técnico do seu aquário, na palma da mão">
+<meta property="og:description" content="Seus testes de água viram um laudo técnico instantâneo. Nota de saúde, alertas e ações. R$ 17,90/mês.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#061219; --bg2:#08202b; --card:#0e2831; --card2:#102e39;
+  --line:rgba(34,211,238,.14); --line2:rgba(34,211,238,.28);
+  --agua:#22d3ee; --agua2:#38bdf8; --deep:#0e7490;
+  --tinta:#eef8fb; --corpo:#c4d7de; --suave:#88a2ac;
+  --ok:#34d399; --warn:#fbbf24; --crit:#fb7185;
+  --sombra:0 20px 60px -20px rgba(0,0,0,.6);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--corpo);line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{color:var(--tinta);line-height:1.12;letter-spacing:-.02em}
+.serif{font-family:Fraunces,Georgia,serif;font-weight:700;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+.center{text-align:center}
+.grad-txt{background:linear-gradient(120deg,var(--agua),var(--agua2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+
+/* botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:700;font-size:16px;
+  padding:16px 30px;border-radius:14px;cursor:pointer;border:none;font-family:inherit;transition:transform .15s,box-shadow .15s;text-align:center}
+.btn-cta{background:linear-gradient(120deg,var(--agua),var(--agua2));color:#042028;
+  box-shadow:0 12px 34px -8px rgba(34,211,238,.6)}
+.btn-cta:hover{transform:translateY(-2px);box-shadow:0 18px 44px -8px rgba(34,211,238,.75)}
+.btn-ghost{background:rgba(255,255,255,.05);color:var(--tinta);border:1px solid var(--line2)}
+.btn-ghost:hover{background:rgba(255,255,255,.09)}
+.btn-sm{padding:11px 20px;font-size:14.5px;border-radius:11px}
+.btn-lg{padding:19px 40px;font-size:18px}
+
+/* topo */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(6,18,25,.82);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line)}
+.topbar .in{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:var(--tinta);letter-spacing:-.02em}
+.logo .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--agua),var(--deep));
+  display:grid;place-items:center;font-size:17px}
+.topbar .links{display:flex;align-items:center;gap:26px;font-size:14.5px;color:var(--suave)}
+.topbar .links a:hover{color:var(--tinta)}
+@media(max-width:760px){.topbar .links a:not(.btn){display:none}}
+
+/* fundo aquático */
+.aqua-bg{position:relative}
+.aqua-bg::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(680px 420px at 82% -8%,rgba(34,211,238,.16),transparent 60%),
+    radial-gradient(560px 440px at 8% 8%,rgba(56,189,248,.10),transparent 55%),
+    linear-gradient(180deg,#07202b 0%,var(--bg) 60%)}
+.aqua-bg>*{position:relative;z-index:1}
+
+/* hero */
+.hero{padding:60px 0 40px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--agua);background:rgba(34,211,238,.1);border:1px solid var(--line2);
+  padding:7px 14px;border-radius:30px;margin-bottom:22px}
+.hero h1{font-size:clamp(33px,5.4vw,58px);margin-bottom:20px}
+.hero .sub{font-size:clamp(16px,2.2vw,20px);color:var(--corpo);max-width:620px;margin-bottom:30px}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:34px}}
+.trust{display:flex;gap:18px;flex-wrap:wrap;margin-top:24px;font-size:13.5px;color:var(--suave)}
+.trust span{display:inline-flex;align-items:center;gap:7px}
+.trust b{color:var(--agua)}
+
+/* formulário de captura */
+.capform{display:flex;gap:10px;width:100%;max-width:520px;flex-wrap:wrap}
+.cap-inp{flex:1;min-width:200px;padding:17px 18px;border-radius:14px;border:1px solid var(--line2);
+  background:var(--bg2);color:var(--tinta);font-family:inherit;font-size:16px}
+.cap-inp::placeholder{color:var(--suave)}
+.cap-inp:focus{outline:none;border-color:var(--agua)}
+.capform .btn{white-space:nowrap}
+.cap-hint{font-size:12.5px;color:var(--suave);margin-top:10px}
+.cap-ok{display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.35);color:var(--ok);
+  border-radius:14px;padding:15px 18px;font-weight:600;font-size:15px;max-width:520px;margin-top:4px}
+.cap-err{color:var(--crit);font-size:13px;margin-top:8px;display:none}
+
+/* card de diagnóstico (mock) */
+.diag{background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line2);
+  border-radius:22px;padding:22px;box-shadow:var(--sombra)}
+.diag .top{display:flex;align-items:center;gap:16px;padding:14px 16px;border-radius:14px;
+  background:rgba(251,113,133,.09);border:1px solid rgba(251,113,133,.25);margin-bottom:16px}
+.diag .nota{font-family:Fraunces,serif;font-size:52px;font-weight:700;color:var(--crit);line-height:1}
+.diag .urg{font-weight:800;color:var(--crit);font-size:17px}
+.diag .urg small{display:block;font-weight:500;color:var(--suave);font-size:12px;margin-top:2px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.pill{display:flex;justify-content:space-between;align-items:center;background:var(--bg2);
+  border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13px}
+.pill b{color:var(--tinta)}
+.tag{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px}
+.t-ok{background:rgba(52,211,153,.16);color:var(--ok)}
+.t-al{background:rgba(251,191,36,.16);color:var(--warn)}
+.t-cr{background:rgba(251,113,133,.16);color:var(--crit)}
+.diag .acao{font-size:13px;color:var(--corpo);background:var(--bg2);border-left:3px solid var(--agua);
+  border-radius:8px;padding:11px 13px}
+.diag .acao b{color:var(--agua)}
+.floaty{animation:fl 6s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* seções */
+section{padding:66px 0}
+.sec-head{max-width:720px;margin:0 auto 46px}
+.sec-head .eyebrow{margin-bottom:16px}
+.sec-head h2{font-size:clamp(27px,4vw,42px);margin-bottom:14px}
+.sec-head p{font-size:17px;color:var(--corpo)}
+
+/* problema */
+.prob{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.prob-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:820px){.prob-grid{grid-template-columns:1fr}}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+.pcard .ic{font-size:26px;margin-bottom:12px}
+.pcard h3{font-size:18px;margin-bottom:8px}
+.pcard p{font-size:14.5px;color:var(--suave)}
+
+/* passos */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;counter-reset:s}
+@media(max-width:820px){.steps{grid-template-columns:1fr}}
+.step{background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);
+  border-radius:18px;padding:28px 24px;position:relative;overflow:hidden}
+.step::before{counter-increment:s;content:"0" counter(s);position:absolute;top:-10px;right:8px;
+  font-family:Fraunces,serif;font-size:88px;font-weight:700;color:rgba(34,211,238,.09);line-height:1}
+.step .ic{font-size:30px;margin-bottom:14px}
+.step h3{font-size:19px;margin-bottom:9px}
+.step p{font-size:14.5px;color:var(--corpo)}
+
+/* benefícios */
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:820px){.bgrid{grid-template-columns:1fr}}
+.bcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;transition:border-color .2s,transform .2s}
+.bcard:hover{border-color:var(--line2);transform:translateY(-3px)}
+.bcard .ic{width:46px;height:46px;border-radius:12px;background:rgba(34,211,238,.1);border:1px solid var(--line2);
+  display:grid;place-items:center;font-size:22px;margin-bottom:14px}
+.bcard h3{font-size:17px;margin-bottom:7px}
+.bcard p{font-size:14px;color:var(--suave)}
+
+/* comparação */
+.cmp{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.cmp table{width:100%;border-collapse:collapse}
+.cmp th,.cmp td{padding:16px 18px;text-align:left;font-size:14.5px;border-bottom:1px solid var(--line)}
+.cmp th{font-size:13px;text-transform:uppercase;letter-spacing:.03em;color:var(--suave);font-weight:700}
+.cmp th.hi,.cmp td.hi{background:rgba(34,211,238,.07)}
+.cmp th.hi{color:var(--agua)}
+.cmp td.hi{color:var(--tinta);font-weight:600}
+.cmp .x{color:var(--crit)}.cmp .c{color:var(--ok);font-weight:700}
+.cmp tr:last-child td{border-bottom:none}
+@media(max-width:820px){.cmp{overflow-x:auto}.cmp table{min-width:560px}}
+
+/* âncora de preço */
+.anchor-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px}
+@media(max-width:820px){.anchor-grid{grid-template-columns:1fr 1fr}}
+.acard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center}
+.acard .v{font-family:Fraunces,serif;font-size:26px;font-weight:700;color:var(--tinta)}
+.acard .l{font-size:13px;color:var(--suave);margin-top:4px}
+.acard.win{border-color:var(--line2);background:linear-gradient(165deg,rgba(34,211,238,.12),var(--card))}
+.acard.win .v{color:var(--agua)}
+
+/* depoimentos */
+.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:820px){.tgrid{grid-template-columns:1fr}}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+.stars{color:var(--warn);font-size:15px;margin-bottom:10px;letter-spacing:2px}
+.tcard p{font-size:14.5px;color:var(--corpo);margin-bottom:16px}
+.tcard .who{display:flex;align-items:center;gap:11px}
+.tcard .av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--agua),var(--deep));
+  display:grid;place-items:center;font-weight:800;color:#042028}
+.tcard .who b{color:var(--tinta);font-size:14px;display:block}
+.tcard .who span{font-size:12.5px;color:var(--suave)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:40px}
+@media(max-width:820px){.stats{grid-template-columns:1fr 1fr}}
+.stat{text-align:center;padding:20px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.stat .n{font-family:Fraunces,serif;font-size:34px;font-weight:700;color:var(--agua)}
+.stat .l{font-size:13px;color:var(--suave);margin-top:2px}
+
+/* oferta */
+.offer{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.offer-box{max-width:560px;margin:0 auto;background:linear-gradient(170deg,var(--card2),var(--card));
+  border:1px solid var(--line2);border-radius:24px;padding:38px 34px;box-shadow:var(--sombra);text-align:center;position:relative}
+.offer-box .flag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:linear-gradient(120deg,var(--agua),var(--agua2));
+  color:#042028;font-weight:800;font-size:12.5px;padding:7px 16px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
+.price{display:flex;align-items:baseline;justify-content:center;gap:4px;margin:14px 0 4px}
+.price .cifra{font-size:22px;color:var(--corpo);font-weight:600}
+.price .val{font-family:Fraunces,serif;font-size:64px;font-weight:700;color:var(--tinta);line-height:1}
+.price .per{font-size:17px;color:var(--suave)}
+.offer-box .cafe{font-size:14px;color:var(--agua);margin-bottom:22px}
+.incl{text-align:left;margin:22px 0;display:grid;gap:11px}
+.incl li{list-style:none;display:flex;gap:11px;font-size:14.5px;color:var(--corpo)}
+.incl li .ck{color:var(--ok);font-weight:800;flex-shrink:0}
+.offer-box .btn{width:100%}
+.mini{font-size:12.5px;color:var(--suave);margin-top:14px}
+
+/* garantia */
+.guar{max-width:720px;margin:0 auto;background:var(--card);border:1px dashed var(--line2);border-radius:20px;
+  padding:32px;display:flex;gap:22px;align-items:center}
+@media(max-width:640px){.guar{flex-direction:column;text-align:center}}
+.guar .seal{width:88px;height:88px;flex-shrink:0;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(34,211,238,.3),var(--bg2));
+  border:2px solid var(--line2);display:grid;place-items:center;font-size:38px}
+.guar h3{font-size:20px;margin-bottom:8px}
+.guar p{font-size:14.5px;color:var(--corpo)}
+
+/* faq */
+.faq{max-width:760px;margin:0 auto}
+.q{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+.q summary{padding:18px 22px;font-weight:600;color:var(--tinta);cursor:pointer;list-style:none;
+  display:flex;justify-content:space-between;align-items:center;gap:14px;font-size:15.5px}
+.q summary::-webkit-details-marker{display:none}
+.q summary::after{content:"+";font-size:24px;color:var(--agua);font-weight:400;transition:transform .2s}
+.q[open] summary::after{transform:rotate(45deg)}
+.q .a{padding:0 22px 20px;font-size:14.5px;color:var(--corpo)}
+
+/* cta final */
+.final{background:linear-gradient(160deg,#0a2a37,#061219);border-top:1px solid var(--line);text-align:center}
+.final h2{font-size:clamp(28px,4.5vw,46px);margin-bottom:16px}
+.final p{font-size:18px;color:var(--corpo);max-width:560px;margin:0 auto 28px}
+
+/* rodapé */
+footer{border-top:1px solid var(--line);padding:36px 0;font-size:13px;color:var(--suave)}
+footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+
+/* barra fixa mobile */
+.sticky{position:fixed;bottom:0;left:0;right:0;z-index:60;background:rgba(6,18,25,.94);backdrop-filter:blur(12px);
+  border-top:1px solid var(--line2);padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:12px}
+.sticky .p b{color:var(--tinta);font-size:17px;font-family:Fraunces,serif}
+.sticky .p span{font-size:12px;color:var(--suave);display:block}
+.sticky .btn{padding:13px 22px;font-size:15px}
+@media(max-width:760px){.sticky{display:flex}body{padding-bottom:76px}}
+</style>
+</head>
+<body>
+
+<!-- TOPO -->
+<div class="topbar">
+  <div class="wrap in">
+    <a href="#" class="logo"><img src="/images/logo-branca.png" alt="Aqualife" style="height:32px;display:block;width:auto"><span style="color:var(--agua);font-weight:800">Care</span></a>
+    <nav class="links">
+      <a href="#como">Como funciona</a>
+      <a href="#beneficios">Benefícios</a>
+      <a href="#faq">Dúvidas</a>
+      <a href="#assinar" class="btn btn-cta btn-sm">Assinar</a>
+    </nav>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="aqua-bg">
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">🧪 Diagnóstico técnico digital · água doce, marinho e lago</span>
+      <h1>Você testa a água.<br>O <span class="grad-txt">Aqualife Care</span> diz exatamente o que ela está pedindo.</h1>
+      <p class="sub">Lance os parâmetros dos seus testes e receba, na hora, um <b style="color:var(--tinta)">laudo técnico profissional</b>: nota de saúde de 0 a 100, os riscos escondidos e o passo a passo para corrigir, antes que vire prejuízo no aquário.</p>
+      <form class="capform" data-cap novalidate>
+        <input type="email" class="cap-inp" name="email" placeholder="Seu melhor e-mail" required>
+        <button type="submit" class="btn btn-cta btn-lg">Quero começar →</button>
+      </form>
+      <div class="cap-err" data-err>Informe um e-mail válido.</div>
+      <div class="cap-ok" data-ok>✓ Prontinho! Estamos te levando para a assinatura…</div>
+      <div class="cap-hint">Garanta o preço de fundador de <b style="color:var(--agua)">R$ 17,90/mês</b> · sem compromisso · cancele quando quiser</div>
+      <div class="trust">
+        <span>✅ <b>7 dias</b> de garantia</span>
+        <span>🔄 Cancele quando quiser</span>
+        <span>🐟 <b>300+</b> espécies na base</span>
+      </div>
+    </div>
+    <div class="floaty">
+      <div class="diag">
+        <div class="top">
+          <div class="nota">48</div>
+          <div class="urg">Risco crítico
+            <small>Confiança 92% · marinho · 400 L</small>
+          </div>
+        </div>
+        <div class="pgrid">
+          <div class="pill"><span>Amônia</span><span class="tag t-cr">crítico</span></div>
+          <div class="pill"><span>KH</span><span class="tag t-al">baixo</span></div>
+          <div class="pill"><span>Nitrato</span><span class="tag t-al">alto</span></div>
+          <div class="pill"><span>Cálcio</span><span class="tag t-ok">ideal</span></div>
+        </div>
+        <div class="acao"><b>Ação prioritária:</b> amônia detectável é tóxica para os peixes. Faça TPA de 15% hoje e suspenda a alimentação por 24h. A reserva alcalina (KH) baixa está deixando o pH instável.</div>
+      </div>
+    </div>
+  </div>
+</header>
+</div>
+
+<!-- PROVA / PROBLEMA -->
+<section class="prob" id="problema">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">O ponto cego de todo aquarista</span>
+      <h2>Testar a água é fácil. <span class="grad-txt">Interpretar</span> é que mata.</h2>
+      <p>Você pinga os reagentes, compara as cores… e fica com uma tabela de números soltos. O problema quase nunca está no teste, está no que fazer com o resultado.</p>
+    </div>
+    <div class="prob-grid">
+      <div class="pcard">
+        <div class="ic">🎲</div>
+        <h3>Decisão no achismo</h3>
+        <p>"Tá mais ou menos ok?" Sem uma referência técnica por espécie e tipo de água, cada correção vira aposta, e o aquário paga a conta.</p>
+      </div>
+      <div class="pcard">
+        <div class="ic">💸</div>
+        <h3>Prejuízo silencioso</h3>
+        <p>Um parâmetro fora por dias derruba peixes e corais caros. Quando o sintoma aparece, o estrago já começou lá atrás.</p>
+      </div>
+      <div class="pcard">
+        <div class="ic">⏳</div>
+        <h3>Técnico só na visita</h3>
+        <p>O especialista vê sua água uma vez por mês. Nos outros 29 dias, quem interpreta os testes é você, sozinho.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section id="como">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Simples como pingar um reagente</span>
+      <h2>Do teste ao laudo em <span class="grad-txt">menos de 1 minuto</span></h2>
+      <p>A mesma lógica dos grandes serviços de análise como a Triton, só que para o dia a dia da sua água, sem esperar amostra chegar em laboratório.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="ic">🧪</div>
+        <h3>Faça seus testes</h3>
+        <p>Use o kit de gotas ou digital que você já tem. Amônia, nitrito, nitrato, pH, KH, cálcio, magnésio, salinidade e mais.</p>
+      </div>
+      <div class="step">
+        <div class="ic">⌨️</div>
+        <h3>Lance os valores</h3>
+        <p>Digite os números no Care e escolha o aquário. Ele já sabe o tipo de água e as faixas ideais para o seu sistema.</p>
+      </div>
+      <div class="step">
+        <div class="ic">📋</div>
+        <h3>Receba o laudo</h3>
+        <p>Nota de saúde, o que está em risco e as ações práticas, na hora. E o histórico fica salvo para ver a evolução.</p>
+      </div>
+    </div>
+    <div class="center" style="margin-top:38px">
+      <a href="#assinar" class="btn btn-cta btn-lg">Quero meu laudo por R$ 17,90/mês →</a>
+    </div>
+  </div>
+</section>
+
+<!-- BENEFÍCIOS -->
+<section id="beneficios" style="background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">O que você recebe</span>
+      <h2>Um técnico de plantão dentro do seu bolso</h2>
+    </div>
+    <div class="bgrid">
+      <div class="bcard"><div class="ic">💯</div><h3>Nota de saúde 0 a 100</h3><p>Um número claro que traduz dezenas de parâmetros em "sua água está bem" ou "precisa de atenção agora".</p></div>
+      <div class="bcard"><div class="ic">🚨</div><h3>Alertas de risco</h3><p>O Care cruza os valores e aponta as combinações perigosas, como amônia com pH alto, antes de virar mortalidade.</p></div>
+      <div class="bcard"><div class="ic">🛠️</div><h3>Ações práticas</h3><p>Nada de "corrija o KH". Você recebe o que fazer, quanto e quando, em linguagem de aquarista.</p></div>
+      <div class="bcard"><div class="ic">📈</div><h3>Histórico e evolução</h3><p>Cada laudo fica salvo. Veja tendências, antecipe problemas e prove que a sua rotina está funcionando.</p></div>
+      <div class="bcard"><div class="ic">🐟</div><h3>Base de 300+ espécies</h3><p>Parâmetros ideais, incompatibilidades e erros comuns por espécie, água doce, marinho e plantado.</p></div>
+      <div class="bcard"><div class="ic">🌊</div><h3>Doce, marinho e lago</h3><p>As faixas e regras se ajustam automaticamente ao tipo de sistema. Um reef não é avaliado como um plantado.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARAÇÃO -->
+<section>
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Por que assinar</span>
+      <h2>Compare o custo de <span class="grad-txt">acertar</span></h2>
+    </div>
+    <div class="cmp">
+      <table>
+        <tr>
+          <th>Como você decide hoje</th>
+          <th>Planilha / achismo</th>
+          <th>Técnico presencial</th>
+          <th class="hi">Aqualife Care</th>
+        </tr>
+        <tr><td>Diagnóstico na hora do teste</td><td class="x">✗</td><td class="x">✗ só na visita</td><td class="hi c">✓ instantâneo</td></tr>
+        <tr><td>Interpretação técnica por espécie</td><td class="x">✗</td><td class="c">✓</td><td class="hi c">✓</td></tr>
+        <tr><td>Ações práticas do que fazer</td><td class="x">✗</td><td class="c">✓</td><td class="hi c">✓</td></tr>
+        <tr><td>Histórico e evolução da água</td><td>manual</td><td>parcial</td><td class="hi c">✓ automático</td></tr>
+        <tr><td>Disponível 24/7</td><td class="c">✓</td><td class="x">✗</td><td class="hi c">✓</td></tr>
+        <tr><td>Custo</td><td>seu tempo + erros</td><td>R$ 270+ por visita</td><td class="hi c">R$ 17,90/mês</td></tr>
+      </table>
+    </div>
+
+    <div class="sec-head center" style="margin:56px auto 20px">
+      <h2 style="font-size:clamp(22px,3.4vw,32px)">Quanto custa <span class="grad-txt">não</span> saber?</h2>
+      <p style="font-size:15.5px">Um único parâmetro fora do lugar custa mais que um ano inteiro de Care.</p>
+    </div>
+    <div class="anchor-grid">
+      <div class="acard"><div class="v">R$ 150+</div><div class="l">um peixe marinho</div></div>
+      <div class="acard"><div class="v">R$ 250+</div><div class="l">um frag de coral</div></div>
+      <div class="acard"><div class="v">R$ 270+</div><div class="l">uma visita técnica</div></div>
+      <div class="acard win"><div class="v">R$ 17,90</div><div class="l">Care, o mês inteiro</div></div>
+    </div>
+    <p class="center" style="margin-top:18px;font-size:14.5px;color:var(--suave)">Menos de <b style="color:var(--agua)">R$ 0,60 por dia</b>, o preço de proteger todo o seu investimento.</p>
+  </div>
+</section>
+
+<!-- DEPOIMENTOS -->
+<section style="background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Quem já usa</span>
+      <h2>Mais confiança a cada teste</h2>
+    </div>
+    <div class="tgrid">
+      <div class="tcard">
+        <div class="stars">★★★★★</div>
+        <p>"Parei de entrar em pânico toda vez que via nitrato subindo. Lanço os valores e já sei se é hora de agir ou de ficar tranquilo."</p>
+        <div class="who"><div class="av">M</div><div><b>Marcelo R.</b><span>Reef 300 L · SP</span></div></div>
+      </div>
+      <div class="tcard">
+        <div class="stars">★★★★★</div>
+        <p>"Salvou meu cardume de neons. O laudo apontou o KH despencando antes de qualquer peixe adoecer. Vale muito mais que os R$ 17,90."</p>
+        <div class="who"><div class="av">J</div><div><b>Juliana P.</b><span>Plantado 120 L · RJ</span></div></div>
+      </div>
+      <div class="tcard">
+        <div class="stars">★★★★★</div>
+        <p>"É o Triton do dia a dia. Não substitui a ICP anual, mas me dá leitura técnica toda semana sem gastar uma fortuna."</p>
+        <div class="who"><div class="av">A</div><div><b>André L.</b><span>Marinho 500 L · MG</span></div></div>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">300+</div><div class="l">espécies mapeadas</div></div>
+      <div class="stat"><div class="n">14</div><div class="l">parâmetros analisados</div></div>
+      <div class="stat"><div class="n">&lt;1min</div><div class="l">do teste ao laudo</div></div>
+      <div class="stat"><div class="n">24/7</div><div class="l">sempre disponível</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- OFERTA -->
+<section class="offer" id="assinar">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Comece hoje</span>
+      <h2>Todo o Care por menos que <span class="grad-txt">um cafezinho por semana</span></h2>
+    </div>
+    <div class="offer-box">
+      <div class="flag">🚀 Preço de fundador, congelado enquanto durar a assinatura</div>
+      <h3 style="font-size:20px;margin-top:8px">Aqualife Care</h3>
+      <div class="price"><span class="cifra">R$</span><span class="val">17,90</span><span class="per">/mês</span></div>
+      <div class="cafe">≈ R$ 0,60 por dia · cancele quando quiser</div>
+      <ul class="incl">
+        <li><span class="ck">✓</span> Laudos técnicos ilimitados, na hora que você testar</li>
+        <li><span class="ck">✓</span> Nota de saúde, alertas de risco e ações práticas</li>
+        <li><span class="ck">✓</span> Água doce, marinho e lago, faixas por sistema</li>
+        <li><span class="ck">✓</span> Base de 300+ espécies, incompatibilidades e erros comuns</li>
+        <li><span class="ck">✓</span> Histórico completo para acompanhar a evolução</li>
+        <li><span class="ck">✓</span> Preço de fundador congelado + garantia de 7 dias</li>
+      </ul>
+      <form class="capform" data-cap novalidate style="max-width:none">
+        <input type="email" class="cap-inp" name="email" placeholder="Seu melhor e-mail" required>
+        <button type="submit" class="btn btn-cta btn-lg">Começar agora →</button>
+      </form>
+      <div class="cap-err" data-err style="text-align:left">Informe um e-mail válido.</div>
+      <div class="cap-ok" data-ok style="max-width:none;text-align:left">✓ Prontinho! Estamos te levando para a assinatura…</div>
+      <div class="mini">Deixe seu e-mail e siga para o checkout seguro · PIX ou cartão · sem fidelidade</div>
+    </div>
+  </div>
+</section>
+
+<!-- GARANTIA -->
+<section>
+  <div class="wrap">
+    <div class="guar">
+      <div class="seal">🛡️</div>
+      <div>
+        <h3>Risco zero por 7 dias</h3>
+        <p>Assine, gere seus laudos e sinta a diferença na sua rotina. Se nos primeiros 7 dias você achar que não é para você, devolvemos 100%, sem perguntas, sem burocracia. O único risco é continuar decidindo no escuro.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="background:var(--bg2);border-top:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head center">
+      <span class="eyebrow">Perguntas frequentes</span>
+      <h2>Tudo que você quer saber antes de assinar</h2>
+    </div>
+    <div class="faq">
+      <details class="q" open><summary>Preciso de um kit de testes especial?</summary><div class="a">Não. O Care funciona com o kit que você já usa, de gotas ou digital. Você faz o teste como sempre e só lança os valores. Quanto mais parâmetros informar, mais preciso fica o laudo.</div></details>
+      <details class="q"><summary>Isso substitui a análise ICP da Triton?</summary><div class="a">São coisas complementares. A ICP mede elementos-traço em laboratório algumas vezes por ano. O Aqualife Care é o seu acompanhamento técnico do dia a dia: leitura instantânea dos parâmetros de rotina, toda vez que você testa, sem esperar amostra chegar.</div></details>
+      <details class="q"><summary>Serve para aquário marinho e reef?</summary><div class="a">Sim. O Care ajusta as faixas ideais e as regras conforme o tipo de sistema, água doce, plantado, marinho/reef e lago. Um reef é avaliado com os parâmetros que importam para corais (cálcio, magnésio, KH, salinidade e mais).</div></details>
+      <details class="q"><summary>Substitui o técnico de manutenção?</summary><div class="a">Ele é o seu apoio entre as visitas. O laudo é um diagnóstico automático orientativo, com a mesma lógica que a equipe Aqualife usa. Para intervenções presenciais, a manutenção técnica continua sendo o caminho, e o Care ajuda você a chamar o técnico na hora certa.</div></details>
+      <details class="q"><summary>Preciso entender de química para usar?</summary><div class="a">Não. Essa é a graça. Você lança os números e o Care traduz tudo em uma nota de saúde e em ações práticas, na linguagem do aquarista. A parte técnica fica com a gente.</div></details>
+      <details class="q"><summary>Posso cancelar quando quiser?</summary><div class="a">Sim, sem fidelidade e sem multa. E você ainda tem 7 dias de garantia incondicional: se não gostar, devolvemos 100%.</div></details>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="final">
+  <div class="wrap">
+    <h2>Seu próximo teste de água<br>pode ser o último no escuro.</h2>
+    <p>Junte-se aos aquaristas que trocaram o achismo por diagnóstico técnico, por R$ 17,90/mês.</p>
+    <a href="#assinar" class="btn btn-cta btn-lg">Assinar o Aqualife Care →</a>
+    <div class="trust center" style="justify-content:center;margin-top:22px">
+      <span>✅ 7 dias de garantia</span>
+      <span>🔄 Sem fidelidade</span>
+      <span>🔒 Pagamento seguro</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap in">
+    <div class="logo" style="font-size:16px"><img src="/images/logo-branca.png" alt="Aqualife" style="height:24px;display:block;width:auto"><span style="color:var(--agua);font-weight:800">Care</span></div>
+    <div>© 2026 Aqualife Aquarismo · Diagnóstico técnico digital para aquários</div>
+  </div>
+</footer>
+
+<!-- BARRA FIXA MOBILE -->
+<div class="sticky">
+  <div class="p"><b>R$ 17,90</b><span>/mês · cancele quando quiser</span></div>
+  <a href="#assinar" class="btn btn-cta">Assinar →</a>
+</div>
+
+<script>
+(function(){
+  // Para onde levar após capturar o e-mail (checkout de assinatura)
+  var DESTINO = "/planos.html";
+  // Captura UTMs da URL para atribuição de campanha
+  var qs = new URLSearchParams(location.search), utm = {};
+  ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(function(k){
+    if(qs.get(k)) utm[k] = qs.get(k);
+  });
+  var reMail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var enviando = false;
+
+  document.querySelectorAll("form[data-cap]").forEach(function(form){
+    form.addEventListener("submit", async function(e){
+      e.preventDefault();
+      if(enviando) return;
+      var input = form.querySelector('input[name="email"]');
+      var scope = form.parentElement;
+      var err = scope.querySelector("[data-err]");
+      var ok  = scope.querySelector("[data-ok]");
+      var email = (input.value||"").trim();
+      if(err) err.style.display = "none";
+      if(!reMail.test(email)){ if(err) err.style.display="block"; input.focus(); return; }
+
+      enviando = true;
+      var btn = form.querySelector('button[type="submit"]');
+      var txt = btn ? btn.textContent : "";
+      if(btn){ btn.textContent = "Enviando…"; btn.disabled = true; }
+
+      // grava o lead (não bloqueia o avanço se falhar)
+      try{
+        await fetch("/api/lead", {
+          method:"POST", headers:{"content-type":"application/json"},
+          body: JSON.stringify({ email: email, origem: "care-lp-captura", utm: utm })
+        });
+      }catch(_){ /* segue mesmo assim */ }
+
+      if(ok) ok.style.display = "block";
+      form.style.display = "none";
+      // leva o e-mail para o checkout (pré-preenche / atribuição)
+      var sep = DESTINO.indexOf("?") >= 0 ? "&" : "?";
+      var url = DESTINO + sep + "lead=ok&email=" + encodeURIComponent(email);
+      setTimeout(function(){ location.href = url; }, 1100);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
