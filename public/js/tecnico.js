@@ -1,0 +1,542 @@
+import { diagnosticar } from "/js/motor.js";
+import { REGRAS } from "/js/regras.js";
+
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+const user=JSON.parse(localStorage.getItem("aqualife_user")||"null");
+if(!token||!user){ location.href="/entrar.html?equipe=1"; }
+// Registrar visita é só para a equipe — cliente vai para o painel dele
+else if(!["tecnico","admin","gestor","aquarista"].includes(user.role)){ location.href="/dashboard.html"; }
+
+$("quem").textContent = user ? `${user.name} · equipe Aqualife` : "";
+$("sair").onclick=()=>{ localStorage.clear(); location.href="/entrar.html"; };
+
+/* ── LABELS ──────────────────────────────────────────────── */
+const PARAM_LABEL={
+  temperatura:"Temperatura",ph:"pH",kh:"KH",gh:"GH",
+  amonia:"Amônia",nitrito:"Nitrito",nitrato:"Nitrato",
+  fosfato:"Fosfato",oxigenio:"O₂",salinidade:"Salinidade",
+  calcio:"Cálcio",magnesio:"Magnésio"
+};
+const PARAM_UNIT={
+  temperatura:"°C",ph:"",kh:"dKH",gh:"dGH",
+  amonia:"ppm",nitrito:"ppm",nitrato:"ppm",
+  fosfato:"ppm",oxigenio:"mg/L",salinidade:"densidade",
+  calcio:"ppm",magnesio:"ppm"
+};
+const URG={
+  ok:     ["Saudável",    "#22e37a"],
+  atencao:["Acompanhar",  "#ffc224"],
+  alerta: ["Atenção",     "#ff9d3c"],
+  critico:["Crítico",     "#ff4d6d"]
+};
+// paleta viva alinhada ao Autodiagnóstico
+const COR_VIVO={ideal:"#22e37a",aceitavel:"#22d3ee",alerta:"#ffc224",critico:"#ff4d6d",vazio:"#5b7683"};
+const fmtN=x=>{ const n=Number(x); return Number.isFinite(n)?String(parseFloat(n.toFixed(3))):x; };
+const COR_ESTADO={
+  ideal:    {bar:"#22C55E", bg:"#DCFCE7", fg:"#166534"},
+  aceitavel:{bar:"#EAB308", bg:"#FEF9C3", fg:"#854D0E"},
+  alerta:   {bar:"#F97316", bg:"#FFEDD5", fg:"#9A3412"},
+  critico:  {bar:"#EF4444", bg:"#FEE2E2", fg:"#991B1B"},
+  vazio:    {bar:"#E2E8F0", bg:"#F8FAFC", fg:"#94A3B8"}
+};
+
+/* ── GAUGE SVG ────────────────────────────────────────────── */
+function buildGauge(nota, cor){
+  const R=52, CX=64, CY=64, SW=10;
+  // arco começa em -215° e vai até +35° (250° total) — semi-círculo estendido
+  const startAngle=-215, totalAngle=250;
+  const endAngle=startAngle + totalAngle * (nota/100);
+
+  function polar(cx,cy,r,angle){
+    const a=angle*Math.PI/180;
+    return [cx+r*Math.cos(a), cy+r*Math.sin(a)];
+  }
+  function arc(cx,cy,r,a1,a2,laf){
+    const [x1,y1]=polar(cx,cy,r,a1);
+    const [x2,y2]=polar(cx,cy,r,a2);
+    return `M${x1},${y1} A${r},${r} 0 ${laf} 1 ${x2},${y2}`;
+  }
+
+  const laf = totalAngle*(nota/100)>180?1:0;
+  const trackLaf = totalAngle>180?1:0;
+
+  // track (fundo cinza)
+  const trackPath=arc(CX,CY,R,startAngle,startAngle+totalAngle,trackLaf);
+  // arco colorido
+  const arcPath = nota===0 ? "" : arc(CX,CY,R,startAngle,endAngle,laf);
+
+  // indicadores das 3 zonas (ticks)
+  const ticks=[
+    {pct:.5, c:"#FEF9C3"},{pct:.75, c:"#DCFCE7"}
+  ].map(t=>{
+    const a=startAngle+totalAngle*t.pct;
+    const [x1,y1]=polar(CX,CY,R-7,a);
+    const [x2,y2]=polar(CX,CY,R+1,a);
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${t.c}" stroke-width="2" stroke-linecap="round"/>`;
+  }).join("");
+
+  // label de nota animada via atributo data
+  return `
+  <svg viewBox="0 0 128 96" xmlns="http://www.w3.org/2000/svg" class="gauge-svg" data-nota="${nota}" data-cor="${cor}">
+    <!-- Sombra suave no centro -->
+    <circle cx="${CX}" cy="${CY}" r="44" fill="rgba(0,0,0,.04)"/>
+    <!-- Track -->
+    <path d="${trackPath}" fill="none" stroke="#E2E8F0" stroke-width="${SW}" stroke-linecap="round"/>
+    <!-- Arco colorido -->
+    ${arcPath ? `<path d="${arcPath}" fill="none" stroke="${cor}" stroke-width="${SW}" stroke-linecap="round"
+      class="gauge-arc" style="filter:drop-shadow(0 0 4px ${cor}44)"/>` : ""}
+    <!-- Ticks de zona -->
+    ${ticks}
+    <!-- Valor central -->
+    <text x="${CX}" y="${CY-4}" text-anchor="middle" font-size="26" font-weight="700"
+      fill="${cor}" font-family="'Inter',sans-serif" class="gauge-num">${nota}</text>
+    <text x="${CX}" y="${CY+13}" text-anchor="middle" font-size="9" fill="#94A3B8"
+      font-family="'Inter',sans-serif" letter-spacing=".08em">DE 100</text>
+  </svg>`;
+}
+
+/* ── BARRA DE PARÂMETRO ───────────────────────────────────── */
+function buildParamBar(p){
+  // p = { parametro, valor, estado, faixa_ideal, desconto }
+  // ou null (parâmetro ainda não preenchido)
+  const k = p?.parametro;
+  const label = PARAM_LABEL[k] || k || "—";
+  const unit  = PARAM_UNIT[k]  || "";
+
+  if(!p){
+    return `
+    <div class="pb2">
+      <div class="pb2-top"><span class="pb2-nome">${label}</span><span class="pb2-val pb2-vazio">—</span></div>
+      <div class="pb2-bar pb2-off"></div>
+    </div>`;
+  }
+
+  const cor=COR_VIVO[p.estado]||COR_VIVO.vazio;
+  const f=p.faixa_ideal;
+  // sem faixa ideal conhecida → mostra só o valor
+  if(!Array.isArray(f)||f[0]==null||f[1]==null||isNaN(+p.valor)){
+    return `
+    <div class="pb2">
+      <div class="pb2-top"><span class="pb2-nome">${label}</span><span class="pb2-val" style="color:${cor}">${fmtN(p?.valor)} <small>${unit}</small></span></div>
+    </div>`;
+  }
+  let lo=+f[0], hi=+f[1]; if(hi<lo){ const t=lo; lo=hi; hi=t; }
+  const span=Math.max((hi-lo),Math.abs(hi)*0.15,0.5);
+  const smin=lo-span, smax=hi+span, W=(smax-smin)||1;
+  const pos=x=>Math.max(0,Math.min(100,((x-smin)/W)*100));
+  const val=+p.valor;
+  let tag,tagCor=cor;
+  if(val<lo){ tag="abaixo do ideal"; } else if(val>hi){ tag="acima do ideal"; } else { tag="dentro do ideal"; tagCor="#22e37a"; }
+
+  return `
+  <div class="pb2">
+    <div class="pb2-top"><span class="pb2-nome">${label}</span><span class="pb2-val" style="color:${cor}">${fmtN(p.valor)} <small>${unit}</small></span></div>
+    <div class="pb2-bar">
+      <div class="pb2-ideal" style="left:${pos(lo)}%;right:${100-pos(hi)}%"></div>
+      <div class="pb2-mark" style="left:${pos(val)}%;background:${cor};color:${cor}"></div>
+    </div>
+    <div class="pb2-legs"><span>${fmtN(smin)}</span><span class="tag" style="color:${tagCor}">${tag} · ideal ${fmtN(lo)}–${fmtN(hi)} ${unit}</span><span>${fmtN(smax)}</span></div>
+  </div>`;
+}
+
+/* ── ESTADO GLOBAL ────────────────────────────────────────── */
+let aquarios=[], atual=null;
+let fotosSeleccionadas=[];
+let ultimoDiag=null;
+
+async function api(caminho,opts={}){
+  const r=await fetch(caminho,{...opts,headers:{"content-type":"application/json",
+    authorization:"Bearer "+token,...(opts.headers||{})}});
+  if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.erro||"HTTP "+r.status); }
+  return r.json();
+}
+
+function uuidv4(){
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>
+    (c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+}
+
+/* ── CARREGAR AQUÁRIOS ────────────────────────────────────── */
+try{
+  aquarios=await api("/api/tecnico/aquarios");
+  $("aquario").innerHTML=aquarios.length
+    ? aquarios.map(a=>`<option value="${a.id}">${a.label} — ${a.organization?.name||""} (${nomeTipo(a.water_type)})</option>`).join("")
+    : `<option>Nenhum aquário disponível</option>`;
+  if(aquarios.length){ atual=aquarios[0]; montarCampos(); }
+}catch(e){ console.error("[tecnico/aquarios]",e); $("aquario").innerHTML=`<option>Erro ao carregar: ${e.message}</option>`; }
+
+$("aquario").onchange=()=>{
+  atual=aquarios.find(a=>a.id===$("aquario").value);
+  montarCampos();
+};
+
+function nomeTipo(wt){return {freshwater:"água doce",marine:"marinho",pond:"lago"}[wt]||wt}
+
+/* ── MONTAR CAMPOS ────────────────────────────────────────── */
+function montarCampos(){
+  if(!atual) return;
+  const faixas=REGRAS.faixas[atual.water_type]||{};
+  const params=Object.keys(REGRAS.pesos[atual.water_type]||{});
+  $("params").innerHTML=params.map(p=>{
+    const [nome,un]=[PARAM_LABEL[p]||p, PARAM_UNIT[p]||""];
+    const fx=faixas[p];
+    const ideal=fx?.ideal?`ideal ${fx.ideal[0]}–${fx.ideal[1]}`:"";
+    return `<div class="param">
+      <label>${nome}<span class="un">${un?" · "+un:""}</span></label>
+      <input type="number" step="any" inputmode="decimal" data-p="${p}" placeholder="—">
+      <div class="ideal">${ideal}</div>
+    </div>`;
+  }).join("");
+  document.querySelectorAll("[data-p]").forEach(i=>i.addEventListener("input",previa));
+  previa();
+}
+
+/* ── LER VALORES ──────────────────────────────────────────── */
+function lerValores(){
+  const v={};
+  document.querySelectorAll("[data-p]").forEach(i=>{
+    if(i.value!=="") v[i.dataset.p]=parseFloat(i.value);
+  });
+  return v;
+}
+
+/* ── PRÉVIA COM VISUAIS ───────────────────────────────────── */
+function previa(){
+  const v=lerValores();
+  const prev=$("previa");
+
+  if(Object.keys(v).length===0){
+    prev.innerHTML=`<div class="vazio" style="padding:38px 20px;text-align:center;color:var(--suave)">
+      Preencha os parâmetros<br>para ver o diagnóstico ao vivo.</div>`;
+    return;
+  }
+
+  const d=diagnosticar(v, atual.water_type);
+  ultimoDiag=d;
+  const [ulbl,ucor]=URG[d.urgencia];
+  const btnPdf=document.getElementById('btn-pdf'); if(btnPdf) btnPdf.style.display='block';
+  const confianca=d.confianca||0;
+
+  // Mapa de parâmetros avaliados
+  const mapParam={};
+  (d.parametros||[]).forEach(p=>{ mapParam[p.parametro]=p; });
+
+  // Parâmetros a mostrar (todos os do tipo de água)
+  const params=Object.keys(REGRAS.pesos[atual.water_type]||{});
+  const barras=params.map(k=>{
+    const p=v[k]!=null ? (mapParam[k] || {parametro:k,valor:v[k],estado:"ideal",faixa_ideal:null,desconto:0}) : null;
+    return buildParamBar(p ? {...p, parametro:k} : null);
+  }).join("");
+
+  prev.innerHTML=`
+    <!-- GAUGE TOPO -->
+    <div class="gauge-area">
+      <div class="gauge-wrap">
+        ${buildGauge(d.nota, ucor)}
+        <div class="gauge-urgencia" style="color:${ucor}">${ulbl}</div>
+        <div class="gauge-conf">Confiança: ${confianca}%</div>
+      </div>
+    </div>
+
+    <!-- ALERTAS -->
+    ${d.alertas.length ? `
+    <div class="alertas-lista">
+      ${d.alertas.map(a=>`
+      <div class="alerta-item" style="border-left-color:${URG[a.urgencia]?.[1]||'#EF4444'}">
+        <span class="alerta-ic" style="color:${URG[a.urgencia]?.[1]||'#ff4d6d'}">●</span>
+        <span>${a.explicacao||''}</span>
+      </div>`).join("")}
+    </div>` : ""}
+
+    <!-- BARRAS DE PARÂMETROS -->
+    <div class="params-barras">
+      <div class="pb-titulo">Parâmetros</div>
+      ${barras}
+    </div>
+
+    <!-- AÇÕES -->
+    ${d.acoes?.filter(a=>a.tecnico).length ? `
+    <div class="acoes-lista">
+      <div class="pb-titulo">Ações recomendadas</div>
+      ${d.acoes.filter(a=>a.tecnico).map(a=>`
+      <div class="acao-item">
+        <span class="acao-ic">→</span>
+        <span>${a.tecnico}</span>
+      </div>`).join("")}
+    </div>` : ""}`;
+}
+
+/* ── FOTOS ────────────────────────────────────────────────── */
+const inputFoto=$("input-foto");
+const previewBox=$("fotos-preview");
+if(inputFoto){
+  inputFoto.addEventListener("change",()=>{
+    const novos=Array.from(inputFoto.files);
+    fotosSeleccionadas=[...fotosSeleccionadas,...novos].slice(0,10);
+    renderFotos(); inputFoto.value="";
+  });
+}
+function renderFotos(){
+  if(!previewBox) return;
+  previewBox.innerHTML=fotosSeleccionadas.map((f,i)=>`
+    <div class="foto-thumb">
+      <img src="${URL.createObjectURL(f)}" alt="${f.name}">
+      <button class="foto-rm" data-i="${i}">✕</button>
+      <div class="foto-nome">${f.name.slice(0,18)}</div>
+    </div>`).join("");
+  previewBox.querySelectorAll(".foto-rm").forEach(btn=>{
+    btn.onclick=()=>{ fotosSeleccionadas.splice(+btn.dataset.i,1); renderFotos(); };
+  });
+}
+
+/* ── SALVAR ───────────────────────────────────────────────── */
+$("salvar").onclick=async()=>{
+  const v=lerValores();
+  if(Object.keys(v).length===0){ alert("Preencha ao menos um parâmetro."); return; }
+  const btn=$("salvar"); btn.disabled=true; btn.textContent="Salvando…";
+  try{
+    const resposta=await api("/api/visita",{method:"POST",body:JSON.stringify({
+      asset_id:atual.id, valores:v, observacao:$("obs").value||null,
+      client_id:uuidv4(),
+    })});
+    if(resposta?.laudo?.id && fotosSeleccionadas.length>0){
+      const fd=new FormData();
+      fotosSeleccionadas.forEach(f=>fd.append("fotos",f));
+      await fetch(`/api/visita/${resposta.laudo.id}/fotos`,{
+        method:"POST", headers:{authorization:"Bearer "+token}, body:fd
+      });
+    }
+    btn.textContent="✓ Enviado ao cliente";
+    fotosSeleccionadas=[]; renderFotos();
+    setTimeout(()=>{
+      document.querySelectorAll("[data-p]").forEach(i=>i.value="");
+      $("obs").value=""; previa();
+      btn.disabled=false; btn.textContent="Salvar e enviar ao cliente";
+    },1400);
+  }catch(e){
+    alert("Erro: "+e.message);
+    btn.disabled=false; btn.textContent="Salvar e enviar ao cliente";
+  }
+};
+
+
+/* ── GERAR PDF DO DIAGNÓSTICO ACTUAL ─────────────────────── */
+window.gerarPDFActual = async function() {
+  if (!ultimoDiag || !atual) { alert("Preencha os parâmetros primeiro."); return; }
+  const btn = document.getElementById("btn-pdf");
+  btn.textContent = "A gerar PDF…"; btn.disabled = true;
+  try {
+    await exportarPDF({
+      aquario: atual.label,
+      cliente: atual.organization?.name || "",
+      nota: ultimoDiag.nota,
+      urgencia: ultimoDiag.urgencia,
+      confianca: ultimoDiag.confianca,
+      alertas: ultimoDiag.alertas || [],
+      acoes: ultimoDiag.acoes || [],
+      parametros: ultimoDiag.parametros || [],
+      observacao: document.getElementById("obs")?.value || "",
+      ruleset: ultimoDiag.ruleset_version || "v1.0",
+    });
+  } catch(e) {
+    alert("Erro ao gerar PDF: " + e.message);
+  } finally {
+    btn.textContent = "⬇ Exportar laudo PDF"; btn.disabled = false;
+  }
+};
+
+/* ── EXPORT PDF ───────────────────────────────────────────── */
+// Usar a biblioteca jsPDF via CDN (sem instalação)
+async function exportarPDF(dadosLaudo) {
+  // Carregar jsPDF dinamicamente
+  if (!window.jspdf) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, M = 16, CW = W - M * 2;
+  let y = 0;
+
+  const cores = {
+    ok:      [34, 197, 94],
+    atencao: [234, 179, 8],
+    alerta:  [249, 115, 22],
+    critico: [239, 68, 68],
+    tinta:   [11, 42, 58],
+    suave:   [148, 163, 184],
+    linha:   [226, 232, 240],
+    fundo:   [248, 250, 252],
+  };
+
+  // Tons ESCUROS para texto legível (a cor viva vai só na barra de destaque)
+  const coresTexto = {
+    ok:      [21, 128, 61],
+    atencao: [180, 83, 9],
+    alerta:  [194, 65, 12],
+    critico: [185, 28, 28],
+  };
+  // Fundo pastel real: mistura a cor com branco (~88% branco)
+  const tint = c => c.map(v => Math.round(v + (255 - v) * 0.88));
+
+  function setColor(c){ doc.setTextColor(...c) }
+  function setFill(c){ doc.setFillColor(...c) }
+  function setDraw(c){ doc.setDrawColor(...c) }
+
+  // HEADER
+  setFill(cores.tinta);
+  doc.rect(0, 0, W, 38, 'F');
+  doc.setFontSize(20); doc.setFont('helvetica','bold');
+  setColor([255,255,255]);
+  doc.text('Aqualife Aquarismo', M, 16);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  setColor([148,163,184]);
+  doc.text('Laudo técnico de qualidade da água', M, 23);
+  doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, M, 29);
+  doc.text(`Ruleset: ${dadosLaudo.ruleset || 'v1.0'}`, M, 34);
+  y = 48;
+
+  // INFO DO AQUÁRIO
+  doc.setFontSize(11); doc.setFont('helvetica','bold');
+  setColor(cores.tinta);
+  doc.text(dadosLaudo.aquario || 'Aquário', M, y);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  setColor(cores.suave);
+  doc.text(dadosLaudo.cliente || '', M, y + 5);
+  y += 14;
+
+  // NOTA DE SAÚDE — fundo pastel + barra de destaque + texto escuro legível
+  const corViva = cores[dadosLaudo.urgencia] || cores.ok;      // barra
+  const corTxt  = coresTexto[dadosLaudo.urgencia] || coresTexto.ok; // número/rótulo
+  const H = 24;
+  setFill(tint(corViva));
+  doc.roundedRect(M, y, CW, H, 3, 3, 'F');
+  setFill(corViva);                                            // barra vertical
+  doc.roundedRect(M, y, 3.2, H, 1.6, 1.6, 'F');
+  doc.setFontSize(30); doc.setFont('helvetica','bold');
+  setColor(corTxt);
+  doc.text(String(dadosLaudo.nota || 0), M + 9, y + 16);
+  const larguraNota = doc.getTextWidth(String(dadosLaudo.nota || 0));
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  setColor(cores.suave);
+  doc.text('de 100', M + 12 + larguraNota, y + 16);
+  const urgLabel = {ok:'Saudável',atencao:'Acompanhar',alerta:'Atenção',critico:'Crítico'}[dadosLaudo.urgencia]||'';
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  setColor(corTxt);
+  doc.text(urgLabel, M + 58, y + 11);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  setColor(cores.suave);
+  doc.text(`Confiança: ${dadosLaudo.confianca || 0}%`, M + 58, y + 18);
+  y += 32;
+
+  // PARÂMETROS
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  setColor(cores.tinta);
+  doc.text('PARÂMETROS MEDIDOS', M, y); y += 6;
+
+  const params = dadosLaudo.parametros || [];
+  const labelMap = {temperatura:'Temperatura',ph:'pH',kh:'KH',gh:'GH',amonia:'Amônia',
+    nitrito:'Nitrito',nitrato:'Nitrato',fosfato:'Fosfato',oxigenio:'O₂',
+    salinidade:'Salinidade',calcio:'Cálcio',magnesio:'Magnésio'};
+  const unitMap = {temperatura:'°C',ph:'',kh:'dKH',gh:'dGH',amonia:'ppm',nitrito:'ppm',
+    nitrato:'ppm',fosfato:'ppm',oxigenio:'mg/L',salinidade:'sg',calcio:'ppm',magnesio:'ppm'};
+
+  params.forEach((p, i) => {
+    if (y > 260) { doc.addPage(); y = 16; }
+    const corP = cores[p.estado] || cores.ok;
+    const bg = i % 2 === 0 ? cores.fundo : [255,255,255];
+    setFill(bg); setDraw(cores.linha);
+    doc.rect(M, y - 3, CW, 8, 'FD');
+    doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+    setColor(cores.tinta);
+    doc.text(labelMap[p.parametro] || p.parametro, M + 2, y + 2);
+    setColor(corP);
+    doc.setFont('helvetica','bold');
+    doc.text(`${p.valor} ${unitMap[p.parametro]||''}`, M + 55, y + 2);
+    const estadoLabel = {ideal:'✓ Ideal',aceitavel:'⚠ Aceitável',alerta:'⚠ Alerta',critico:'✕ Crítico'}[p.estado]||'';
+    doc.setFontSize(7.5);
+    doc.text(estadoLabel, M + 90, y + 2);
+    const [imin,imax] = p.faixa_ideal || [null,null];
+    if (imin !== null) {
+      setColor(cores.suave); doc.setFont('helvetica','normal');
+      doc.text(`Ideal: ${imin}–${imax} ${unitMap[p.parametro]||''}`, M + 130, y + 2);
+    }
+    y += 8;
+  });
+
+  y += 6;
+
+  // ALERTAS
+  const alertas = dadosLaudo.alertas || [];
+  if (alertas.length) {
+    if (y > 240) { doc.addPage(); y = 16; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    setColor(cores.tinta);
+    doc.text('ALERTAS', M, y); y += 6;
+    alertas.forEach(a => {
+      if (y > 270) { doc.addPage(); y = 16; }
+      const corA = cores[a.urgencia] || cores.alerta;
+      setFill(corA); doc.rect(M, y - 3, 2, 8, 'F');
+      doc.setFontSize(8); doc.setFont('helvetica','normal');
+      setColor(cores.tinta);
+      const linhas = doc.splitTextToSize(a.explicacao || '', CW - 8);
+      doc.text(linhas, M + 5, y + 1);
+      y += linhas.length * 4.5 + 4;
+    });
+  }
+
+  // ACÇÕES
+  const acoes = (dadosLaudo.acoes || []).filter(a => a.tecnico);
+  if (acoes.length) {
+    if (y > 240) { doc.addPage(); y = 16; }
+    y += 4;
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    setColor(cores.tinta);
+    doc.text('AÇÕES RECOMENDADAS', M, y); y += 6;
+    acoes.forEach(a => {
+      if (y > 270) { doc.addPage(); y = 16; }
+      doc.setFontSize(8); doc.setFont('helvetica','normal');
+      setColor([11,42,58]);
+      doc.text('→', M, y + 1);
+      const linhas = doc.splitTextToSize(a.tecnico, CW - 6);
+      doc.text(linhas, M + 5, y + 1);
+      y += linhas.length * 4.5 + 3;
+    });
+  }
+
+  // OBS
+  if (dadosLaudo.observacao) {
+    if (y > 240) { doc.addPage(); y = 16; }
+    y += 4;
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    setColor(cores.tinta);
+    doc.text('OBSERVAÇÃO DO TÉCNICO', M, y); y += 6;
+    doc.setFontSize(8); doc.setFont('helvetica','normal');
+    setColor(cores.suave);
+    const linhas = doc.splitTextToSize(dadosLaudo.observacao, CW);
+    doc.text(linhas, M, y);
+  }
+
+  // FOOTER
+  const totalPags = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPags; i++) {
+    doc.setPage(i);
+    setColor(cores.suave);
+    doc.setFontSize(7.5);
+    doc.text('Aqualife Aquarismo · aqualifeaquarismo.com', M, 292);
+    doc.text(`Página ${i} de ${totalPags}`, W - M, 292, { align: 'right' });
+    setDraw(cores.linha);
+    doc.line(M, 288, W - M, 288);
+  }
+
+  const nome = `laudo-${(dadosLaudo.aquario||'aqualife').replace(/\s+/g,'-').toLowerCase()}-${new Date().toISOString().slice(0,10)}.pdf`;
+  doc.save(nome);
+}
+
+// Expor função globalmente
+window.exportarPDF = exportarPDF;
