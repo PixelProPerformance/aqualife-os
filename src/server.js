@@ -403,13 +403,55 @@ app.patch("/api/admin/especies/sugestoes/:id", exigeLogin, exigeAdmin, async (re
   if (!["aprovada", "rejeitada"].includes(status))
     return res.status(400).json({ erro: "status inválido" });
   try {
-    const r = await query(
-      `UPDATE especie_sugestao SET status=$1, moderado_por=$2, moderado_em=NOW()
-       WHERE id=$3 RETURNING *`,
-      [status, req.usuario.id, req.params.id]
+    // Lê a sugestão + nome de quem sugeriu (usuário logado ou visitante)
+    const sr = await query(
+      `SELECT s.*, COALESCE(u.name, s.autor_nome) AS autor
+       FROM especie_sugestao s LEFT JOIN app_user u ON u.id = s.user_id
+       WHERE s.id=$1`,
+      [req.params.id]
     );
-    if (!r.rows[0]) return res.status(404).json({ erro: "sugestão não encontrada" });
-    res.json(r.rows[0]);
+    const sug = sr.rows[0];
+    if (!sug) return res.status(404).json({ erro: "sugestão não encontrada" });
+
+    // Só cria a espécie quando é uma aprovação NOVA (evita duplicar em re-aprovações)
+    const criarEspecie = status === "aprovada" && sug.status !== "aprovada";
+    let especieCriada = null;
+
+    await withTransaction(async (c) => {
+      await c.query(
+        `UPDATE especie_sugestao SET status=$1, moderado_por=$2, moderado_em=NOW() WHERE id=$3`,
+        [status, req.usuario.id, sug.id]
+      );
+
+      if (criarEspecie) {
+        // Monta a espécie a partir dos dados da sugestão (descrição vira "notas")
+        const body = {
+          nome_comum: sug.nome_comum,
+          nome_cientifico: sug.nome_cientifico,
+          categoria: ["agua-doce", "marinho", "coral", "planta"].includes(sug.categoria) ? sug.categoria : "agua-doce",
+          foto_url: sug.foto_url,
+          notas: sug.descricao,
+          sugerido_por: sug.autor || "Sugestão da comunidade",
+        };
+        let id = _slugify(sug.nome_comum) || ("especie-" + sug.id.slice(0, 8));
+        const existe = await c.query("SELECT 1 FROM especie WHERE id=$1", [id]);
+        if (existe.rows[0]) id = id + "-" + sug.id.slice(0, 5);
+        const e = _montarEspecie(body, id);
+        const ordemR = await c.query("SELECT COALESCE(MAX(ordem),0)+1 AS n FROM especie");
+        // ativo=false → entra desativada para o admin ajustar e publicar
+        await c.query(
+          `INSERT INTO especie (id, categoria, nome_comum, nome_cientifico, slug, sugerido_por, ordem, dados, ativo)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb, false)`,
+          [e.id, e.categoria, e.nome_comum, e.nome_cientifico, e.slug, e.sugerido_por, ordemR.rows[0].n, JSON.stringify(e)]
+        );
+        especieCriada = { id: e.id, nome_comum: e.nome_comum };
+      }
+    });
+
+    res.json({
+      ok: true, status,
+      especie_criada: especieCriada, // { id, nome_comum } quando aprovada; senão null
+    });
   } catch (err) {
     console.error("[admin/especies/sugestoes:patch]", err.message);
     res.status(500).json({ erro: "erro interno" });
