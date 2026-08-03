@@ -238,8 +238,13 @@ async function carregarSugestoes(){
         </div>
       </div>`).join("") : `<div class="vazio">Nenhuma sugestão por enquanto.</div>`;
     document.querySelectorAll("[data-aprovar]").forEach(b=>b.onclick=async()=>{
-      try{await api(`/api/admin/especies/sugestoes/${b.dataset.aprovar}`,{method:"PATCH",body:JSON.stringify({status:"aprovada"})});carregarSugestoes();}
-      catch(e){alert("Erro: "+e.message);}
+      try{
+        const r=await api(`/api/admin/especies/sugestoes/${b.dataset.aprovar}`,{method:"PATCH",body:JSON.stringify({status:"aprovada"})});
+        if(r&&r.especie_criada){
+          alert(`Sugestão aprovada! A espécie "${r.especie_criada.nome_comum}" foi criada como rascunho (desativada) no Aquabook.\n\nAbra "Gerir espécies e incompatibilidades" para ajustar os dados e ativá-la.`);
+        }
+        carregarSugestoes();
+      }catch(e){alert("Erro: "+e.message);}
     });
     document.querySelectorAll("[data-rejeitar]").forEach(b=>b.onclick=async()=>{
       try{await api(`/api/admin/especies/sugestoes/${b.dataset.rejeitar}`,{method:"PATCH",body:JSON.stringify({status:"rejeitada"})});carregarSugestoes();}
