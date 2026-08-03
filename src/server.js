@@ -380,6 +380,42 @@ app.get("/api/admin/especies", exigeLogin, exigeAdmin, async (req, res) => {
   }
 });
 
+// Sugestões do Aquabook — DEVEM vir antes de "/:id" senão o Express casa
+// "sugestoes" como se fosse um id de espécie e devolve "Espécie não encontrada".
+app.get("/api/admin/especies/sugestoes", exigeLogin, exigeAdmin, async (req, res) => {
+  try {
+    const r = await query(
+      `SELECT s.*, COALESCE(u.name, s.autor_nome) as usuario_nome,
+              (s.user_id IS NULL) as eh_visitante
+       FROM especie_sugestao s
+       LEFT JOIN app_user u ON u.id = s.user_id
+       ORDER BY (s.status = 'em_moderacao') DESC, s.created_at DESC`
+    );
+    res.json(r.rows);
+  } catch (err) {
+    console.error("[admin/especies/sugestoes:get]", err.message);
+    res.status(500).json({ erro: "erro interno" });
+  }
+});
+
+app.patch("/api/admin/especies/sugestoes/:id", exigeLogin, exigeAdmin, async (req, res) => {
+  const { status } = req.body; // aprovada | rejeitada
+  if (!["aprovada", "rejeitada"].includes(status))
+    return res.status(400).json({ erro: "status inválido" });
+  try {
+    const r = await query(
+      `UPDATE especie_sugestao SET status=$1, moderado_por=$2, moderado_em=NOW()
+       WHERE id=$3 RETURNING *`,
+      [status, req.usuario.id, req.params.id]
+    );
+    if (!r.rows[0]) return res.status(404).json({ erro: "sugestão não encontrada" });
+    res.json(r.rows[0]);
+  } catch (err) {
+    console.error("[admin/especies/sugestoes:patch]", err.message);
+    res.status(500).json({ erro: "erro interno" });
+  }
+});
+
 // Detalhe completo (todos os campos) para edição
 app.get("/api/admin/especies/:id", exigeLogin, exigeAdmin, async (req, res) => {
   try {
@@ -2031,42 +2067,6 @@ app.post("/api/especies/sugestao", async (req, res) => {
     res.status(201).json({ ok: true, id: r.rows[0].id });
   } catch (err) {
     console.error("[especies:sugestao]", err.message);
-    res.status(500).json({ erro: "erro interno" });
-  }
-});
-
-app.get("/api/admin/especies/sugestoes", exigeLogin, exigeAdmin, async (req, res) => {
-  try {
-    const r = await query(
-      `SELECT s.*, COALESCE(u.name, s.autor_nome) as usuario_nome,
-              (s.user_id IS NULL) as eh_visitante
-       FROM especie_sugestao s
-       LEFT JOIN app_user u ON u.id = s.user_id
-       ORDER BY (s.status = 'em_moderacao') DESC, s.created_at DESC`
-    );
-    res.json(r.rows);
-  } catch (err) {
-    res.status(500).json({ erro: "erro interno" });
-  }
-});
-
-app.patch("/api/admin/especies/sugestoes/:id", exigeLogin, exigeAdmin, async (req, res) => {
-  const { status } = req.body; // aprovada | rejeitada
-  if (!["aprovada", "rejeitada"].includes(status))
-    return res.status(400).json({ erro: "status inválido" });
-  try {
-    const r = await query(
-      `UPDATE especie_sugestao SET status=$1, moderado_por=$2, moderado_em=NOW()
-       WHERE id=$3 RETURNING *`,
-      [status, req.usuario.id, req.params.id]
-    );
-    if (!r.rows[0]) return res.status(404).json({ erro: "sugestão não encontrada" });
-    res.json(r.rows[0]);
-    // NOTA: a publicação efetiva no Aquabook (inserir em _ESPECIES / especies.json)
-    // é feita manualmente por enquanto, pois os dados de espécies estão embutidos
-    // no server.js. Fica preparado para automatizar quando migrarmos para tabela.
-  } catch (err) {
-    console.error("[admin/especies/sugestoes:patch]", err.message);
     res.status(500).json({ erro: "erro interno" });
   }
 });
