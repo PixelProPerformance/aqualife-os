@@ -73,6 +73,18 @@ a{color:inherit;text-decoration:none}
 .trust span{display:inline-flex;align-items:center;gap:7px}
 .trust b{color:var(--agua)}
 
+/* formulário de captura */
+.capform{display:flex;gap:10px;width:100%;max-width:520px;flex-wrap:wrap}
+.cap-inp{flex:1;min-width:200px;padding:17px 18px;border-radius:14px;border:1px solid var(--line2);
+  background:var(--bg2);color:var(--tinta);font-family:inherit;font-size:16px}
+.cap-inp::placeholder{color:var(--suave)}
+.cap-inp:focus{outline:none;border-color:var(--agua)}
+.capform .btn{white-space:nowrap}
+.cap-hint{font-size:12.5px;color:var(--suave);margin-top:10px}
+.cap-ok{display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.35);color:var(--ok);
+  border-radius:14px;padding:15px 18px;font-weight:600;font-size:15px;max-width:520px;margin-top:4px}
+.cap-err{color:var(--crit);font-size:13px;margin-top:8px;display:none}
+
 /* card de diagnóstico (mock) */
 .diag{background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line2);
   border-radius:22px;padding:22px;box-shadow:var(--sombra)}
@@ -242,7 +254,7 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;al
       <a href="#como">Como funciona</a>
       <a href="#beneficios">Benefícios</a>
       <a href="#faq">Dúvidas</a>
-      <a href="/planos.html" class="btn btn-cta btn-sm">Assinar</a>
+      <a href="#assinar" class="btn btn-cta btn-sm">Assinar</a>
     </nav>
   </div>
 </div>
@@ -255,10 +267,13 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;al
       <span class="eyebrow"><svg class="lp-ic" viewBox="0 0 24 24"><path d="M9.5 3h5M10.5 3v5.2L5.7 16.5A2 2 0 0 0 7.4 19.5h9.2a2 2 0 0 0 1.7-3L13.5 8.2V3"/><path d="M8.5 13h7"/></svg> Diagnóstico técnico digital · água doce, marinho e lago</span>
       <h1>Você testa a água.<br>O <span class="grad-txt">Aqualife Care</span> diz exatamente o que ela está pedindo.</h1>
       <p class="sub">Lance os parâmetros dos seus testes e receba, na hora, um <b style="color:var(--tinta)">laudo técnico profissional</b>: nota de saúde de 0 a 100, os riscos escondidos e o passo a passo para corrigir, antes que vire prejuízo no aquário.</p>
-      <div class="hero-cta">
-        <a href="/planos.html" class="btn btn-cta btn-lg">Assinar por R$ 4,99/mês →</a>
-        <a href="#como" class="btn btn-ghost">Ver como funciona</a>
-      </div>
+      <form class="capform" data-cap novalidate>
+        <input type="email" class="cap-inp" name="email" placeholder="Seu melhor e-mail" required>
+        <button type="submit" class="btn btn-cta btn-lg">Quero começar →</button>
+      </form>
+      <div class="cap-err" data-err>Informe um e-mail válido.</div>
+      <div class="cap-ok" data-ok>✓ Prontinho! Estamos te levando para a assinatura…</div>
+      <div class="cap-hint">Garanta o preço de fundador de <b style="color:var(--agua)">R$ 4,99/mês</b> · no plano anual de R$ 59,90 no Pix</div>
       <div class="trust">
         <span><svg class="lp-ic" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4.5"/></svg> <b>7 dias</b> de garantia</span>
         <span><svg class="lp-ic" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 12.8-5.3L20 9M20 4.5V9h-4.5"/><path d="M19.5 12a7.5 7.5 0 0 1-12.8 5.3L4 15M4 19.5V15h4.5"/></svg> Cancele quando quiser</span>
@@ -340,7 +355,7 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;al
       </div>
     </div>
     <div class="center" style="margin-top:38px">
-      <a href="/planos.html" class="btn btn-cta btn-lg">Quero meu laudo por R$ 4,99/mês →</a>
+      <a href="#assinar" class="btn btn-cta btn-lg">Quero meu laudo por R$ 4,99/mês →</a>
     </div>
   </div>
 </section>
@@ -454,8 +469,13 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;al
         <li><span class="ck">✓</span> Histórico completo para acompanhar a evolução</li>
         <li><span class="ck">✓</span> Preço de fundador congelado + garantia de 7 dias</li>
       </ul>
-      <a href="/planos.html" class="btn btn-cta btn-lg">Assinar o Care agora →</a>
-      <div class="mini">Pagamento seguro via Mercado Pago · PIX ou cartão · garantia de 7 dias</div>
+      <form class="capform" data-cap novalidate style="max-width:none">
+        <input type="email" class="cap-inp" name="email" placeholder="Seu melhor e-mail" required>
+        <button type="submit" class="btn btn-cta btn-lg">Começar agora →</button>
+      </form>
+      <div class="cap-err" data-err style="text-align:left">Informe um e-mail válido.</div>
+      <div class="cap-ok" data-ok style="max-width:none;text-align:left">✓ Prontinho! Estamos te levando para a assinatura…</div>
+      <div class="mini">Deixe seu e-mail e siga para o checkout seguro · PIX ou cartão · garantia de 7 dias</div>
     </div>
   </div>
 </section>
@@ -496,7 +516,7 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;al
   <div class="wrap">
     <h2>Seu próximo teste de água<br>pode ser o último no escuro.</h2>
     <p>Junte-se aos aquaristas que trocaram o achismo por diagnóstico técnico, por R$ 4,99/mês.</p>
-    <a href="/planos.html" class="btn btn-cta btn-lg">Assinar o Aqualife Care →</a>
+    <a href="#assinar" class="btn btn-cta btn-lg">Assinar o Aqualife Care →</a>
     <div class="trust center" style="justify-content:center;margin-top:22px">
       <span><svg class="lp-ic" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z"/><path d="M9 12l2 2 4-4.5"/></svg> 7 dias de garantia</span>
       <span><svg class="lp-ic" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 12.8-5.3L20 9M20 4.5V9h-4.5"/><path d="M19.5 12a7.5 7.5 0 0 1-12.8 5.3L4 15M4 19.5V15h4.5"/></svg> Sem fidelidade</span>
@@ -515,8 +535,56 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;al
 <!-- BARRA FIXA MOBILE -->
 <div class="sticky">
   <div class="p"><b>R$ 4,99</b><span>/mês · no plano anual</span></div>
-  <a href="/planos.html" class="btn btn-cta">Assinar →</a>
+  <a href="#assinar" class="btn btn-cta">Assinar →</a>
 </div>
+
+<script>
+(function(){
+  // Para onde levar após capturar o e-mail (checkout de assinatura)
+  var DESTINO = "/planos.html";
+  // Captura UTMs da URL para atribuição de campanha
+  var qs = new URLSearchParams(location.search), utm = {};
+  ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(function(k){
+    if(qs.get(k)) utm[k] = qs.get(k);
+  });
+  var reMail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var enviando = false;
+
+  document.querySelectorAll("form[data-cap]").forEach(function(form){
+    form.addEventListener("submit", async function(e){
+      e.preventDefault();
+      if(enviando) return;
+      var input = form.querySelector('input[name="email"]');
+      var scope = form.parentElement;
+      var err = scope.querySelector("[data-err]");
+      var ok  = scope.querySelector("[data-ok]");
+      var email = (input.value||"").trim();
+      if(err) err.style.display = "none";
+      if(!reMail.test(email)){ if(err) err.style.display="block"; input.focus(); return; }
+
+      enviando = true;
+      var btn = form.querySelector('button[type="submit"]');
+      var txt = btn ? btn.textContent : "";
+      if(btn){ btn.textContent = "Enviando…"; btn.disabled = true; }
+
+      // grava o lead (não bloqueia o avanço se falhar)
+      try{
+        await fetch("/api/lead", {
+          method:"POST", headers:{"content-type":"application/json"},
+          body: JSON.stringify({ email: email, origem: "care-lp-captura", utm: utm })
+        });
+      }catch(_){ /* segue mesmo assim */ }
+
+      if(ok) ok.style.display = "block";
+      form.style.display = "none";
+      // leva o e-mail para o checkout (pré-preenche / atribuição)
+      var sep = DESTINO.indexOf("?") >= 0 ? "&" : "?";
+      var url = DESTINO + sep + "lead=ok&email=" + encodeURIComponent(email);
+      setTimeout(function(){ location.href = url; }, 1100);
+    });
+  });
+})();
+</script>
 
 </body>
 </html>
