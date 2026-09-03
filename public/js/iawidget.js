@@ -61,6 +61,7 @@
       + ".aqia-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}"
       + ".aqia-chip{font-size:12px;background:#E8F2F5;color:#125265;border:1px solid #cfe4ea;border-radius:20px;padding:6px 11px;cursor:pointer}"
       + ".aqia-chip:hover{background:#dcedf1}"
+      + "html.aqia-ready [data-aqia-laudo],html.aqia-ready [data-aqia-perguntar]{display:inline-flex !important}"
       + "@media(max-width:480px){.aqia-panel{right:8px;left:8px;width:auto;bottom:86px;height:calc(100vh - 110px)}.aqia-fab{right:16px;bottom:16px}}";
     var st = document.createElement("style");
     st.textContent = css;
@@ -109,9 +110,13 @@
     // reidrata histórico (se houver, de outra página)
     if (historico.length) { historico.forEach(function (m) { bolha(m.role === "user" ? "u" : "a", m.content); }); }
     else { boasVindas(); }
+
+    // marca que a IA está pronta → o botão "Analisar com IA" pode se revelar
+    document.documentElement.classList.add("aqia-ready");
   }
 
   function toggle() {
+    if (!panel) return;
     aberto = !aberto;
     panel.classList.toggle("on", aberto);
     if (aberto) { setTimeout(function () { input && input.focus(); }, 60); scrollFim(); }
@@ -162,10 +167,14 @@
   function salvar() { try { sessionStorage.setItem(HKEY, JSON.stringify(historico.slice(-16))); } catch (e) {} }
 
   function enviar() {
-    if (esperando) return;
     var texto = (input.value || "").trim();
     if (!texto) return;
     input.value = ""; input.style.height = "auto";
+    enviarTexto(texto, null);
+  }
+
+  function enviarTexto(texto, laudoId) {
+    if (esperando || !texto || !msgsEl) return;
     var chips = msgsEl.querySelector(".aqia-chips"); if (chips) chips.remove();
 
     bolha("u", texto);
@@ -177,10 +186,13 @@
     typ.className = "aqia-typ"; typ.innerHTML = "<i></i><i></i><i></i>";
     msgsEl.appendChild(typ); scrollFim();
 
+    var body = { mensagens: historico.slice(-12) };
+    if (laudoId) body.laudo_id = laudoId;
+
     fetch(API + "/chat", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: "Bearer " + token },
-      body: JSON.stringify({ mensagens: historico.slice(-12) })
+      body: JSON.stringify(body)
     })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
       .then(function (res) {
@@ -194,4 +206,30 @@
       .catch(function () { typ.remove(); bolha("a", "Falha de conexão. Verifique sua internet e tente de novo."); })
       .finally(function () { esperando = false; sendBtn.disabled = false; input.focus(); });
   }
+
+  // ---- API pública + botões "Analisar com IA" em qualquer página ----
+  function abrirSe() { if (!aberto) toggle(); }
+  window.AqualifeIA = {
+    abrir: abrirSe,
+    fechar: function () { if (aberto) toggle(); },
+    perguntar: function (texto, opts) {
+      opts = opts || {}; abrirSe();
+      setTimeout(function () { enviarTexto(texto, opts.laudoId || null); }, 250);
+    },
+    analisarLaudo: function (laudoId, rotulo) {
+      abrirSe();
+      var q = "Analise " + (rotulo ? ("o laudo do " + rotulo) : "este meu laudo") +
+              " do Aqualife Care: explique em linguagem simples o que está bom, o que precisa de atenção e o que eu devo fazer agora.";
+      setTimeout(function () { enviarTexto(q, laudoId || null); }, 250);
+    }
+  };
+
+  // Delegação: qualquer elemento com data-aqia-laudo / data-aqia-perguntar
+  // aciona a IA — funciona para botões criados dinamicamente (laudos, modais).
+  document.addEventListener("click", function (e) {
+    var elL = e.target.closest && e.target.closest("[data-aqia-laudo]");
+    if (elL) { e.preventDefault(); window.AqualifeIA.analisarLaudo(elL.getAttribute("data-aqia-laudo"), elL.getAttribute("data-aqia-rotulo") || ""); return; }
+    var elP = e.target.closest && e.target.closest("[data-aqia-perguntar]");
+    if (elP) { e.preventDefault(); window.AqualifeIA.perguntar(elP.getAttribute("data-aqia-perguntar")); }
+  });
 })();

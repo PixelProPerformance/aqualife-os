@@ -263,7 +263,12 @@ async function abrirLaudo(id){
       <h4 class="laudo-h">Parâmetros medidos</h4>
       <table class="tbl"><tr><th>Parâmetro</th><th>Leitura</th><th>Situação</th><th>Faixa ideal</th></tr>${linhas}</table>
       ${acoes.length?`<h4 class="laudo-h">Ações recomendadas</h4><ul class="laudo-acoes">${acoes.map(a=>`<li>${a}</li>`).join("")}</ul>`:""}
-      ${l.observacao?`<h4 class="laudo-h">Observação do técnico</h4><p style="font-size:14px;color:#334155;line-height:1.6">${l.observacao}</p>`:""}`;
+      ${l.observacao?`<h4 class="laudo-h">Observação do técnico</h4><p style="font-size:14px;color:#334155;line-height:1.6">${l.observacao}</p>`:""}
+      <button class="btn btn-p btn-sm aqia-ia-btn" style="margin-top:18px;display:none;align-items:center;gap:8px"
+              data-aqia-laudo="${id}" data-aqia-rotulo="${(l.aquario||'aquário').replace(/"/g,'&quot;')}">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 7V4M8 13h.01M16 13h.01"/></svg>
+        Analisar com IA
+      </button>`;
   }catch(e){ $("laudoCorpo").innerHTML=`<div class="vazio">Erro: ${e.message}</div>`; }
 }
 
