@@ -163,14 +163,14 @@
       "nitrito": {
         "ideal": [
           0,
-          0
+          8
         ],
         "ok": [
           0,
-          1
+          10
         ],
         "critico_abaixo": null,
-        "critico_acima": 2
+        "critico_acima": null
       },
       "nitrato": {
         "ideal": [
