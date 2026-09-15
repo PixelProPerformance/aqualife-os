@@ -260,8 +260,9 @@ async function abrirLaudo(id){
           <div class="lh-conf">Confiança: ${l.confianca||0}%</div></div>
       </div>
       <div class="laudo-meta">${l.aquario||"Aquário"} · ${l.cliente||""} · ${new Date(l.created_at).toLocaleDateString("pt-BR")} · Ruleset ${l.ruleset||"v1.0"}</div>
-      <h4 class="laudo-h">Parâmetros medidos</h4>
-      <table class="tbl"><tr><th>Parâmetro</th><th>Leitura</th><th>Situação</th><th>Faixa ideal</th></tr>${linhas}</table>
+      ${(l.parametros&&l.parametros.length&&window.LaudoBars)
+        ? LaudoBars.html(l.parametros,"Parâmetros medidos")
+        : `<h4 class="laudo-h">Parâmetros medidos</h4><table class="tbl"><tr><th>Parâmetro</th><th>Leitura</th><th>Situação</th><th>Faixa ideal</th></tr>${linhas}</table>`}
       ${acoes.length?`<h4 class="laudo-h">Ações recomendadas</h4><ul class="laudo-acoes">${acoes.map(a=>`<li>${a}</li>`).join("")}</ul>`:""}
       ${l.observacao?`<h4 class="laudo-h">Observação do técnico</h4><p style="font-size:14px;color:#334155;line-height:1.6">${l.observacao}</p>`:""}
       <button class="btn btn-p btn-sm aqia-ia-btn" style="margin-top:18px;display:none;align-items:center;gap:8px"
