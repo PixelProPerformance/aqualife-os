@@ -67,7 +67,9 @@ function avaliarCondicao(regra, v, waterType, contexto) {
     case "MG_BAIXO_BLOQUEIA":
       return waterType === "marine" && g("magnesio") != null && g("magnesio") < 1200;
     case "NITRITO_PRESENTE":
-      return g("nitrito") != null && g("nitrito") > 0;
+      // Marinho tolera nitrito bem mais: é avaliado só pela faixa (ideal 0–8,
+      // aceitável até 10, alerta acima de 10). Doce/lago mantêm o alerta a partir de >0.
+      return waterType !== "marine" && g("nitrito") != null && g("nitrito") > 0;
     case "OD_BAIXO_TEMP_ALTA":
       return waterType === "pond" && g("oxigenio") != null && g("temperatura") != null &&
              g("oxigenio") < 5 && g("temperatura") > 26;
