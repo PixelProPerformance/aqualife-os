@@ -2,12 +2,18 @@ const $=id=>document.getElementById(id);
 const token=localStorage.getItem("aqualife_token");
 const user=JSON.parse(localStorage.getItem("aqualife_user")||"null");
 if(!token||!user||!["admin","gestor"].includes(user.role)) location.href="/entrar.html?equipe=1";
-$("sair").onclick=()=>{localStorage.clear();location.href="/entrar.html"};
+$("sair").onclick=async()=>{try{await fetch("/api/logout",{method:"POST",keepalive:true,headers:{authorization:"Bearer "+token}});}catch(_){}localStorage.clear();location.href="/entrar.html";};
 
 async function api(c,o={}){
   const r=await fetch(c,{...o,headers:{"content-type":"application/json",authorization:"Bearer "+token,...(o.headers||{})}});
   if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.erro||"HTTP "+r.status);}
   return r.status===204?null:r.json();
+}
+// Upload de arquivo (FormData) — NÃO define content-type (o navegador cuida do boundary)
+async function apiUpload(c,formData){
+  const r=await fetch(c,{method:"POST",headers:{authorization:"Bearer "+token},body:formData});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.erro||"HTTP "+r.status);}
+  return r.json();
 }
 window.fecharModal=id=>$(id).classList.remove("on");
 const abrir=id=>$(id).classList.add("on");
@@ -85,9 +91,11 @@ async function carregarPessoas(){
         <td><span class="papel-b">${PAPEL[p.role]||p.role}</span></td>
         <td style="color:var(--suave)">${p.organization?.name||"—"}</td>
         <td style="white-space:nowrap;text-align:right">
-          <span class="rm" style="color:var(--agua-esc)" data-senha="${p.id}" data-nm="${p.name}" data-em="${p.email}">redefinir senha</span>
+          <span class="rm" style="color:var(--agua-esc)" data-gerir="${p.id}" data-nm="${p.name}">gerir</span>
+          &nbsp;·&nbsp; <span class="rm" style="color:var(--agua-esc)" data-senha="${p.id}" data-nm="${p.name}" data-em="${p.email}">redefinir senha</span>
           ${p.id!==user.id?` &nbsp;·&nbsp; <span class="rm" data-rm="${p.id}" data-nm="${p.name}">excluir</span>`:""}</td>
       </tr>`).join("")}</table>`;
+    document.querySelectorAll("[data-gerir]").forEach(b=>b.onclick=()=>abrirGestao(b.dataset.gerir,b.dataset.nm));
     document.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{
       if(!confirm(`Excluir ${b.dataset.nm}?`))return;
       try{await api("/api/admin/pessoas/"+b.dataset.rm,{method:"DELETE"});carregarPessoas();}
@@ -132,6 +140,78 @@ $("salvarPessoa").onclick=async()=>{
     fecharModal("modalPessoa");carregarPessoas();
   }catch(e){alert("Erro: "+e.message);}finally{b.disabled=false;}
 };
+
+// ---------- GERIR CLIENTE ----------
+async function abrirGestao(id,nome){
+  $("gerirTitulo").textContent="Gerir · "+nome;
+  $("gerirCorpo").innerHTML='<div class="vazio">Carregando…</div>';
+  abrir("modalGerir");
+  await recarregarGestao(id);
+}
+async function recarregarGestao(id){
+  try{
+    const g=await api("/api/admin/pessoas/"+id+"/gestao");
+    const c=g.care, m=g.manutencao, u=g.usuario;
+    // --- Care / período grátis ---
+    let careHtml;
+    if(!c.existe){
+      careHtml=`<div style="color:var(--suave);font-size:13.5px">Sem assinatura ou cortesia Care. Conceda um período grátis abaixo.</div>`;
+    }else{
+      const estado = c.ativa
+        ? (c.vitalicio
+            ? `<span class="bdg bdg-ativa">Vitalício</span>`
+            : `<span class="bdg bdg-ativa">Ativo</span> <span style="color:var(--suave);font-size:13px">· vence ${dt(c.vence)} (${c.dias_restantes} dia${c.dias_restantes===1?"":"s"})</span>`)
+        : `<span class="bdg bdg-falha">Expirado</span> <span style="color:var(--suave);font-size:13px">· venceu ${dt(c.vence)}</span>`;
+      careHtml=`<div>${estado}</div>
+        <div style="font-size:12.5px;color:var(--suave);margin-top:4px">${c.cortesia?"Cortesia":c.plano||"Care"}${c.ciclo&&!c.cortesia?" · "+(PLANONOME[c.ciclo]||c.ciclo):""}${c.founding?" · Fundador":""}</div>`;
+    }
+    const extend=`<div style="margin-top:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-c btn-sm" data-add="7">+7 dias</button>
+      <button class="btn btn-c btn-sm" data-add="15">+15 dias</button>
+      <button class="btn btn-c btn-sm" data-add="30">+30 dias</button>
+      <input class="inp" id="gDias" type="number" min="1" placeholder="dias" style="width:88px;padding:7px 10px">
+      <button class="btn btn-p btn-sm" id="gEstender">Estender / conceder</button>
+    </div>`;
+    // --- Manutenção (agendamentos por e-mail) ---
+    let manutHtml;
+    if(m.total>0){
+      const emDia = m.pagamentos_em_dia
+        ? `<span class="bdg bdg-pago">Em dia</span>`
+        : `${m.pendentes?`<span class="bdg bdg-pend">${m.pendentes} pendente(s)</span> `:""}${m.falhas?`<span class="bdg bdg-falha">${m.falhas} falha(s)</span>`:""}`;
+      manutHtml=`<div style="border-top:1px solid var(--linha);margin-top:16px;padding-top:14px">
+        <div style="font-weight:600;color:var(--tinta);margin-bottom:8px">Manutenção</div>
+        <div style="font-size:13.5px">Última manutenção: <b>${m.ultima?dt(m.ultima):"—"}</b></div>
+        <div style="font-size:13.5px;margin-top:4px">Pagamentos: ${emDia}</div>
+        <div style="font-size:12.5px;color:var(--suave);margin-top:4px">${m.total} agendamento(s) no histórico</div>
+        ${m.historico.length?`<div class="tbl-wrap" style="margin-top:10px"><table class="tbl">
+          <tr><th>Data</th><th>Serviço</th><th>Pagamento</th></tr>
+          ${m.historico.map(h=>`<tr><td style="font-size:13px">${dt(h.created_at)}</td>
+            <td style="font-size:13px">${TWATER[h.water_type]||h.water_type||"—"}${h.plano?" · "+(PLANONOME[h.plano]||h.plano):""}</td>
+            <td>${bdgPagto(h.status_pagamento)}</td></tr>`).join("")}
+        </table></div>`:""}
+      </div>`;
+    }else{
+      manutHtml=`<div style="border-top:1px solid var(--linha);margin-top:16px;padding-top:14px;font-size:13px;color:var(--suave)">Sem histórico de manutenção para este e-mail.</div>`;
+    }
+    $("gerirCorpo").innerHTML=`
+      <div style="font-size:13.5px;color:var(--suave);margin-bottom:14px">${u.email} · ${PAPEL[u.role]||u.role}${u.ativo?"":' · <span style="color:var(--critico)">inativo</span>'}</div>
+      <div style="background:var(--agua-clr);border-radius:10px;padding:14px 16px">
+        <div style="font-weight:600;color:var(--agua-esc);margin-bottom:8px">Aqualife Care · período grátis</div>
+        ${careHtml}${extend}
+      </div>
+      ${manutHtml}`;
+    $("gerirCorpo").querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>estenderCare(id,parseInt(b.dataset.add)));
+    $("gEstender").onclick=()=>{const d=parseInt($("gDias").value);if(!d||d<1){alert("Informe os dias (maior que 0).");return;}estenderCare(id,d);};
+  }catch(e){ $("gerirCorpo").innerHTML=`<div class="vazio">Erro: ${e.message}</div>`; }
+}
+async function estenderCare(id,dias){
+  try{
+    const r=await api("/api/admin/pessoas/"+id+"/care",{method:"POST",body:JSON.stringify({dias})});
+    alert(`Período estendido em ${dias} dias.\nNovo vencimento: ${r.vence?dt(r.vence):"vitalício"}`);
+    recarregarGestao(id);
+    carregarPessoas();
+  }catch(e){alert("Erro: "+e.message);}
+}
 
 // ---------- LAUDOS ----------
 const URG_LAUDO={ok:["Saudável","#15803D","#22C55E"],atencao:["Acompanhar","#B45309","#EAB308"],
@@ -180,10 +260,16 @@ async function abrirLaudo(id){
           <div class="lh-conf">Confiança: ${l.confianca||0}%</div></div>
       </div>
       <div class="laudo-meta">${l.aquario||"Aquário"} · ${l.cliente||""} · ${new Date(l.created_at).toLocaleDateString("pt-BR")} · Ruleset ${l.ruleset||"v1.0"}</div>
-      <h4 class="laudo-h">Parâmetros medidos</h4>
-      <table class="tbl"><tr><th>Parâmetro</th><th>Leitura</th><th>Situação</th><th>Faixa ideal</th></tr>${linhas}</table>
+      ${(l.parametros&&l.parametros.length&&window.LaudoBars)
+        ? LaudoBars.html(l.parametros,"Parâmetros medidos")
+        : `<h4 class="laudo-h">Parâmetros medidos</h4><table class="tbl"><tr><th>Parâmetro</th><th>Leitura</th><th>Situação</th><th>Faixa ideal</th></tr>${linhas}</table>`}
       ${acoes.length?`<h4 class="laudo-h">Ações recomendadas</h4><ul class="laudo-acoes">${acoes.map(a=>`<li>${a}</li>`).join("")}</ul>`:""}
-      ${l.observacao?`<h4 class="laudo-h">Observação do técnico</h4><p style="font-size:14px;color:#334155;line-height:1.6">${l.observacao}</p>`:""}`;
+      ${l.observacao?`<h4 class="laudo-h">Observação do técnico</h4><p style="font-size:14px;color:#334155;line-height:1.6">${l.observacao}</p>`:""}
+      <button class="btn btn-p btn-sm aqia-ia-btn" style="margin-top:18px;display:none;align-items:center;gap:8px"
+              data-aqia-laudo="${id}" data-aqia-rotulo="${(l.aquario||'aquário').replace(/"/g,'&quot;')}">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 7V4M8 13h.01M16 13h.01"/></svg>
+        Analisar com IA
+      </button>`;
   }catch(e){ $("laudoCorpo").innerHTML=`<div class="vazio">Erro: ${e.message}</div>`; }
 }
 
@@ -226,7 +312,7 @@ async function carregarSugestoes(){
       <div class="sug-card">
         <div>
           <b>${s.nome_comum}</b> ${s.nome_cientifico?`<i style="color:var(--suave)">(${s.nome_cientifico})</i>`:""}
-          <div style="font-size:13px;color:var(--suave)">sugerido por ${s.usuario_nome||"visitante"} · ${s.categoria||"—"}</div>
+          <div style="font-size:13px;color:var(--suave)">sugerido por ${s.usuario_nome||"visitante"}${s.eh_visitante?" (visitante)":""}${s.autor_email?` · ${s.autor_email}`:""} · ${s.categoria||"—"}</div>
           ${s.descricao?`<p style="font-size:13.5px;margin-top:4px">${s.descricao}</p>`:""}
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
@@ -238,8 +324,13 @@ async function carregarSugestoes(){
         </div>
       </div>`).join("") : `<div class="vazio">Nenhuma sugestão por enquanto.</div>`;
     document.querySelectorAll("[data-aprovar]").forEach(b=>b.onclick=async()=>{
-      try{await api(`/api/admin/especies/sugestoes/${b.dataset.aprovar}`,{method:"PATCH",body:JSON.stringify({status:"aprovada"})});carregarSugestoes();}
-      catch(e){alert("Erro: "+e.message);}
+      try{
+        const r=await api(`/api/admin/especies/sugestoes/${b.dataset.aprovar}`,{method:"PATCH",body:JSON.stringify({status:"aprovada"})});
+        if(r&&r.especie_criada){
+          alert(`Sugestão aprovada! A espécie "${r.especie_criada.nome_comum}" foi criada como rascunho (desativada) no Aquabook.\n\nAbra "Gerir espécies e incompatibilidades" para ajustar os dados e ativá-la.`);
+        }
+        carregarSugestoes();
+      }catch(e){alert("Erro: "+e.message);}
     });
     document.querySelectorAll("[data-rejeitar]").forEach(b=>b.onclick=async()=>{
       try{await api(`/api/admin/especies/sugestoes/${b.dataset.rejeitar}`,{method:"PATCH",body:JSON.stringify({status:"rejeitada"})});carregarSugestoes();}
@@ -293,6 +384,59 @@ $("salvarMP").onclick=async()=>{
       access_token:$("mpToken").value, public_key:$("mpPub").value, webhook_secret:$("mpSecret").value})});
     $("mpToken").value="";$("mpSecret").value="";
     carregarMP();alert("Credenciais salvas.");
+  }catch(e){alert("Erro: "+e.message);}finally{b.disabled=false;}
+};
+
+// ---------- REMUNERAÇÃO DO TÉCNICO ----------
+function remunLinhaHtml(l){
+  const comb=!!l.combinar, n=v=>(v==null?"":v);
+  const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+  return `<tr class="remun-row">
+    <td style="padding:6px 8px 6px 0"><input class="inp remun-vol" style="min-width:150px" value="${esc(l.volume)}" placeholder="Ex.: Até 500L"></td>
+    <td style="padding:6px 8px"><input class="inp remun-valor" type="number" step="0.01" min="0" style="width:105px" value="${comb?"":n(l.valor)}" ${comb?"disabled":""}></td>
+    <td style="padding:6px 8px"><input class="inp remun-desl" type="number" step="0.01" min="0" style="width:105px" value="${comb?"":n(l.deslocamento)}" ${comb?"disabled":""}></td>
+    <td style="padding:6px 8px"><input class="inp remun-reemb" type="number" step="0.01" min="0" style="width:105px" value="${comb?"":n(l.reembolso)}" ${comb?"disabled":""}></td>
+    <td style="padding:6px 8px;text-align:center"><input type="checkbox" class="remun-comb" ${comb?"checked":""}></td>
+    <td style="padding:6px 8px;text-align:right"><button type="button" class="btn btn-c btn-sm remun-del" title="Remover linha">✕</button></td>
+  </tr>`;
+}
+function remunBind(tr){
+  const comb=tr.querySelector(".remun-comb");
+  const toggles=()=>["remun-valor","remun-desl","remun-reemb"].forEach(c=>{const el=tr.querySelector("."+c);el.disabled=comb.checked;if(comb.checked)el.value="";});
+  comb.addEventListener("change",toggles);
+  tr.querySelector(".remun-del").addEventListener("click",()=>tr.remove());
+}
+function remunAdd(l){
+  const body=$("remunBody");
+  body.insertAdjacentHTML("beforeend",remunLinhaHtml(l||{volume:"",valor:"",deslocamento:20,reembolso:100,combinar:false}));
+  remunBind(body.lastElementChild);
+}
+async function carregarRemuneracao(){
+  try{
+    const r=await api("/api/admin/remuneracao");
+    $("remunBody").innerHTML="";
+    (r.linhas||[]).forEach(l=>remunAdd(l));
+    $("remunNota").value=r.nota||"";
+    $("remunStatus").textContent="Tabela carregada. Edite, adicione ou remova linhas e clique em salvar.";
+  }catch(e){$("remunStatus").textContent="Erro ao carregar: "+e.message;}
+}
+$("addRemun").onclick=()=>remunAdd();
+$("salvarRemun").onclick=async()=>{
+  const b=$("salvarRemun");b.disabled=true;
+  try{
+    const linhas=[...document.querySelectorAll("#remunBody .remun-row")].map(tr=>{
+      const volume=tr.querySelector(".remun-vol").value.trim();
+      if(!volume) return null;
+      if(tr.querySelector(".remun-comb").checked) return {volume,combinar:true};
+      return {volume,
+        valor:parseFloat(tr.querySelector(".remun-valor").value)||0,
+        deslocamento:parseFloat(tr.querySelector(".remun-desl").value)||0,
+        reembolso:parseFloat(tr.querySelector(".remun-reemb").value)||0,
+        combinar:false};
+    }).filter(Boolean);
+    if(!linhas.length){alert("Adicione ao menos uma linha com o campo Volume preenchido.");b.disabled=false;return;}
+    await api("/api/admin/remuneracao",{method:"PUT",body:JSON.stringify({linhas,nota:$("remunNota").value})});
+    carregarRemuneracao();alert("Remunerações salvas.");
   }catch(e){alert("Erro: "+e.message);}finally{b.disabled=false;}
 };
 
@@ -394,14 +538,38 @@ async function recarregarConteudo(){
   const cursoId=$("conCursoId").value;
   const d=await api("/api/admin/academy/cursos/"+cursoId);
   $("listaAulas").innerHTML = d.aulas.length ? d.aulas.map(a=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--linha);border-radius:8px;margin-bottom:6px;font-size:13.5px">
-      <span><b>${a.ordem}.</b> ${a.titulo}</span>
-      <span class="rm" data-delaula="${a.id}">remover</span></div>`).join("") : `<div style="font-size:13px;color:var(--suave)">Sem aulas ainda.</div>`;
+    <div style="padding:8px 10px;border:1px solid var(--linha);border-radius:8px;margin-bottom:6px;font-size:13.5px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span><b>${a.ordem}.</b> ${a.titulo}</span>
+        <span class="rm" data-delaula="${a.id}">remover</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:6px;font-size:12.5px;color:var(--suave)">
+        ${a.material_url
+          ? `<span>📄 <a href="${a.material_url}" target="_blank" rel="noopener">${a.material_nome||"material.pdf"}</a></span>
+             <label class="lnk" style="cursor:pointer;color:var(--agua-esc)">trocar PDF<input type="file" accept="application/pdf" data-matpdf="${a.id}" style="display:none"></label>
+             <span class="rm" data-delmat="${a.id}">remover PDF</span>`
+          : `<label class="lnk" style="cursor:pointer;color:var(--agua-esc)">+ anexar PDF<input type="file" accept="application/pdf" data-matpdf="${a.id}" style="display:none"></label>`}
+      </div>
+    </div>`).join("") : `<div style="font-size:13px;color:var(--suave)">Sem aulas ainda.</div>`;
   $("listaPerguntas").innerHTML = d.perguntas.length ? d.perguntas.map(p=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--linha);border-radius:8px;margin-bottom:6px;font-size:13.5px">
       <span>${p.pergunta}</span>
       <span class="rm" data-delpg="${p.id}">remover</span></div>`).join("") : `<div style="font-size:13px;color:var(--suave)">Sem perguntas ainda.</div>`;
   document.querySelectorAll("[data-delaula]").forEach(b=>b.onclick=async()=>{ await api("/api/admin/academy/aulas/"+b.dataset.delaula,{method:"DELETE"}); recarregarConteudo(); carregarCursos(); });
+  // anexar/trocar PDF de material da aula
+  document.querySelectorAll("[data-matpdf]").forEach(inp=>inp.onchange=async()=>{
+    const f=inp.files[0]; if(!f) return;
+    try{
+      const fd=new FormData(); fd.append("material",f);
+      await apiUpload("/api/admin/academy/aulas/"+inp.dataset.matpdf+"/material",fd);
+      recarregarConteudo();
+    }catch(e){ alert("Erro ao enviar o PDF: "+e.message); }
+  });
+  document.querySelectorAll("[data-delmat]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Remover o PDF desta aula?")) return;
+    try{ await api("/api/admin/academy/aulas/"+b.dataset.delmat+"/material",{method:"DELETE"}); recarregarConteudo(); }
+    catch(e){ alert("Erro: "+e.message); }
+  });
   document.querySelectorAll("[data-delpg]").forEach(b=>b.onclick=async()=>{ await api("/api/admin/academy/perguntas/"+b.dataset.delpg,{method:"DELETE"}); recarregarConteudo(); carregarCursos(); });
 }
 $("addAula").onclick=async()=>{
@@ -455,6 +623,32 @@ $("testarMeta").onclick=async()=>{
   }catch(e){alert("Erro: "+e.message);}finally{b.disabled=false;b.textContent="Enviar evento de teste";}
 };
 
+// ---------- AQUALIFE IA ----------
+async function carregarIA(){
+  try{
+    const m=await api("/api/admin/integracoes/ia");
+    $("iaStatus").innerHTML=m.configurada
+      ? (m.ativa?`<span style="color:#065F46;font-weight:600">✓ IA ativa</span> · modelo ${m.modelo} · chave ${m.chave_mascarada||""}`
+                :`<span style="color:#92400E;font-weight:600">⏸ Configurada, porém desligada</span> · modelo ${m.modelo}`)
+      : `<span style="color:#92400E;font-weight:600">⚠ Ainda não configurada</span> — cole a chave da OpenAI para ativar a IA.`;
+    if(m.modelo && [...$("iaModelo").options].some(o=>o.value===m.modelo)) $("iaModelo").value=m.modelo;
+    $("iaAtiva").value=String(m.ativa);
+  }catch(e){$("iaStatus").textContent="Erro ao carregar: "+e.message;}
+}
+$("salvarIA").onclick=async()=>{
+  const b=$("salvarIA");b.disabled=true;
+  try{
+    await api("/api/admin/integracoes/ia",{method:"PUT",body:JSON.stringify({
+      openai_api_key:$("iaKey").value, modelo:$("iaModelo").value, ativa:$("iaAtiva").value==="true"})});
+    $("iaKey").value=""; carregarIA(); alert("Configuração da IA salva.");
+  }catch(e){alert("Erro: "+e.message);}finally{b.disabled=false;}
+};
+$("testarIA").onclick=async()=>{
+  const b=$("testarIA");b.disabled=true;b.textContent="Testando…";
+  try{ const r=await api("/api/admin/integracoes/ia/teste",{method:"POST",body:JSON.stringify({})}); alert(r.mensagem||"OK!"); }
+  catch(e){alert("Erro: "+e.message);}finally{b.disabled=false;b.textContent="Testar conexão";}
+};
+
 // ---------- FINANCEIRO ----------
 const brl=c=>(((c||0)/100)).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const dt=d=>d?new Date(d).toLocaleDateString("pt-BR"):"—";
@@ -469,6 +663,81 @@ document.querySelectorAll(".subaba").forEach(a=>a.onclick=()=>{
   document.querySelectorAll(".subaba").forEach(x=>x.classList.toggle("on",x===a));
   document.querySelectorAll(".subpane").forEach(p=>p.classList.toggle("on",p.id==="sub-"+a.dataset.sub));
 });
+
+// ===== Acompanhamento do Academy =====
+let PROG=null;
+const escH=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const barra=p=>`<div class="barra-prog"><span style="width:${Math.max(0,Math.min(100,p||0))}%"></span></div>`;
+
+async function carregarProgresso(){
+  try{
+    PROG=await api("/api/admin/academy/progresso");
+    const alunos=new Set(PROG.progresso.map(r=>r.user_id));
+    const totalConcl=PROG.progresso.filter(r=>r.concluido).length;
+    const inscric=PROG.progresso.length;
+    $("progKpis").innerHTML=`
+      <div class="kpi"><div class="rot">Alunos ativos</div><div class="val">${alunos.size}</div><div class="sub">com algum progresso</div></div>
+      <div class="kpi"><div class="rot">Inscrições em cursos</div><div class="val">${inscric}</div><div class="sub">aluno × curso iniciados</div></div>
+      <div class="kpi"><div class="rot">Conclusões</div><div class="val">${totalConcl}</div><div class="sub">cursos finalizados</div></div>
+      <div class="kpi"><div class="rot">Cursos publicados</div><div class="val">${PROG.por_curso.filter(c=>c.publicado).length}</div><div class="sub">de ${PROG.por_curso.length} no total</div></div>`;
+    renderProgCurso(); renderProgAluno();
+  }catch(e){ $("progKpis").innerHTML=`<div class="vazio" style="color:var(--critico)">${escH(e.message)}</div>`; }
+}
+
+function renderProgCurso(){
+  if(!PROG) return;
+  const rows=PROG.por_curso;
+  $("progPorCurso").innerHTML = rows.length ? `<div class="tbl-wrap"><table class="tbl">
+    <thead><tr><th>Curso</th><th>Aulas</th><th>Inscritos</th><th>Concluíram</th><th style="min-width:150px">Progresso médio</th></tr></thead>
+    <tbody>${rows.map(c=>`<tr>
+      <td style="font-weight:600">${escH(c.titulo)} ${c.publicado?"":'<span style="font-size:11px;color:#92400E">(rascunho)</span>'}</td>
+      <td>${c.total_aulas}</td>
+      <td>${c.inscritos}</td>
+      <td>${c.concluidos}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">${barra(c.percent_medio)}<span class="pct">${c.percent_medio}%</span></div></td>
+    </tr>`).join("")}</tbody></table></div>` : `<div class="vazio">Nenhum curso cadastrado.</div>`;
+}
+
+function renderProgAluno(){
+  if(!PROG) return;
+  const q=($("buscaAluno").value||"").toLowerCase().trim();
+  const mapa=new Map();
+  PROG.progresso.forEach(r=>{
+    if(!mapa.has(r.user_id)) mapa.set(r.user_id,{nome:r.name,email:r.email,role:r.role,cursos:[]});
+    mapa.get(r.user_id).cursos.push(r);
+  });
+  let alunos=[...mapa.values()];
+  if(q) alunos=alunos.filter(a=>a.nome?.toLowerCase().includes(q)||a.email?.toLowerCase().includes(q));
+  $("progPorAluno").innerHTML = alunos.length ? alunos.map(a=>{
+    const concl=a.cursos.filter(c=>c.concluido).length;
+    return `<div class="prog-al">
+      <div class="prog-al-top">
+        <div><div class="prog-al-nome">${escH(a.nome)}</div><div class="prog-al-meta">${escH(a.email)} · ${PAPEL[a.role]||a.role}</div></div>
+        <div class="prog-al-meta">${a.cursos.length} curso(s) · ${concl} concluído(s)</div>
+      </div>
+      <div class="prog-cursos">${a.cursos.map(c=>`
+        <div class="prog-linha">
+          <span class="tit">${escH(c.titulo)}</span>
+          ${barra(c.percentual)}
+          <span class="pct">${c.percentual||0}%</span>
+          <span class="quiz">${c.concluido?'<span class="chip-ok">Concluído</span>':'<span class="chip-and">Em curso</span>'}</span>
+        </div>`).join("")}</div>
+    </div>`;
+  }).join("") : `<div class="vazio">Nenhum aluno com progresso ${q?"para esta busca":"ainda"}.</div>`;
+}
+
+// alterna Por curso / Por aluno
+document.querySelectorAll(".pv-tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".pv-tab").forEach(x=>x.classList.toggle("on",x===t));
+  const aluno=t.dataset.progvis==="aluno";
+  $("progPorAluno").style.display=aluno?"block":"none";
+  $("progPorCurso").style.display=aluno?"none":"block";
+  $("buscaAluno").style.display=aluno?"block":"none";
+});
+$("buscaAluno").addEventListener("input",renderProgAluno);
+$("recarregarProg").onclick=carregarProgresso;
+// carrega ao abrir a sub-aba de acompanhamento
+document.querySelectorAll('.subaba[data-sub="acProg"]').forEach(a=>a.addEventListener("click",()=>{ if(!PROG) carregarProgresso(); }));
 
 let finData=null;
 const liqCell=(r)=>r.liquido_cents!=null?`${brl(r.liquido_cents)}${r.taxa_estimada?'<span class="est"> ~est.</span>':""}`:"—";
@@ -622,4 +891,4 @@ $("exportarXlsx").onclick=()=>{
 
 $("recarregarFin").onclick=carregarFinanceiro;
 
-carregarFinanceiro();carregarClientes();carregarPessoas();carregarLaudos();carregarTickets();carregarSugestoes();carregarOferta();carregarMP();carregarEmail();carregarMeta();carregarCursos();
+carregarFinanceiro();carregarClientes();carregarPessoas();carregarLaudos();carregarTickets();carregarSugestoes();carregarOferta();carregarMP();carregarEmail();carregarMeta();carregarIA();carregarCursos();carregarRemuneracao();
