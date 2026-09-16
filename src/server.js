@@ -2368,6 +2368,91 @@ app.put("/api/admin/founding-members", exigeLogin, exigeAdmin, async (req, res) 
 });
 
 // ============================================================
+// REMUNERAÇÃO DO TÉCNICO — tabela por volume de aquário
+// Técnico vê (somente leitura); admin vê e edita.
+// Guardado em config (chave "remuneracao_tecnico") como JSON.
+// ============================================================
+const REMUNERACAO_PADRAO = {
+  linhas: [
+    { volume: "Até 500L",         valor: 100, deslocamento: 20, reembolso: 100, combinar: false },
+    { volume: "Acima 500L",       valor: 200, deslocamento: 20, reembolso: 100, combinar: false },
+    { volume: "Até 6.000L",       valor: 200, deslocamento: 20, reembolso: 100, combinar: false },
+    { volume: "Até 8.000L",       valor: 250, deslocamento: 20, reembolso: 150, combinar: false },
+    { volume: "Até 10.000L",      valor: 300, deslocamento: 20, reembolso: 200, combinar: false },
+    { volume: "Acima de 10.000L", combinar: true }
+  ],
+  nota: ""
+};
+
+async function lerRemuneracao() {
+  try {
+    const raw = await getConfig("remuneracao_tecnico");
+    if (!raw) return REMUNERACAO_PADRAO;
+    const obj = JSON.parse(raw);
+    if (!obj || !Array.isArray(obj.linhas) || !obj.linhas.length) return REMUNERACAO_PADRAO;
+    return obj;
+  } catch (e) {
+    console.error("[remuneracao:ler]", e.message);
+    return REMUNERACAO_PADRAO;
+  }
+}
+
+// Técnico (e admin/gestor/aquarista) — somente leitura
+app.get("/api/tecnico/remuneracao", exigeLogin, async (req, res) => {
+  if (!["tecnico", "admin", "gestor", "aquarista"].includes(req.usuario.role))
+    return res.status(403).json({ erro: "acesso restrito" });
+  try {
+    res.json(await lerRemuneracao());
+  } catch (err) {
+    console.error("[tecnico/remuneracao:get]", err.message);
+    res.status(500).json({ erro: "erro interno" });
+  }
+});
+
+// Admin — ler para edição
+app.get("/api/admin/remuneracao", exigeLogin, exigeAdmin, async (req, res) => {
+  try {
+    res.json(await lerRemuneracao());
+  } catch (err) {
+    console.error("[admin/remuneracao:get]", err.message);
+    res.status(500).json({ erro: "erro interno" });
+  }
+});
+
+// Admin — salvar (substitui a tabela inteira)
+app.put("/api/admin/remuneracao", exigeLogin, exigeAdmin, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const linhasRaw = Array.isArray(body.linhas) ? body.linhas : [];
+    const num = (x) => {
+      const n = Number(x);
+      return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : 0;
+    };
+    const linhas = linhasRaw
+      .map((l) => {
+        const volume = String((l && l.volume) || "").trim().slice(0, 60);
+        if (!volume) return null;
+        if (l && l.combinar) return { volume, combinar: true };
+        return {
+          volume,
+          valor: num(l && l.valor),
+          deslocamento: num(l && l.deslocamento),
+          reembolso: num(l && l.reembolso),
+          combinar: false
+        };
+      })
+      .filter(Boolean);
+    if (!linhas.length) return res.status(400).json({ erro: "informe ao menos uma linha" });
+    const obj = { linhas, nota: String(body.nota || "").trim().slice(0, 500) };
+    await setConfig("remuneracao_tecnico", JSON.stringify(obj));
+    res.json({ ok: true, ...obj });
+  } catch (err) {
+    console.error("[admin/remuneracao:put]", err.message);
+    res.status(500).json({ erro: "erro interno" });
+  }
+});
+
+// ============================================================
 // MERCADO PAGO — credenciais (admin) · nunca fixas no código
 // ============================================================
 function mascarar(v) {
