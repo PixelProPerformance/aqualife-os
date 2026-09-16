@@ -32,8 +32,8 @@ export function rotear(cp, cidade) {
 
 const PRECOS = {
   BR: {
-    freshwater: [[200, 270], [600, 340], [1000, 500], [null, SC]],
-    marine:     [[200, 330], [600, 400], [1000, 600], [null, SC]],
+    freshwater: [[200, 270], [600, 480], [1000, 540], [null, SC]],
+    marine:     [[200, 330], [600, 620], [1000, 720], [null, SC]],
     pond:       [[2000, 450], [4000, 650], [10000, 800], [null, SC]],
   },
   PT: {
