@@ -127,6 +127,19 @@ html[data-theme="dark"] .param input{background:#0A1E27}
 .foto-rm{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;
   background:var(--critico);color:#fff;border:none;cursor:pointer;font-size:10px;
   display:flex;align-items:center;justify-content:center}
+
+/* ── REMUNERAÇÕES ────────────────────────────────────────── */
+#remun-sec{border-top:1px solid var(--linha);margin-top:14px}
+.remun-tab{width:100%;border-collapse:collapse;font-size:13.5px}
+.remun-tab thead tr{color:var(--suave);font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em;border-bottom:1px solid var(--linha)}
+.remun-tab th{padding:11px 14px;font-weight:600}
+.remun-tab td{padding:11px 14px;color:var(--corpo)}
+.remun-tab tbody tr{border-top:1px solid var(--linha)}
+.remun-tab tbody tr:first-child{border-top:none}
+.remun-vol{font-weight:600;color:var(--tinta)}
+.remun-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.remun-comb{text-align:right;color:var(--agua);font-weight:700}
 </style>
 </head>
 <body>
@@ -137,7 +150,7 @@ html[data-theme="dark"] .param input{background:#0A1E27}
       <img src="/images/logo-azul.png" alt="Aqualife" style="height:36px"
            onerror="this.outerHTML='<div class=\'marca-i\'>A</div><div class=\'marca-t\'>Aqualife<small>AQUARISMO</small></div>'">
     </div>
-    <nav class="nav"><a href="https://app.aqualifeaquarismo.com/tecnico.html" class="ativo">Registrar visita</a></nav>
+    <nav class="nav"><a href="https://app.aqualifeaquarismo.com/tecnico.html" class="ativo">Registrar visita</a><a href="#remun-sec">Remunerações</a></nav>
     <button class="btn btn-c btn-sm" id="sair" style="margin-left:auto">Sair</button>
   </div>
 </header>
@@ -194,7 +207,50 @@ html[data-theme="dark"] .param input{background:#0A1E27}
       </div>
     </div>
   </div>
+
+  <!-- REMUNERAÇÕES (somente leitura — definidas pelo admin) -->
+  <section class="sec" id="remun-sec">
+    <h3 style="font-size:16px;margin-bottom:4px">Tabela de remunerações</h3>
+    <p style="color:var(--suave);font-size:13px;margin-bottom:16px">Valores por visita conforme o volume do aquário. Definidos pela administração.</p>
+    <div id="remun-box" class="cartao" style="padding:0;overflow:hidden;max-width:720px">
+      <div style="padding:24px;text-align:center;color:var(--suave)">Carregando…</div>
+    </div>
+  </section>
 </main>
+
+<script>
+/* Remunerações do técnico — leitura de /api/tecnico/remuneracao */
+(async function(){
+  var box=document.getElementById("remun-box"); if(!box) return;
+  var tk=null; try{tk=localStorage.getItem("aqualife_token");}catch(e){}
+  var esc=function(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+  var fmt=function(v){return "R$ "+Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});};
+  try{
+    var r=await fetch("/api/tecnico/remuneracao",{headers:tk?{authorization:"Bearer "+tk}:{}});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    var data=await r.json();
+    var linhas=(data&&data.linhas)||[];
+    if(!linhas.length){box.innerHTML='<div style="padding:24px;text-align:center;color:var(--suave)">Tabela ainda não configurada.</div>';return;}
+    var rows=linhas.map(function(l){
+      var vol='<td class="remun-vol">'+esc(l.volume)+'</td>';
+      if(l.combinar) return '<tr>'+vol+'<td class="remun-comb" colspan="3">A combinar</td></tr>';
+      return '<tr>'+vol
+        +'<td class="remun-num">'+fmt(l.valor)+'</td>'
+        +'<td class="remun-num">'+fmt(l.deslocamento)+'</td>'
+        +'<td class="remun-num">'+fmt(l.reembolso)+'</td></tr>';
+    }).join("");
+    var nota=(data&&data.nota)?'<p style="padding:2px 14px 14px;font-size:12.5px;color:var(--suave)">'+esc(data.nota)+'</p>':'';
+    box.innerHTML='<table class="remun-tab"><thead><tr>'
+      +'<th style="text-align:left">Volume</th>'
+      +'<th style="text-align:right">Valor</th>'
+      +'<th style="text-align:right">Deslocamento</th>'
+      +'<th style="text-align:right">Reembolsos até</th>'
+      +'</tr></thead><tbody>'+rows+'</tbody></table>'+nota;
+  }catch(e){
+    box.innerHTML='<div style="padding:24px;text-align:center;color:var(--suave)">Não foi possível carregar as remunerações.</div>';
+  }
+})();
+</script>
 
 <script type="module" src="/js/tecnico.js"></script>
 <script src="/js/theme.js" defer></script>
