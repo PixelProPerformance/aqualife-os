@@ -22,6 +22,7 @@ import { enviarPurchaseCAPI } from "./capi.js";
 import { diagnosticar, RULESET_VERSION, FAIXAS } from "./motor/engine.mjs";
 import { coletarEventos, visaoGeral, funil, secoes, alertas, contextoInsights, paisDosHeaders } from "./analytics_api.js";
 import { TERMO_VERSAO, TERMO_ATUALIZADO, TERMO_TITULO, TERMO_HTML } from "./termo.js";
+import { registrarLoja, LOJA_SCHEMA } from "./loja.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -252,6 +253,8 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "2mb" }));
 app.use(express.static(path.join(__dirname, "../public")));
 
+// ── Loja (e-commerce nativo) — catálogo: vitrine pública + gestão admin ──
+registrarLoja({ app, upload, query, withTransaction, exigeLogin, exigeAdmin });
 
 
 // ============================================================
@@ -3552,6 +3555,8 @@ async function garantirSchema() {
     `CREATE INDEX IF NOT EXISTS idx_revoked_exp ON revoked_token (expires_at)`,
     // Purga tokens revogados que já expiraram (não precisam mais ficar na lista)
     `DELETE FROM revoked_token WHERE expires_at < NOW()`,
+    // Loja (e-commerce nativo) — catálogo
+    ...LOJA_SCHEMA,
   ];
   let okc = 0;
   for (const sql of passos) {
