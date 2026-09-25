@@ -891,4 +891,166 @@ $("exportarXlsx").onclick=()=>{
 
 $("recarregarFin").onclick=carregarFinanceiro;
 
-carregarFinanceiro();carregarClientes();carregarPessoas();carregarLaudos();carregarTickets();carregarSugestoes();carregarOferta();carregarMP();carregarEmail();carregarMeta();carregarIA();carregarCursos();carregarRemuneracao();
+// ==========================================================
+// LOJA (e-commerce nativo) — Fase 1: catálogo
+// ==========================================================
+let LOJA_CATS=[];
+
+async function carregarCategorias(){
+  try{
+    LOJA_CATS=await api("/api/admin/loja/categorias");
+    const box=$("listaCategorias");
+    if(!LOJA_CATS.length){box.innerHTML='<div class="vazio">Nenhuma categoria ainda.</div>';return;}
+    box.innerHTML=LOJA_CATS.map(c=>`<span class="aq-chip">
+      <b style="color:var(--tinta)">${escH(c.nome)}</b>
+      <span style="color:var(--suave)">· ${c.n_produtos} prod.</span>
+      <span class="rm" data-delcat="${c.id}" style="margin-left:4px">remover</span></span>`).join("");
+    box.querySelectorAll("[data-delcat]").forEach(el=>el.onclick=async()=>{
+      if(!confirm("Remover esta categoria? Os produtos dela ficam sem categoria (não são apagados)."))return;
+      try{ await api("/api/admin/loja/categorias/"+el.dataset.delcat,{method:"DELETE"});
+        carregarCategorias(); carregarProdutos(); }catch(e){alert("Erro: "+e.message);}
+    });
+  }catch(e){$("listaCategorias").innerHTML='<div class="vazio">Erro: '+e.message+'</div>';}
+}
+$("novaCategoria").onclick=async()=>{
+  const nome=prompt("Nome da nova categoria:"); if(!nome||!nome.trim())return;
+  try{ await api("/api/admin/loja/categorias",{method:"POST",body:JSON.stringify({nome:nome.trim()})});
+    carregarCategorias(); }catch(e){alert("Erro: "+e.message);}
+};
+
+async function carregarProdutos(){
+  try{
+    const ps=await api("/api/admin/loja/produtos");
+    const box=$("listaProdutos");
+    if(!ps.length){box.innerHTML='<div class="vazio">Nenhum produto ainda. Clique em “Novo produto”.</div>';return;}
+    box.innerHTML=`<div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th style="width:52px"></th><th>Produto</th><th>Categoria</th>
+      <th class="num">A partir de</th><th class="num">Estoque</th><th>Status</th><th></th>
+      </tr></thead><tbody>${ps.map(p=>`<tr>
+        <td>${p.capa?`<img src="${escH(p.capa)}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;display:block">`:`<div style="width:40px;height:40px;border-radius:6px;background:var(--papel)"></div>`}</td>
+        <td style="font-weight:600;color:var(--tinta)">${escH(p.nome)}${p.destaque?' <span class="fund-tag">destaque</span>':''}</td>
+        <td>${escH(p.categoria||'—')}</td>
+        <td class="num">${p.preco_a_partir!=null?'R$ '+reais(p.preco_a_partir):'—'}</td>
+        <td class="num">${p.estoque_total}</td>
+        <td>${p.ativo?'<span class="bdg bdg-ativa">ativo</span>':'<span class="bdg bdg-canc">inativo</span>'}</td>
+        <td style="white-space:nowrap"><span class="rm" data-edit="${p.id}" style="color:var(--agua-esc)">editar</span>${p.ativo?` · <span class="rm" data-del="${p.id}">ocultar</span>`:''}</td>
+      </tr>`).join("")}</tbody></table></div>`;
+    box.querySelectorAll("[data-edit]").forEach(el=>el.onclick=()=>editarProduto(el.dataset.edit));
+    box.querySelectorAll("[data-del]").forEach(el=>el.onclick=async()=>{
+      if(!confirm("Ocultar este produto da loja? (você pode reativar depois, editando)"))return;
+      try{ await api("/api/admin/loja/produtos/"+el.dataset.del,{method:"DELETE"});carregarProdutos(); }
+      catch(e){alert("Erro: "+e.message);}
+    });
+  }catch(e){$("listaProdutos").innerHTML='<div class="vazio">Erro: '+e.message+'</div>';}
+}
+
+function varRowHtml(v){
+  v=v||{};
+  return `<div class="var-row" data-id="${v.id||''}" style="display:grid;grid-template-columns:1.3fr .9fr .8fr .8fr .7fr auto;gap:6px;align-items:center;margin-bottom:6px">
+    <input class="inp v-nome" placeholder="nome (ex.: 250 g)" value="${escH(v.nome||'')}">
+    <input class="inp v-sku" placeholder="SKU" value="${escH(v.sku||'')}">
+    <input class="inp v-preco" type="number" step="0.01" min="0" placeholder="preço" value="${v.preco_cents!=null?reais(v.preco_cents):''}">
+    <input class="inp v-promo" type="number" step="0.01" min="0" placeholder="promo" value="${v.preco_promo_cents?reais(v.preco_promo_cents):''}">
+    <input class="inp v-est" type="number" min="0" placeholder="estoque" value="${v.estoque!=null?v.estoque:0}">
+    <button type="button" class="btn btn-c btn-sm v-del" title="Remover">✕</button>
+  </div>`;
+}
+function bindVarRows(){
+  document.querySelectorAll("#listaVariacoes .var-row .v-del").forEach(b=>b.onclick=()=>{
+    if(document.querySelectorAll("#listaVariacoes .var-row").length<=1){alert("O produto precisa de ao menos uma linha de preço.");return;}
+    b.closest(".var-row").remove();
+  });
+}
+$("addVariacao").onclick=()=>{ $("listaVariacoes").insertAdjacentHTML("beforeend",varRowHtml({estoque:0})); bindVarRows(); };
+function coletarVariacoes(){
+  return [...document.querySelectorAll("#listaVariacoes .var-row")].map(r=>{
+    const promo=r.querySelector(".v-promo").value;
+    const o={ nome:r.querySelector(".v-nome").value.trim()||null,
+      sku:r.querySelector(".v-sku").value.trim()||null,
+      preco_cents:Math.round(parseFloat(r.querySelector(".v-preco").value||0)*100)||0,
+      preco_promo_cents: promo!==""?Math.round(parseFloat(promo)*100):null,
+      estoque:parseInt(r.querySelector(".v-est").value||0)||0 };
+    if(r.dataset.id) o.id=r.dataset.id;
+    return o;
+  });
+}
+function preencherSelectCategoria(sel){
+  $("prodCategoria").innerHTML='<option value="">— sem categoria —</option>'+
+    LOJA_CATS.map(c=>`<option value="${c.id}">${escH(c.nome)}</option>`).join("");
+  if(sel)$("prodCategoria").value=sel;
+}
+function modoFotos(temId){
+  $("fotosAviso").style.display=temId?"none":"block";
+  $("fotosBtn").style.display=temId?"inline-flex":"none";
+  if(!temId)$("fotosGrid").innerHTML="";
+}
+function renderFotos(imgs){
+  const g=$("fotosGrid");
+  g.innerHTML=(imgs||[]).map(i=>`<div style="position:relative;width:78px">
+    <img src="${escH(i.url)}" style="width:78px;height:78px;object-fit:cover;border-radius:8px;border:2px solid ${i.capa?'var(--agua)':'var(--linha)'};display:block">
+    <button type="button" data-cap="${i.id}" title="Definir como capa" style="position:absolute;left:2px;bottom:2px;font-size:10px;background:${i.capa?'var(--agua)':'rgba(255,255,255,.92)'};color:${i.capa?'#fff':'var(--tinta)'};border:none;border-radius:5px;padding:1px 6px;cursor:pointer">capa</button>
+    <button type="button" data-rm="${i.id}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--critico);color:#fff;border:none;cursor:pointer;font-size:11px">✕</button>
+  </div>`).join("");
+  g.querySelectorAll("[data-cap]").forEach(b=>b.onclick=async()=>{try{await api("/api/admin/loja/foto/"+b.dataset.cap+"/capa",{method:"PUT"});recarregarFotos();}catch(e){alert("Erro: "+e.message);}});
+  g.querySelectorAll("[data-rm]").forEach(b=>b.onclick=async()=>{try{await api("/api/admin/loja/foto/"+b.dataset.rm,{method:"DELETE"});recarregarFotos();}catch(e){alert("Erro: "+e.message);}});
+}
+async function recarregarFotos(){
+  const id=$("prodId").value; if(!id)return;
+  try{ const d=await api("/api/admin/loja/produtos/"+id); renderFotos(d.imagens); carregarProdutos(); }catch(e){}
+}
+$("fotosInput").onchange=async(e)=>{
+  const f=e.target.files, id=$("prodId").value; if(!f||!f.length||!id)return;
+  const fd=new FormData(); [...f].forEach(x=>fd.append("fotos",x));
+  try{ await apiUpload("/api/admin/loja/produtos/"+id+"/fotos",fd); recarregarFotos(); }
+  catch(err){ alert("Erro no upload: "+err.message); }
+  e.target.value="";
+};
+
+$("novoProduto").onclick=()=>{
+  $("prodModalTitulo").textContent="Novo produto";
+  $("prodId").value=""; $("prodNome").value=""; $("prodMarca").value="";
+  $("prodDescricao").value=""; $("prodPeso").value=0; $("prodDestaque").value="false";
+  $("prodAltura").value=0; $("prodLargura").value=0; $("prodComprimento").value=0; $("prodAtivo").value="true";
+  preencherSelectCategoria("");
+  $("listaVariacoes").innerHTML=varRowHtml({estoque:0}); bindVarRows();
+  modoFotos(false); abrir("modalProduto");
+};
+async function editarProduto(id){
+  try{
+    const d=await api("/api/admin/loja/produtos/"+id);
+    $("prodModalTitulo").textContent="Editar produto";
+    $("prodId").value=d.id; $("prodNome").value=d.nome||""; $("prodMarca").value=d.marca||"";
+    $("prodDescricao").value=d.descricao||""; $("prodPeso").value=d.peso_gramas||0;
+    $("prodDestaque").value=String(d.destaque); $("prodAtivo").value=String(d.ativo);
+    $("prodAltura").value=d.altura_cm||0; $("prodLargura").value=d.largura_cm||0; $("prodComprimento").value=d.comprimento_cm||0;
+    preencherSelectCategoria(d.categoria_id||"");
+    const vs=(d.variacoes&&d.variacoes.length)?d.variacoes:[{estoque:0}];
+    $("listaVariacoes").innerHTML=vs.map(varRowHtml).join(""); bindVarRows();
+    modoFotos(true); renderFotos(d.imagens);
+    abrir("modalProduto");
+  }catch(e){alert("Erro: "+e.message);}
+}
+$("salvarProduto").onclick=async()=>{
+  const btn=$("salvarProduto");
+  const body={ nome:$("prodNome").value.trim(), marca:$("prodMarca").value.trim(),
+    descricao:$("prodDescricao").value.trim(), categoria_id:$("prodCategoria").value||null,
+    peso_gramas:parseInt($("prodPeso").value||0)||0,
+    altura_cm:parseFloat($("prodAltura").value||0)||0, largura_cm:parseFloat($("prodLargura").value||0)||0,
+    comprimento_cm:parseFloat($("prodComprimento").value||0)||0,
+    destaque:$("prodDestaque").value==="true", ativo:$("prodAtivo").value==="true",
+    variacoes:coletarVariacoes() };
+  if(!body.nome){alert("Informe o nome do produto.");return;}
+  btn.disabled=true;
+  try{
+    const id=$("prodId").value;
+    if(id){ await api("/api/admin/loja/produtos/"+id,{method:"PUT",body:JSON.stringify(body)}); alert("Produto atualizado."); }
+    else{ const r=await api("/api/admin/loja/produtos",{method:"POST",body:JSON.stringify(body)});
+      $("prodId").value=r.id; $("prodModalTitulo").textContent="Editar produto"; modoFotos(true);
+      alert("Produto criado! Agora você pode enviar as fotos."); }
+    carregarProdutos();
+  }catch(e){alert("Erro: "+e.message);}finally{btn.disabled=false;}
+};
+
+async function carregarLoja(){ await carregarCategorias(); carregarProdutos(); }
+
+carregarFinanceiro();carregarClientes();carregarPessoas();carregarLaudos();carregarTickets();carregarSugestoes();carregarOferta();carregarMP();carregarEmail();carregarMeta();carregarIA();carregarCursos();carregarRemuneracao();carregarLoja();
