@@ -101,6 +101,25 @@
 .aviso-fase{font-size:11.5px;color:var(--suave);text-align:center;margin-top:8px}
 .msg{font-size:12.5px;margin-top:8px}
 .msg.err{color:var(--critico)}
+/* checkout */
+.co{position:fixed;inset:0;background:rgba(18,51,63,.5);display:none;align-items:center;justify-content:center;padding:18px;z-index:90}
+.co.on{display:flex}
+.co-cx{background:var(--branco);border-radius:16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;padding:24px}
+.co-cx h3{font-size:20px;color:var(--tinta);margin-bottom:4px}
+.co-cx .co-sub{font-size:13px;color:var(--suave);margin-bottom:16px}
+.co-cx label{display:block;font-size:12.5px;color:var(--suave);margin:10px 0 4px;font-weight:500}
+.co-cx input{width:100%;padding:10px 12px;border:1px solid var(--linha);border-radius:9px;font-family:inherit;font-size:14px;color:var(--tinta)}
+.co-row{display:grid;gap:10px}
+.co-row.c2{grid-template-columns:1fr 1fr}.co-row.c3{grid-template-columns:2fr 1fr 1fr}
+@media(max-width:520px){.co-row.c2,.co-row.c3{grid-template-columns:1fr}}
+.co-resumo{background:var(--papel);border-radius:10px;padding:12px 14px;margin:14px 0;font-size:13.5px}
+.co-resumo .l{display:flex;justify-content:space-between;margin-bottom:4px}
+.co-resumo .l.t{font-weight:700;color:var(--tinta);font-size:16px;margin-top:6px}
+.co-acoes{display:flex;gap:10px;margin-top:16px}
+.co-acoes button{flex:1;padding:12px;border-radius:10px;border:none;font-size:14.5px;font-weight:600;cursor:pointer}
+.co-voltar{background:var(--papel);color:var(--corpo);border:1px solid var(--linha) !important}
+.co-pagar{background:var(--agua-esc);color:#fff}
+.co-pagar:disabled{background:var(--linha);color:var(--suave);cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -113,6 +132,7 @@
 </header>
 
 <main class="wrap sec">
+  <div id="retornoBanner" hidden style="padding:14px 16px;border-radius:12px;margin-bottom:18px;font-size:14.5px;font-weight:500"></div>
   <div class="loja-hero">
     <div>
       <h1>Loja Aqualife</h1>
@@ -160,6 +180,39 @@
     <div class="aviso-fase">O pagamento entra na próxima etapa. Por enquanto, monte o pedido e calcule o frete.</div>
   </div>
 </aside>
+
+<!-- checkout -->
+<div class="co" id="co"><div class="co-cx">
+  <h3>Finalizar compra</h3>
+  <div class="co-sub">Seus dados para entrega e nota. O pagamento é no ambiente seguro do Mercado Pago.</div>
+  <div class="co-row c2">
+    <div><label>Nome completo *</label><input id="coNome"></div>
+    <div><label>E-mail *</label><input id="coEmail" type="email"></div>
+  </div>
+  <div class="co-row c2">
+    <div><label>CPF *</label><input id="coCpf" inputmode="numeric" placeholder="000.000.000-00"></div>
+    <div><label>Telefone/WhatsApp *</label><input id="coTel" inputmode="numeric" placeholder="(00) 00000-0000"></div>
+  </div>
+  <div class="co-row c2">
+    <div><label>CEP *</label><input id="coCep" inputmode="numeric" maxlength="9"></div>
+    <div><label>Cidade *</label><input id="coCidade"></div>
+  </div>
+  <div class="co-row c3">
+    <div><label>Rua *</label><input id="coRua"></div>
+    <div><label>Número *</label><input id="coNumero"></div>
+    <div><label>UF *</label><input id="coUf" maxlength="2"></div>
+  </div>
+  <div class="co-row c2">
+    <div><label>Bairro *</label><input id="coBairro"></div>
+    <div><label>Complemento</label><input id="coCompl" placeholder="apto, bloco…"></div>
+  </div>
+  <div class="co-resumo" id="coResumo"></div>
+  <div class="msg" id="coMsg"></div>
+  <div class="co-acoes">
+    <button class="co-voltar" onclick="fecharCheckout()">Voltar</button>
+    <button class="co-pagar" id="coPagar">Ir para o pagamento</button>
+  </div>
+</div></div>
 
 <script>
 (function(){
@@ -309,13 +362,13 @@
         if(!r.ok){msg.className="msg err";msg.textContent=d.erro||"Não foi possível calcular o frete.";return;}
         if(!d.opcoes||!d.opcoes.length){msg.className="msg err";msg.textContent="Sem opções de frete para este CEP.";return;}
         msg.textContent="";
-        ops.innerHTML=d.opcoes.map(function(o,i){
-          return '<div class="frete-op" data-i="'+i+'" data-preco="'+o.preco+'"><span>'+esc(o.nome)+(o.empresa?' · '+esc(o.empresa):'')
+        ops.innerHTML=d.opcoes.map(function(o){
+          return '<div class="frete-op" data-id="'+esc(o.id)+'" data-preco="'+o.preco+'"><span>'+esc(o.nome)+(o.empresa?' · '+esc(o.empresa):'')
             +(o.prazo_dias?' · '+o.prazo_dias+' dia(s)':'')+'</span><span class="p">'+reaisF(o.preco)+'</span></div>';
         }).join("");
         ops.querySelectorAll(".frete-op").forEach(function(el){
           el.onclick=function(){ ops.querySelectorAll(".frete-op").forEach(function(x){x.classList.remove("on");}); el.classList.add("on");
-            freteSel={preco:parseFloat(el.getAttribute("data-preco")), nome:el.querySelector("span").textContent}; atualizarTotais(); };
+            freteSel={id:el.getAttribute("data-id"), preco:parseFloat(el.getAttribute("data-preco")), nome:el.querySelector("span").textContent, cep:(document.getElementById("cepInput").value||"").replace(/\D/g,"")}; atualizarTotais(); };
         });
       }catch(e){msg.className="msg err";msg.textContent="Erro ao calcular o frete.";}
     };
@@ -329,12 +382,61 @@
     document.getElementById("tTotal").textContent=reaisF(total);
     document.getElementById("btnCheckout").disabled=!freteSel;
   }
-  document.getElementById("btnCheckout").onclick=function(){
-    alert("Pagamento e finalização entram na próxima etapa (Fase 3). Seu pedido e o frete já estão calculados!");
+  // ---- checkout ----
+  function v(id){return (document.getElementById(id).value||"").trim();}
+  window.fecharCheckout=function(){document.getElementById("co").classList.remove("on");};
+  async function viacep(cep){
+    cep=(cep||"").replace(/\D/g,""); if(cep.length!==8)return;
+    try{ var d=await fetch("https://viacep.com.br/ws/"+cep+"/json/").then(function(r){return r.json();});
+      if(d && !d.erro){ if(d.logradouro&&!v("coRua"))document.getElementById("coRua").value=d.logradouro;
+        if(d.bairro&&!v("coBairro"))document.getElementById("coBairro").value=d.bairro;
+        if(d.localidade)document.getElementById("coCidade").value=d.localidade;
+        if(d.uf)document.getElementById("coUf").value=d.uf; }
+    }catch(e){}
+  }
+  function abrirCheckout(){
+    if(!freteSel)return;
+    var sub=ultimoCarrinho?ultimoCarrinho.subtotal_cents:0;
+    document.getElementById("coResumo").innerHTML=
+      '<div class="l"><span>Subtotal</span><span>'+reais(sub)+'</span></div>'
+      +'<div class="l"><span>Frete ('+esc(freteSel.nome)+')</span><span>'+reaisF(freteSel.preco)+'</span></div>'
+      +'<div class="l t"><span>Total</span><span>'+reaisF(sub/100+freteSel.preco)+'</span></div>';
+    if(freteSel.cep){ document.getElementById("coCep").value=freteSel.cep.replace(/(\d{5})(\d{3})/,"$1-$2"); viacep(freteSel.cep); }
+    document.getElementById("coMsg").textContent="";
+    document.getElementById("co").classList.add("on");
+  }
+  document.getElementById("coCep").addEventListener("blur",function(){viacep(this.value);});
+  document.getElementById("btnCheckout").onclick=abrirCheckout;
+  document.getElementById("coPagar").onclick=async function(){
+    var msg=document.getElementById("coMsg"); msg.className="msg";
+    var faltou=["coNome","coEmail","coCpf","coTel","coCep","coRua","coNumero","coBairro","coCidade","coUf"].some(function(id){return !v(id);});
+    if(faltou){msg.className="msg err";msg.textContent="Preencha todos os campos obrigatórios (*).";return;}
+    if(!freteSel){msg.className="msg err";msg.textContent="Selecione o frete no carrinho.";return;}
+    var body={ cliente:{nome:v("coNome"),email:v("coEmail"),cpf:v("coCpf"),telefone:v("coTel")},
+      endereco:{cep:v("coCep"),rua:v("coRua"),numero:v("coNumero"),complemento:v("coCompl"),bairro:v("coBairro"),cidade:v("coCidade"),uf:v("coUf")},
+      itens:lerCart(), frete_id:freteSel.id };
+    var b=this; b.disabled=true; b.textContent="Redirecionando…";
+    try{
+      var r=await fetch("/api/loja/checkout",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+      var d=await r.json();
+      if(!r.ok || !d.init_point){ msg.className="msg err"; msg.textContent=d.erro||"Não foi possível finalizar."; b.disabled=false; b.textContent="Ir para o pagamento"; if(d.recarregar){window.fecharCheckout();renderCart();} return; }
+      window.location.href=d.init_point;
+    }catch(e){ msg.className="msg err"; msg.textContent="Erro ao finalizar. Tente novamente."; b.disabled=false; b.textContent="Ir para o pagamento"; }
   };
 
+  function mostrarRetorno(){
+    var p; try{ p=new URLSearchParams(location.search).get("pedido"); }catch(e){ p=null; }
+    if(!p)return;
+    var el=document.getElementById("retornoBanner");
+    if(p==="ok"){ try{localStorage.removeItem("aqualife_cart");}catch(e){} atualizarBadge();
+      el.style.background="#DCF3E6";el.style.color="#1F6E43";el.textContent="✓ Pedido recebido e pagamento aprovado! Você vai receber a confirmação por e-mail."; }
+    else if(p==="pendente"){ el.style.background="#FBEBCF";el.style.color="#8A5A12";el.textContent="⏳ Pagamento pendente. Assim que for aprovado, confirmamos por e-mail."; }
+    else { el.style.background="#FBE0E1";el.style.color="#9C2A2E";el.textContent="Pagamento não concluído. Você pode tentar de novo pelo carrinho."; }
+    el.hidden=false;
+  }
+
   async function init(){
-    atualizarBadge();
+    atualizarBadge(); mostrarRetorno();
     try{
       var res=await Promise.all([fetch("/api/loja/categorias"),fetch("/api/loja/produtos")]);
       CATS=await res[0].json(); PRODUTOS=await res[1].json();
