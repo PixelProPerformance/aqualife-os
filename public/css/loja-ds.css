@@ -1,0 +1,159 @@
+/* ==========================================================================
+   AQUALIFE — DESIGN SYSTEM DA LOJA (loja-ds.css)
+   Aditivo: define tokens --aq-* e componentes .aq-* próprios, sem sobrescrever
+   o app.css. Mobile-first (base ~390px), progride para tablet/desktop/wide.
+   Filosofia: "menos interface, mais produto". 70% claro · 20% navy/grafite ·
+   10% azul #0038FF (CTA/links/seleção/estados).
+   ========================================================================== */
+
+:root{
+  /* --- Cor de marca (usar com moderação) --- */
+  --aq-blue:#0038FF;
+  --aq-blue-600:#0030DB;      /* hover */
+  --aq-blue-050:#EEF2FF;      /* seleção/realce suave */
+
+  /* --- Neutros (70% claro / 20% escuro) --- */
+  --aq-white:#FFFFFF;
+  --aq-paper:#F7F8FA;         /* off-white de fundo */
+  --aq-navy:#0B1B33;          /* navy muito escuro (títulos) */
+  --aq-graphite:#3A4656;      /* grafite (texto) */
+  --aq-muted:#6B7684;         /* texto secundário */
+  --aq-line:#E6E9EF;          /* bordas discretas */
+  --aq-line-2:#D7DCE5;
+
+  /* --- Estados --- */
+  --aq-ok:#128A5B;            /* positivo / compatível */
+  --aq-ok-bg:#E7F5EE;
+  --aq-warn:#B7791F;
+  --aq-warn-bg:#FBF3E4;
+  --aq-danger:#C0392B;
+  --aq-danger-bg:#FBEBE9;
+
+  /* --- Tipografia --- */
+  --aq-font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --aq-fs-display:clamp(28px,6vw,44px);
+  --aq-fs-h1:clamp(23px,4.5vw,32px);
+  --aq-fs-h2:clamp(19px,3.4vw,24px);
+  --aq-fs-h3:17px;
+  --aq-fs-body:15px;
+  --aq-fs-small:13px;
+  --aq-fs-caption:11.5px;
+  --aq-lh:1.55;
+
+  /* --- Espaçamento (escala 4pt) --- */
+  --aq-1:4px; --aq-2:8px; --aq-3:12px; --aq-4:16px; --aq-5:20px;
+  --aq-6:24px; --aq-8:32px; --aq-10:40px; --aq-12:48px; --aq-16:64px;
+
+  /* --- Raio / borda / sombra (discretos) --- */
+  --aq-radius:12px;
+  --aq-radius-sm:8px;
+  --aq-radius-pill:999px;
+  --aq-border:1px solid var(--aq-line);
+  --aq-shadow:0 1px 2px rgba(11,27,51,.04);
+  --aq-shadow-hover:0 8px 24px rgba(11,27,51,.10);
+
+  /* --- Layout --- */
+  --aq-container:1200px;
+  --aq-gutter:16px;
+
+  /* --- Interação --- */
+  --aq-tap:44px;              /* alvo de toque mínimo */
+  --aq-t:.18s cubic-bezier(.2,.6,.2,1);
+}
+
+/* ---------- Base tipográfica de apoio ---------- */
+.aq-scope{font-family:var(--aq-font);color:var(--aq-graphite);font-size:var(--aq-fs-body);line-height:var(--aq-lh);-webkit-font-smoothing:antialiased}
+.aq-display{font-size:var(--aq-fs-display);font-weight:700;letter-spacing:-.02em;color:var(--aq-navy);line-height:1.1}
+.aq-h1{font-size:var(--aq-fs-h1);font-weight:700;letter-spacing:-.01em;color:var(--aq-navy);line-height:1.2}
+.aq-h2{font-size:var(--aq-fs-h2);font-weight:700;color:var(--aq-navy);line-height:1.25}
+.aq-h3{font-size:var(--aq-fs-h3);font-weight:600;color:var(--aq-navy)}
+.aq-small{font-size:var(--aq-fs-small)}
+.aq-caption{font-size:var(--aq-fs-caption);color:var(--aq-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.aq-muted{color:var(--aq-muted)}
+
+/* ---------- Container / grid ---------- */
+.aq-container{max-width:var(--aq-container);margin:0 auto;padding-inline:var(--aq-gutter)}
+.aq-grid-prod{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--aq-3)}
+@media(min-width:600px){.aq-grid-prod{grid-template-columns:repeat(3,1fr);gap:var(--aq-4)}}
+@media(min-width:900px){.aq-grid-prod{grid-template-columns:repeat(4,1fr)}}
+@media(min-width:1200px){.aq-grid-prod{grid-template-columns:repeat(5,1fr)}}
+
+/* ---------- Botões ---------- */
+.aq-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:var(--aq-tap);padding:0 var(--aq-5);border-radius:var(--aq-radius-sm);
+  font:600 var(--aq-fs-body)/1 var(--aq-font);cursor:pointer;border:1px solid transparent;
+  transition:background var(--aq-t),border-color var(--aq-t),transform var(--aq-t);
+  text-decoration:none;white-space:nowrap;
+}
+.aq-btn:active{transform:translateY(1px)}
+.aq-btn--primary{background:var(--aq-blue);color:#fff}
+.aq-btn--primary:hover{background:var(--aq-blue-600)}
+.aq-btn--ghost{background:#fff;color:var(--aq-navy);border-color:var(--aq-line-2)}
+.aq-btn--ghost:hover{border-color:var(--aq-blue);color:var(--aq-blue)}
+.aq-btn--block{width:100%}
+.aq-btn--sm{min-height:36px;padding:0 var(--aq-4);font-size:var(--aq-fs-small)}
+.aq-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ---------- Inputs ---------- */
+.aq-field{display:flex;flex-direction:column;gap:6px}
+.aq-label{font-size:var(--aq-fs-small);font-weight:600;color:var(--aq-graphite)}
+.aq-input,.aq-select{
+  width:100%;min-height:var(--aq-tap);padding:0 var(--aq-3);border:1px solid var(--aq-line-2);
+  border-radius:var(--aq-radius-sm);font:400 var(--aq-fs-body) var(--aq-font);color:var(--aq-navy);background:#fff;
+  transition:border-color var(--aq-t),box-shadow var(--aq-t);
+}
+.aq-input:focus,.aq-select:focus{outline:none;border-color:var(--aq-blue);box-shadow:0 0 0 3px var(--aq-blue-050)}
+
+/* ---------- Foco visível global (acessibilidade) ---------- */
+.aq-scope :focus-visible{outline:2px solid var(--aq-blue);outline-offset:2px;border-radius:4px}
+
+/* ---------- Badges ---------- */
+.aq-badge{display:inline-flex;align-items:center;gap:4px;font-size:var(--aq-fs-caption);font-weight:700;
+  padding:4px 8px;border-radius:var(--aq-radius-pill);letter-spacing:.02em;text-transform:uppercase}
+.aq-badge--oferta{background:var(--aq-blue);color:#fff}
+.aq-badge--destaque{background:var(--aq-blue-050);color:var(--aq-blue-600)}
+.aq-badge--esgotado{background:#EEF0F3;color:var(--aq-muted)}
+.aq-badge--ok{background:var(--aq-ok-bg);color:var(--aq-ok)}
+
+/* ---------- Preço ---------- */
+.aq-price{display:flex;flex-direction:column;gap:1px;margin-top:auto}
+.aq-price__de{font-size:var(--aq-fs-caption);color:var(--aq-muted);text-decoration:line-through}
+.aq-price__por{font-size:19px;font-weight:700;color:var(--aq-navy);line-height:1.1}
+.aq-price__pix{font-size:var(--aq-fs-small);color:var(--aq-ok);font-weight:600}
+.aq-price__parc{font-size:var(--aq-fs-caption);color:var(--aq-muted)}
+
+/* ---------- Rating (só quando houver nota real) ---------- */
+.aq-rating{display:inline-flex;align-items:center;gap:4px;font-size:var(--aq-fs-small);color:var(--aq-graphite)}
+.aq-rating__stars{color:#F5A623;letter-spacing:1px}
+
+/* ---------- Product Card ---------- */
+.aq-card{position:relative;display:flex;flex-direction:column;background:var(--aq-white);
+  border:var(--aq-border);border-radius:var(--aq-radius);overflow:hidden;box-shadow:var(--aq-shadow);
+  transition:box-shadow var(--aq-t),transform var(--aq-t)}
+.aq-card:hover{box-shadow:var(--aq-shadow-hover);transform:translateY(-2px)}
+.aq-card__media{position:relative;aspect-ratio:1/1;background:var(--aq-paper);overflow:hidden}
+.aq-card__media img{width:100%;height:100%;object-fit:cover;display:block}
+.aq-card__media .aq-nofoto{display:flex;align-items:center;justify-content:center;height:100%;color:var(--aq-muted);font-size:var(--aq-fs-small)}
+.aq-card__flags{position:absolute;top:8px;left:8px;display:flex;gap:6px;flex-wrap:wrap}
+.aq-fav{position:absolute;top:8px;right:8px;width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.9);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--aq-muted);box-shadow:var(--aq-shadow);transition:color var(--aq-t)}
+.aq-fav:hover{color:var(--aq-blue)}
+.aq-fav[aria-pressed="true"]{color:var(--aq-blue)}
+.aq-card__body{display:flex;flex-direction:column;gap:4px;padding:var(--aq-3);flex:1}
+.aq-card__marca{font-size:var(--aq-fs-caption);color:var(--aq-muted);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.aq-card__nome{font-size:var(--aq-fs-small);font-weight:600;color:var(--aq-navy);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
+.aq-card__cta{margin-top:var(--aq-3)}
+
+/* ---------- Skeleton (evita layout shift no carregamento) ---------- */
+.aq-skel{position:relative;overflow:hidden;background:#EEF0F3;border-radius:var(--aq-radius)}
+.aq-skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);animation:aq-shimmer 1.2s infinite}
+.aq-skel-card{height:280px}
+@keyframes aq-shimmer{100%{transform:translateX(100%)}}
+
+/* ---------- Acessibilidade: movimento reduzido ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
