@@ -243,7 +243,7 @@ export function registrarLoja(deps) {
     const cepOrigem = soDigitos(await getConfig("melhorenvio_cep_origem"), 8);
     if (!token || cepOrigem.length !== 8) { const e = new Error("frete_nao_configurado"); e.code = 400; throw e; }
     const sandbox = (await getConfig("melhorenvio_sandbox")) === "true";
-    const base = sandbox ? "https://sandbox.melhorenvio.com.br" : "https://www.melhorenvio.com.br";
+    const base = sandbox ? "https://sandbox.melhorenvio.com.br" : "https://melhorenvio.com.br";
     const products = itens.map((it, i) => ({
       id: String(i + 1),
       width: Math.max(11, Math.round(it.largura_cm || 0)),
