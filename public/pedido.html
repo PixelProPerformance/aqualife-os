@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("aq_theme")||"light");}catch(e){}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acompanhar pedido — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.wrap{max-width:720px;margin:0 auto;padding:32px 18px 60px}
+.topo{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.topo h1{font-size:23px;color:var(--tinta)}
+.topo a{margin-left:auto;font-size:13.5px;color:var(--agua-esc);text-decoration:none;font-weight:600}
+.card{background:var(--branco);border:1px solid var(--linha);border-radius:14px;padding:22px 22px}
+.busca{display:flex;flex-direction:column;gap:12px}
+.busca label{font-size:12.5px;font-weight:600;color:var(--suave)}
+.busca input{width:100%;padding:11px 13px;border:1px solid var(--linha);border-radius:10px;font-size:14.5px;font-family:inherit;background:var(--branco);color:var(--corpo)}
+.busca input:focus{outline:none;border-color:var(--agua)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:10px;background:var(--agua);color:#fff;border:none;font-size:14.5px;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.6;cursor:default}
+.erro{color:var(--critico);font-size:13.5px;margin-top:6px}
+.hint{color:var(--suave);font-size:12.5px;margin-top:2px}
+
+.res{margin-top:22px;display:none}
+.res.on{display:block}
+.res h2{font-size:16px;color:var(--tinta);margin-bottom:2px}
+.res .num{font-size:12.5px;color:var(--suave);margin-bottom:18px;word-break:break-all}
+
+/* timeline */
+.tl{list-style:none;margin:6px 0 20px;padding:0}
+.tl li{position:relative;padding:0 0 20px 30px;color:var(--suave);font-size:14px}
+.tl li:last-child{padding-bottom:0}
+.tl li::before{content:"";position:absolute;left:6px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--linha);border:2px solid var(--branco);box-shadow:0 0 0 1px var(--linha)}
+.tl li::after{content:"";position:absolute;left:11px;top:14px;bottom:0;width:2px;background:var(--linha)}
+.tl li:last-child::after{display:none}
+.tl li.done{color:var(--corpo)}
+.tl li.done::before{background:var(--agua);box-shadow:0 0 0 1px var(--agua)}
+.tl li.cur{color:var(--tinta);font-weight:700}
+.tl li.cur::before{background:var(--agua-esc);box-shadow:0 0 0 3px var(--agua-clr,rgba(18,82,101,.18))}
+.tl li.cancel::before{background:var(--critico);box-shadow:0 0 0 1px var(--critico)}
+
+.rast{background:var(--papel);border:1px solid var(--linha);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.rast .cod{font-size:16px;font-weight:700;color:var(--tinta);letter-spacing:.02em}
+.rast a{display:inline-block;margin-top:8px;font-size:13.5px;font-weight:600;color:var(--agua-esc);text-decoration:none}
+
+.linha{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;color:var(--corpo)}
+.linha b{color:var(--tinta)}
+.tot{border-top:1px solid var(--linha);margin-top:6px;padding-top:8px;font-size:15px}
+.itens{margin:6px 0 14px}
+.item{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:6px 0;border-bottom:1px dashed var(--linha)}
+.item:last-child{border-bottom:none}
+.item .q{color:var(--suave)}
+.ent{font-size:13px;color:var(--suave);line-height:1.5;margin-top:12px}
+h3.sub{font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--suave);margin:16px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topo">
+    <h1>Acompanhar pedido</h1>
+    <a href="/loja.html">← Voltar à loja</a>
+  </div>
+
+  <div class="card" id="cardBusca">
+    <form class="busca" id="form">
+      <div>
+        <label for="fid">Número do pedido</label>
+        <input id="fid" placeholder="cole o número que veio no seu e-mail" autocomplete="off">
+      </div>
+      <div>
+        <label for="femail">E-mail usado na compra</label>
+        <input id="femail" type="email" placeholder="voce@email.com" autocomplete="email">
+      </div>
+      <button class="btn" id="btn" type="submit">Acompanhar</button>
+      <div class="erro" id="erro"></div>
+      <div class="hint">O número do pedido está no e-mail de confirmação que você recebeu.</div>
+    </form>
+  </div>
+
+  <div class="res" id="res"></div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const brl = (c) => "R$ " + (Number(c||0)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const ORDEM = ["pago","separando","enviado","entregue"];
+const LABEL = { pendente:"Aguardando pagamento", pago:"Pagamento confirmado", separando:"Em separação", enviado:"Enviado", entregue:"Entregue", cancelado:"Cancelado" };
+
+function timeline(status){
+  if(status === "cancelado")
+    return `<ul class="tl"><li class="cancel cur">Pedido cancelado</li></ul>`;
+  const idx = ORDEM.indexOf(status);
+  const cur = idx < 0 ? -1 : idx;
+  return `<ul class="tl">` + ORDEM.map((s,i)=>{
+    const cls = i < cur ? "done" : (i === cur ? "cur" : "");
+    return `<li class="${cls}">${LABEL[s]}</li>`;
+  }).join("") + `</ul>`;
+}
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function render(p){
+  const e = p.entrega || {};
+  const itens = (p.itens||[]).map(it=>`
+    <div class="item">
+      <div>${esc(it.produto_nome)}${it.variacao_nome?" <span class='q'>· "+esc(it.variacao_nome)+"</span>":""} <span class="q">× ${it.qty}</span></div>
+      <div>${brl(it.subtotal_cents)}</div>
+    </div>`).join("");
+  const rast = p.rastreio_codigo ? `
+    <h3 class="sub">Rastreio</h3>
+    <div class="rast">
+      <div class="cod">${esc(p.rastreio_codigo)}</div>
+      ${p.rastreio_url?`<a href="${esc(p.rastreio_url)}" target="_blank" rel="noopener">Rastrear entrega →</a>`:""}
+    </div>` : "";
+  const data = p.criado_em ? new Date(p.criado_em).toLocaleDateString("pt-BR") : "";
+  $("res").innerHTML = `
+    <div class="card">
+      <h2>${esc(p.status_label || LABEL[p.status] || p.status)}</h2>
+      <div class="num">Pedido ${esc(p.id)}${data?" · "+data:""}</div>
+      ${timeline(p.status)}
+      ${rast}
+      <h3 class="sub">Itens</h3>
+      <div class="itens">${itens||"<div class='q'>—</div>"}</div>
+      <div class="linha"><span>Subtotal</span><span>${brl(p.subtotal_cents)}</span></div>
+      <div class="linha"><span>Frete${p.frete_servico?" ("+esc(p.frete_servico)+")":""}</span><span>${brl(p.frete_cents)}</span></div>
+      <div class="linha tot"><b>Total</b><b>${brl(p.total_cents)}</b></div>
+      <div class="ent"><b>Entrega:</b> ${esc(e.rua)}, ${esc(e.numero)}${e.complemento?" - "+esc(e.complemento):""}<br>
+        ${esc(e.bairro)} — ${esc(e.cidade)}/${esc(e.uf)} — CEP ${esc(e.cep)}</div>
+    </div>`;
+  $("res").classList.add("on");
+}
+
+async function buscar(id, email){
+  $("erro").textContent = "";
+  $("btn").disabled = true; $("btn").textContent = "Buscando…";
+  try{
+    const r = await fetch("/api/loja/pedido/" + encodeURIComponent(id) + "?email=" + encodeURIComponent(email));
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok){ $("res").classList.remove("on"); $("erro").textContent = j.erro || "Não foi possível localizar o pedido."; return; }
+    render(j);
+  }catch(e){ $("erro").textContent = "Falha de conexão. Tente novamente."; }
+  finally{ $("btn").disabled = false; $("btn").textContent = "Acompanhar"; }
+}
+
+$("form").addEventListener("submit",(ev)=>{
+  ev.preventDefault();
+  const id = $("fid").value.trim(), email = $("femail").value.trim();
+  if(!id || !email){ $("erro").textContent = "Preencha o número do pedido e o e-mail."; return; }
+  buscar(id, email);
+});
+
+// Link direto do e-mail: ?id=...&email=...
+(function(){
+  const q = new URLSearchParams(location.search);
+  const id = q.get("id"), email = q.get("email");
+  if(id) $("fid").value = id;
+  if(email) $("femail").value = email;
+  if(id && email) buscar(id, email);
+})();
+</script>
+</body>
+</html>
