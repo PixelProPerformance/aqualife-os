@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("aq_theme")||"light");}catch(e){}</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aqualife — tudo para o seu ecossistema</title>
+<meta name="description" content="Produtos de aquarismo selecionados por quem cuida de aquários todos os dias. Filtragem, iluminação, rações, testes e mais.">
+<link rel="canonical" href="https://app.aqualifeaquarismo.com/home.html">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/loja-ds.css">
+<style>
+.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.home{padding:0 0 60px}
+.sec{margin-top:44px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.sec-h h2{font-size:var(--aq-fs-h2);color:var(--aq-navy)}
+.sec-h a{font-size:var(--aq-fs-small);color:var(--aq-blue);font-weight:600;text-decoration:none}
+
+/* HERO */
+.hero{margin-top:22px;border-radius:18px;overflow:hidden;position:relative;
+  background:linear-gradient(120deg,#0B1B33 0%,#123 40%,#0038FF 140%);color:#fff;padding:40px 26px}
+.hero::after{content:"";position:absolute;right:-60px;top:-40px;width:320px;height:320px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.16),transparent 62%);pointer-events:none}
+.hero h1{font-size:var(--aq-fs-display);line-height:1.08;font-weight:700;letter-spacing:-.02em;max-width:16ch;color:#fff}
+.hero p{margin-top:12px;font-size:var(--aq-fs-body);color:rgba(255,255,255,.82);max-width:46ch}
+.hero-cta{display:flex;gap:12px;margin-top:22px;flex-wrap:wrap}
+.hero .aq-btn--primary{background:#fff;color:var(--aq-blue-600)}
+.hero .aq-btn--primary:hover{background:#eef}
+.hero .aq-btn--ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+.hero .aq-btn--ghost:hover{border-color:#fff;color:#fff}
+
+/* cards de sistema / categoria */
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:700px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tile{display:flex;flex-direction:column;gap:8px;padding:18px 16px;border:var(--aq-border);border-radius:var(--aq-radius);
+  background:var(--aq-white);text-decoration:none;color:var(--aq-navy);transition:border-color var(--aq-t),transform var(--aq-t),box-shadow var(--aq-t)}
+.tile:hover{border-color:var(--aq-blue);transform:translateY(-2px);box-shadow:var(--aq-shadow-hover)}
+.tile .ic{width:40px;height:40px;border-radius:10px;background:var(--aq-blue-050);display:grid;place-items:center;color:var(--aq-blue)}
+.tile .ic .i{width:22px;height:22px}
+.tile b{font-size:var(--aq-fs-body);font-weight:600}
+.tile small{color:var(--aq-muted);font-size:var(--aq-fs-small)}
+
+.cats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:560px){.cats{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:900px){.cats{grid-template-columns:repeat(5,1fr)}}
+.cat{display:flex;align-items:center;gap:10px;padding:14px;border:var(--aq-border);border-radius:var(--aq-radius-sm);
+  background:var(--aq-white);text-decoration:none;color:var(--aq-navy);font-weight:600;font-size:var(--aq-fs-small);transition:border-color var(--aq-t)}
+.cat:hover{border-color:var(--aq-blue)}
+.cat .i{color:var(--aq-blue)}
+
+/* assistente */
+.assist{background:linear-gradient(180deg,var(--aq-blue-050),#fff);border:1px solid var(--aq-blue-050);border-radius:18px;padding:26px}
+.assist h2{font-size:var(--aq-fs-h2);color:var(--aq-navy)}
+.assist p{color:var(--aq-muted);font-size:var(--aq-fs-small);margin:4px 0 16px}
+.assist-form{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:720px){.assist-form{grid-template-columns:1fr 1fr 1fr auto;align-items:end}}
+
+/* ecossistema */
+.eco{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:760px){.eco{grid-template-columns:repeat(3,1fr)}}
+.eco-card{border:var(--aq-border);border-radius:var(--aq-radius);padding:22px;background:var(--aq-white);text-decoration:none;color:var(--aq-navy);transition:border-color var(--aq-t),transform var(--aq-t)}
+.eco-card:hover{border-color:var(--aq-blue);transform:translateY(-2px)}
+.eco-card .ic{width:42px;height:42px;border-radius:11px;background:var(--aq-blue-050);display:grid;place-items:center;color:var(--aq-blue);margin-bottom:12px}
+.eco-card h3{font-size:var(--aq-fs-h3);color:var(--aq-navy);margin-bottom:4px}
+.eco-card p{color:var(--aq-muted);font-size:var(--aq-fs-small)}
+
+.rodape{margin-top:60px}
+</style>
+</head>
+<body class="aq-scope">
+
+<header class="topo">
+  <div class="wrap topo-in">
+    <a class="marca" href="/home.html" aria-label="Aqualife" style="text-decoration:none">
+      <img src="/images/logo-azul.png" alt="Aqualife" style="height:36px;display:block" onerror="this.outerHTML='<span class=&quot;marca-i&quot;>A</span><span class=&quot;marca-t&quot;>Aqualife<small>AQUARISMO</small></span>'">
+    </a>
+    <nav class="nav" style="margin-left:auto">
+      <a href="/loja.html">Loja</a>
+      <a href="/aquabook.html">Aquabook</a>
+      <a href="/academy.html">Academy</a>
+    </nav>
+    <a href="/loja.html" class="aq-btn aq-btn--ghost aq-btn--sm" style="margin-left:8px">Ver produtos</a>
+    <button class="aq-btn aq-btn--ghost aq-btn--sm" id="btnCart" style="position:relative" aria-label="Carrinho">
+      <svg class="i" viewBox="0 0 24 24"><path d="M6 6h15l-1.6 9H8z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/></svg>
+      <span id="cartBadge" style="position:absolute;top:-6px;right:-6px;background:var(--aq-blue);color:#fff;border-radius:999px;font-size:11px;font-weight:700;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0 4px">0</span>
+    </button>
+  </div>
+</header>
+
+<main class="wrap home">
+
+  <section class="hero">
+    <h1>Tudo para o seu ecossistema.</h1>
+    <p>Produtos selecionados por quem cuida de aquários todos os dias.</p>
+    <div class="hero-cta">
+      <a href="/loja.html" class="aq-btn aq-btn--primary">Comprar agora</a>
+      <a href="#assistente" class="aq-btn aq-btn--ghost">Encontre o produto ideal</a>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><h2>Compre pelo seu aquário</h2></div>
+    <div class="tiles" id="sistemas"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><h2>Destaques da Aqualife</h2><a href="/loja.html">Ver todos →</a></div>
+    <div class="aq-grid-prod" id="destaques"><div class="aq-skel aq-skel-card"></div><div class="aq-skel aq-skel-card"></div><div class="aq-skel aq-skel-card"></div><div class="aq-skel aq-skel-card"></div></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><h2>Categorias</h2><a href="/loja.html">Ver todas →</a></div>
+    <div class="cats" id="categorias"></div>
+  </section>
+
+  <section class="sec" id="assistente">
+    <div class="assist">
+      <h2>Não sabe qual produto comprar?</h2>
+      <p>Responda 3 perguntas e a gente te leva direto ao que faz sentido para o seu aquário.</p>
+      <div class="assist-form">
+        <div class="aq-field"><label class="aq-label" for="aSis">Qual seu sistema?</label>
+          <select class="aq-select" id="aSis">
+            <option value="">Selecione</option>
+            <option value="doce">Água doce</option>
+            <option value="plantado">Plantado</option>
+            <option value="marinho">Marinho / Reef</option>
+            <option value="lago">Koi / Lago</option>
+          </select></div>
+        <div class="aq-field"><label class="aq-label" for="aVol">Quantos litros?</label>
+          <input class="aq-input" id="aVol" type="number" min="1" placeholder="250"></div>
+        <div class="aq-field"><label class="aq-label" for="aCat">O que procura?</label>
+          <select class="aq-select" id="aCat"><option value="">Qualquer</option></select></div>
+        <button class="aq-btn aq-btn--primary" id="aBtn" type="button" style="height:var(--aq-tap)">Ver indicados</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><h2>Mais que uma loja</h2></div>
+    <div class="eco">
+      <a class="eco-card" href="/aquabook.html">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M12 5.5C10.5 4.3 8.3 4 5.5 4v13c2.8 0 5 .3 6.5 1.5C13.5 17.3 15.7 17 18.5 17V4c-2.8 0-5 .3-6.5 1.5Z"/><path d="M12 5.5v13"/></svg></div>
+        <h3>Aquabook</h3><p>Enciclopédia de espécies: compatibilidade, parâmetros e cuidados.</p></a>
+      <a class="eco-card" href="/planos.html">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9.5 12l2 2 3.5-4"/></svg></div>
+        <h3>Aqualife Care</h3><p>Monitoramento e acompanhamento da saúde do seu aquário.</p></a>
+      <a class="eco-card" href="/academy.html">
+        <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M12 4 2.5 9 12 14l9.5-5L12 4Z"/><path d="M6 11v4c0 1.5 3 3 6 3s6-1.5 6-3v-4"/></svg></div>
+        <h3>Aqualife Academy</h3><p>Aprenda a montar e manter aquários com quem entende.</p></a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="rodape"><div class="wrap">© Aqualife Aquarismo — tudo para o seu ecossistema.</div></footer>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+  var esc=function(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");};
+  var reais=function(c){return "R$ "+(Number(c||0)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});};
+  var COMERCIAL={pix_desconto_pct:0,parcelas_max:1,parcela_min_cents:0};
+
+  function track(ev,data){ try{(window.dataLayer=window.dataLayer||[]).push(Object.assign({event:ev},data||{}));}catch(e){} }
+  function badge(){ var n=0; try{ (JSON.parse(localStorage.getItem("aqualife_cart")||"[]")).forEach(function(i){n+=i.qty||0;}); }catch(e){} if($("cartBadge"))$("cartBadge").textContent=n; }
+
+  // Cards "compre pelo seu aquário" — só os sistemas que sabemos filtrar de verdade
+  var SIS=[
+    {s:"doce",n:"Água Doce",d:"Comunitário e tropical",ic:'<path d="M12 3c3.5 4 5.5 6.6 5.5 9.3A5.5 5.5 0 0 1 6.5 12.3C6.5 9.6 8.5 7 12 3Z"/>'},
+    {s:"plantado",n:"Plantado",d:"CO₂, luz e fertilização",ic:'<path d="M12 20c0-6 4-9 8-9-1 6-4 9-8 9z"/><path d="M12 20c0-5-3-8-8-8 1 5 4 8 8 8z"/><path d="M12 20V9"/>'},
+    {s:"marinho",n:"Marinho / Reef",d:"Corais e peixes marinhos",ic:'<path d="M6 20c0-4 1.5-7 3-9M18 20c0-4-1.5-7-3-9M12 20V6"/><circle cx="12" cy="5" r="1.6"/>'},
+    {s:"lago",n:"Koi / Lago",d:"Ornamentais de lago",ic:'<path d="M3 15c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/><path d="M3 19c3 0 3-2 6-2s3 2 6 2 3-2 6-2"/><circle cx="16" cy="8" r="2.4"/>'}
+  ];
+
+  function precoBloco(p){
+    if(p.preco_a_partir==null) return '<div class="aq-price"><span class="aq-muted aq-small">sob consulta</span></div>';
+    var atual=Number(p.preco_a_partir);
+    var de=(p.preco_cheio!=null&&Number(p.preco_cheio)>atual)?'<span class="aq-price__de">'+reais(p.preco_cheio)+'</span>':'';
+    var pix=''; if(COMERCIAL.pix_desconto_pct>0){ pix='<span class="aq-price__pix">'+reais(Math.round(atual*(1-COMERCIAL.pix_desconto_pct/100)))+' no PIX</span>'; }
+    var parc=''; if(COMERCIAL.parcelas_max>1){ var n=COMERCIAL.parcelas_max; if(COMERCIAL.parcela_min_cents>0){ while(n>1&&(atual/n)<COMERCIAL.parcela_min_cents)n--; } if(n>1) parc='<span class="aq-price__parc">'+n+'x de '+reais(Math.round(atual/n))+'</span>'; }
+    return '<div class="aq-price">'+de+'<span class="aq-price__por">'+reais(atual)+'</span>'+pix+parc+'</div>';
+  }
+  function urlProduto(p){ return "/produto.html?"+(p.slug?("slug="+encodeURIComponent(p.slug)):("id="+encodeURIComponent(p.id))); }
+  function card(p){
+    var esg=Number(p.estoque_total)<=0, promo=(p.preco_cheio!=null&&p.preco_a_partir!=null&&Number(p.preco_cheio)>Number(p.preco_a_partir));
+    var flags=[]; if(esg)flags.push('<span class="aq-badge aq-badge--esgotado">Esgotado</span>'); else if(promo)flags.push('<span class="aq-badge aq-badge--oferta">Oferta</span>');
+    if(p.destaque&&!esg)flags.push('<span class="aq-badge aq-badge--destaque">Destaque</span>');
+    var img=p.capa?'<img src="'+esc(p.capa)+'" alt="'+esc(p.nome)+'" loading="lazy" width="300" height="300">':'<div class="aq-nofoto">sem foto</div>';
+    return '<a class="aq-card" href="'+urlProduto(p)+'" style="text-decoration:none" data-id="'+esc(p.id)+'">'
+      +'<div class="aq-card__media">'+(flags.length?'<div class="aq-card__flags">'+flags.join("")+'</div>':'')+img+'</div>'
+      +'<div class="aq-card__body">'+(p.marca?'<div class="aq-card__marca">'+esc(p.marca)+'</div>':'')
+      +'<div class="aq-card__nome">'+esc(p.nome)+'</div>'+precoBloco(p)+'</div></a>';
+  }
+
+  function renderSistemas(){
+    $("sistemas").innerHTML=SIS.map(function(x){
+      return '<a class="tile" href="/loja.html?sistema='+x.s+'"><div class="ic"><svg class="i" viewBox="0 0 24 24">'+x.ic+'</svg></div><b>'+x.n+'</b><small>'+x.d+'</small></a>';
+    }).join("");
+  }
+
+  async function init(){
+    badge();
+    try{
+      var r=await Promise.all([fetch("/api/loja/produtos"),fetch("/api/loja/categorias"),fetch("/api/loja/comercial")]);
+      var produtos=await r[0].json(), cats=await r[1].json();
+      try{ COMERCIAL=await r[2].json(); }catch(e){}
+
+      renderSistemas();
+
+      // destaques: prioriza destaque=true; completa com os primeiros
+      var dest=produtos.filter(function(p){return p.destaque;});
+      var lista=(dest.length?dest:produtos).slice(0,10);
+      $("destaques").innerHTML = lista.length ? lista.map(card).join("") : '<div class="vazio">Em breve, novidades por aqui.</div>';
+      if(lista.length) track("view_item_list",{item_list_name:"Destaques Home",items:lista.slice(0,10).map(function(p){return {item_id:p.id,item_name:p.nome};})});
+
+      // categorias reais
+      $("categorias").innerHTML = cats.length
+        ? cats.map(function(c){return '<a class="cat" href="/loja.html?cat='+esc(c.slug)+'"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg> '+esc(c.nome)+'</a>';}).join("")
+        : '<div class="vazio">Categorias em breve.</div>';
+      var aCat=$("aCat");
+      cats.forEach(function(c){ var o=document.createElement("option"); o.value=c.slug; o.textContent=c.nome; aCat.appendChild(o); });
+    }catch(e){
+      $("destaques").innerHTML='<div class="vazio">Não foi possível carregar agora.</div>';
+      renderSistemas();
+    }
+  }
+
+  $("aBtn").onclick=function(){
+    var sis=$("aSis").value, vol=$("aVol").value, cat=$("aCat").value;
+    var qs=[]; if(sis)qs.push("sistema="+encodeURIComponent(sis)); if(cat)qs.push("cat="+encodeURIComponent(cat)); if(vol)qs.push("vol="+encodeURIComponent(vol));
+    track("care_cta",{tipo:"assistente_home",sistema:sis||null,cat:cat||null});
+    location.href="/loja.html"+(qs.length?("?"+qs.join("&")):"");
+  };
+  $("btnCart").onclick=function(){ location.href="/loja.html?cart=1"; };
+
+  init();
+})();
+</script>
+<script src="/js/theme.js" defer></script>
+</body>
+</html>
