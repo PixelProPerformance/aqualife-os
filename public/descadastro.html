@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Descadastro — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.wrap{max-width:520px;margin:0 auto;padding:60px 18px}
+.card{background:var(--branco);border:1px solid var(--linha);border-radius:16px;padding:34px 30px;text-align:center}
+.card h1{font-size:21px;color:var(--tinta);margin-bottom:8px}
+.card p{color:var(--corpo);font-size:14.5px;line-height:1.6}
+.card .em{color:var(--tinta);font-weight:600;word-break:break-all}
+.ic{font-size:40px;line-height:1;margin-bottom:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:10px;background:var(--agua);color:#fff;border:none;font-size:14.5px;font-weight:600;cursor:pointer;text-decoration:none;margin-top:18px}
+.btn.sec{background:transparent;color:var(--agua-esc);border:1px solid var(--linha)}
+.btn:disabled{opacity:.6;cursor:default}
+.muted{color:var(--suave);font-size:13px;margin-top:16px}
+.linkloja{display:block;margin-top:22px;font-size:13.5px;color:var(--agua-esc);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card">
+    <div class="ic">⏳</div>
+    <h1>Processando…</h1>
+    <p>Estamos atualizando sua preferência de e-mails.</p>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const q=new URLSearchParams(location.search);
+const E=q.get("e")||"", T=q.get("t")||"";
+
+function render(html){ $("card").innerHTML=html; }
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function telaDescadastrado(){
+  render(`<div class="ic">✅</div>
+    <h1>Descadastro concluído</h1>
+    <p>O e-mail <span class="em">${esc(E)}</span> não receberá mais nossas newsletters.</p>
+    <p class="muted">Você ainda receberá e-mails importantes sobre seus pedidos e manutenções.</p>
+    <button class="btn sec" id="voltar">Voltar a receber novidades</button>
+    <a class="linkloja" href="/loja.html">← Ir para a loja</a>`);
+  $("voltar").onclick=reinscrever;
+}
+function telaReinscrito(){
+  render(`<div class="ic">🐠</div>
+    <h1>Tudo certo!</h1>
+    <p>O e-mail <span class="em">${esc(E)}</span> voltará a receber nossas novidades.</p>
+    <button class="btn" id="desc">Descadastrar novamente</button>
+    <a class="linkloja" href="/loja.html">← Ir para a loja</a>`);
+  $("desc").onclick=()=>descadastrar(true);
+}
+function telaErro(msg){
+  render(`<div class="ic">⚠️</div>
+    <h1>Não foi possível concluir</h1>
+    <p>${esc(msg||"Este link é inválido ou expirou.")}</p>
+    <a class="linkloja" href="/loja.html">← Ir para a loja</a>`);
+}
+
+async function post(url){
+  const r=await fetch(url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({e:E,t:T})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.erro||"Falha");
+  return j;
+}
+async function descadastrar(){ try{ await post("/api/loja/descadastro"); telaDescadastrado(); }catch(e){ telaErro(e.message); } }
+async function reinscrever(){ try{ await post("/api/loja/reinscrever"); telaReinscrito(); }catch(e){ telaErro(e.message); } }
+
+(async function(){
+  if(!E||!T){ telaErro("Link incompleto."); return; }
+  // valida o link antes de agir (evita opt-out por prefetch: só o JS executa isto)
+  try{
+    const r=await fetch("/api/loja/descadastro/status?e="+encodeURIComponent(E)+"&t="+encodeURIComponent(T));
+    if(!r.ok){ telaErro(); return; }
+    // link válido → descadastra automaticamente
+    await descadastrar();
+  }catch(e){ telaErro(); }
+})();
+</script>
+</body>
+</html>
