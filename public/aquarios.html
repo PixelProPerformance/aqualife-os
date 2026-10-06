@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meus Aquários — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Georgia&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:32px 0}
+.barra{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.grid-aq{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.aq-card{overflow:hidden}
+.aq-foto{height:150px;background:var(--papel) center/cover no-repeat;position:relative}
+.aq-foto-vazia{display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--linha)}
+.aq-body{padding:16px 18px}
+.aq-nome{font-size:16px;font-weight:600;color:var(--tinta)}
+.aq-meta{font-size:13px;color:var(--suave);margin-top:2px}
+.aq-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.aq-tag{font-size:11.5px;background:var(--agua-clr);color:var(--agua-esc);padding:3px 9px;border-radius:20px}
+.aq-acoes{display:flex;gap:8px;margin-top:14px}
+.modal{position:fixed;inset:0;background:rgba(18,51,63,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+.modal.on{display:flex}
+.modal-cx{background:var(--branco);border-radius:14px;padding:26px;max-width:480px;width:100%;max-height:90vh;overflow:auto}
+.modal-cx h3{font-size:19px;margin-bottom:18px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-acoes{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.rm{color:var(--critico);font-size:13px;cursor:pointer;font-weight:500}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca"><a href="/dashboard.html" title="Ir para o painel"><img src="/images/logo-azul.png" alt="Aqualife" style="height:36px;display:block" onerror="this.style.display='none'"></a></div>
+    <a href="/dashboard.html" class="btn btn-c btn-sm" style="margin-left:auto">Voltar ao painel</a>
+  </div>
+</header>
+<main class="wrap sec">
+  <div class="barra">
+    <h1 style="font-size:24px">Meus Aquários</h1>
+    <div style="display:flex;gap:8px">
+      <a class="btn btn-c btn-sm" href="/autodiagnostico.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M3 12h3.5l2-5 3 10 2.5-5H21"/></svg>Autodiagnóstico</a>
+      <button class="btn btn-p btn-sm" id="novoBtn">+ Novo aquário/lago</button>
+    </div>
+  </div>
+  <div class="grid-aq" id="lista"><div class="vazio">Carregando…</div></div>
+</main>
+
+<div class="modal" id="modal"><div class="modal-cx">
+  <h3 id="modalTitulo">Novo aquário</h3>
+  <input type="hidden" id="aqId">
+  <div class="campo"><label>Nome</label><input class="inp" id="aqNome" placeholder="Reef da sala"></div>
+  <div class="duo">
+    <div class="campo"><label>Tipo</label>
+      <select class="inp" id="aqTipo">
+        <option value="freshwater">Água doce</option>
+        <option value="marine">Marinho</option>
+        <option value="pond">Lago</option></select></div>
+    <div class="campo"><label>Volume (L)</label><input class="inp" id="aqVol" type="number"></div>
+  </div>
+  <div class="campo"><label>Sistema de filtragem</label><input class="inp" id="aqFiltro" placeholder="Canister, HOB, sump..."></div>
+  <div class="campo"><label>Fauna (separe por vírgula)</label><input class="inp" id="aqFauna" placeholder="Neon-tetra, Cascudo..."></div>
+  <div class="campo"><label>Flora (separe por vírgula)</label><input class="inp" id="aqFlora" placeholder="Anubias, Musgo de java..."></div>
+  <div class="campo"><label>Data de montagem</label><input class="inp" id="aqData" type="date"></div>
+  <div class="campo"><label>Observações</label><textarea class="inp" id="aqObs" rows="3"></textarea></div>
+  <div class="campo"><label>Foto</label><input type="file" id="aqFoto" accept="image/*"></div>
+  <div class="modal-acoes">
+    <button class="btn btn-c" onclick="fecharModal()">Cancelar</button>
+    <button class="btn btn-p" id="salvarBtn">Salvar</button></div>
+</div></div>
+
+<!-- MODAL HABITANTES -->
+<div class="modal" id="modalHab"><div class="modal-cx" style="max-width:640px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px">
+    <h3 id="habTitulo" style="margin:0">Habitantes</h3>
+    <button class="btn btn-c btn-sm" onclick="document.getElementById('modalHab').classList.remove('on')">Fechar</button>
+  </div>
+  <p style="font-size:12.5px;color:var(--suave);margin-bottom:14px">Cadastre os animais, plantas e corais deste aquário. Comece a digitar para buscar no Aquabook.</p>
+
+  <!-- adicionar -->
+  <div class="cartao" style="padding:14px 16px;margin-bottom:14px">
+    <div style="position:relative">
+      <label style="font-size:12.5px;font-weight:600;color:var(--suave)">Espécie</label>
+      <input class="inp" id="habBusca" autocomplete="off" placeholder="Ex.: Neon-tetra, Zoanthus King Midas…">
+      <div id="habAC" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--branco);border:1px solid var(--linha);border-radius:10px;box-shadow:0 10px 24px rgba(11,27,51,.12);max-height:260px;overflow:auto;margin-top:4px"></div>
+    </div>
+    <div class="duo" style="margin-top:10px">
+      <div class="campo"><label>Quantidade</label><input class="inp" id="habQtd" type="number" min="1" value="1"></div>
+      <div class="campo"><label>Apelido (opcional)</label><input class="inp" id="habApelido" placeholder="ex.: cardume da frente"></div>
+    </div>
+    <div class="campo" style="margin-top:10px"><label>Observação (opcional)</label><input class="inp" id="habObs"></div>
+    <div id="habMsg" style="font-size:12.5px;margin-top:8px"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px">
+      <button class="btn btn-p btn-sm" id="habAdd">+ Adicionar ao aquário</button>
+    </div>
+  </div>
+
+  <!-- análise -->
+  <div id="habAnalise" style="margin-bottom:14px"></div>
+
+  <!-- lista -->
+  <div id="habLista"><div class="vazio" style="padding:16px 0">Carregando…</div></div>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+if(!token){ location.href="/entrar.html"; }
+const TIPO={freshwater:"Água doce",marine:"Marinho",pond:"Lago"};
+
+async function api(c,o={}){
+  const r=await fetch(c,{...o,cache:"no-store",headers:{...(o.body&&!(o.body instanceof FormData)?{"content-type":"application/json"}:{}),authorization:"Bearer "+token}});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.erro||"HTTP "+r.status);}
+  return r.status===204?null:r.json();
+}
+function abrir(){$("modal").classList.add("on")}
+function fecharModal(){$("modal").classList.remove("on")}
+window.fecharModal=fecharModal;
+
+async function carregar(){
+  try{
+    const aq=await api("/api/aquarios");
+    $("lista").innerHTML = aq.length ? aq.map(a=>`
+      <div class="cartao aq-card">
+        ${a.foto_url?`<div class="aq-foto" style="background-image:url('${a.foto_url}')"></div>`
+                     :`<div class="aq-foto aq-foto-vazia"><svg viewBox="0 0 24 24" style="width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.5"><path d="M12 3.5c3.5 4 5.5 6.5 5.5 9.2A5.5 5.5 0 0 1 6.5 12.7C6.5 10 8.5 7.5 12 3.5Z"/></svg></div>`}
+        <div class="aq-body">
+          <div class="aq-nome">${a.name||a.label}</div>
+          <div class="aq-meta">${TIPO[a.water_type]} · ${a.volume_liters||"—"} L${a.data_montagem?` · desde ${new Date(a.data_montagem).toLocaleDateString("pt-BR")}`:""}</div>
+          ${a.sistema_filtragem?`<div class="aq-meta">Filtragem: ${a.sistema_filtragem}</div>`:""}
+          <div class="aq-tags">
+            ${(a.fauna||[]).map(f=>`<span class="aq-tag">${f}</span>`).join("")}
+            ${(a.flora||[]).map(f=>`<span class="aq-tag aq-tag-flora">${f}</span>`).join("")}
+          </div>
+          ${a.observacoes?`<p style="font-size:13px;color:var(--suave);margin-top:10px">${a.observacoes}</p>`:""}
+          <div class="aq-acoes">
+            <button class="btn btn-p btn-sm" data-hab="${a.id}" data-habnome="${(a.name||a.label||'').replace(/"/g,'&quot;')}">🐟 Habitantes</button>
+            <button class="btn btn-c btn-sm" data-editar='${JSON.stringify(a).replace(/'/g,"&apos;")}'>Editar</button>
+            <span class="rm" data-apagar="${a.id}">apagar</span>
+          </div>
+        </div>
+      </div>`).join("") : `<div class="vazio">Você ainda não cadastrou nenhum aquário.<br>Clique em "Novo aquário" para começar.</div>`;
+
+    document.querySelectorAll("[data-hab]").forEach(b=>b.onclick=()=>abrirHabitantes(b.dataset.hab,b.dataset.habnome));
+    document.querySelectorAll("[data-editar]").forEach(b=>b.onclick=()=>abrirEdicao(JSON.parse(b.dataset.editar.replace(/&apos;/g,"'"))));
+    document.querySelectorAll("[data-apagar]").forEach(b=>b.onclick=async()=>{
+      if(!confirm("Apagar este aquário?")) return;
+      try{await api("/api/aquarios/"+b.dataset.apagar,{method:"DELETE"});carregar();}
+      catch(e){alert("Erro: "+e.message);}
+    });
+  }catch(e){$("lista").innerHTML=`<div class="vazio">Não foi possível carregar seus aquários agora.<br>Tente novamente em instantes ou fale com o suporte se persistir.</div>`;}
+}
+
+function limparForm(){
+  $("aqId").value=""; $("aqNome").value=""; $("aqTipo").value="freshwater"; $("aqVol").value="";
+  $("aqFiltro").value=""; $("aqFauna").value=""; $("aqFlora").value=""; $("aqData").value="";
+  $("aqObs").value=""; $("aqFoto").value="";
+}
+$("novoBtn").onclick=()=>{ limparForm(); $("modalTitulo").textContent="Novo aquário"; abrir(); };
+
+function abrirEdicao(a){
+  $("aqId").value=a.id; $("aqNome").value=a.name||a.label||""; $("aqTipo").value=a.water_type||"freshwater";
+  $("aqVol").value=a.volume_liters||""; $("aqFiltro").value=a.sistema_filtragem||"";
+  $("aqFauna").value=(a.fauna||[]).join(", "); $("aqFlora").value=(a.flora||[]).join(", ");
+  $("aqData").value=a.data_montagem?a.data_montagem.slice(0,10):""; $("aqObs").value=a.observacoes||"";
+  $("modalTitulo").textContent="Editar aquário"; abrir();
+}
+
+$("salvarBtn").onclick=async()=>{
+  const b=$("salvarBtn"); b.disabled=true;
+  try{
+    const payload={
+      name:$("aqNome").value.trim(), water_type:$("aqTipo").value,
+      volume_liters:parseFloat($("aqVol").value)||null, sistema_filtragem:$("aqFiltro").value.trim()||null,
+      fauna:$("aqFauna").value.split(",").map(s=>s.trim()).filter(Boolean),
+      flora:$("aqFlora").value.split(",").map(s=>s.trim()).filter(Boolean),
+      data_montagem:$("aqData").value||null, observacoes:$("aqObs").value.trim()||null,
+    };
+    if(!payload.name){ alert("Informe o nome do aquário."); return; }
+    const id=$("aqId").value;
+    const salvo = id ? await api(`/api/aquarios/${id}`,{method:"PUT",body:JSON.stringify(payload)})
+                      : await api("/api/aquarios",{method:"POST",body:JSON.stringify(payload)});
+    // A foto é opcional: se falhar, o aquário JÁ foi salvo — não perde o cadastro
+    const foto=$("aqFoto").files[0];
+    let fotoErro=false;
+    if(foto && salvo && salvo.id){
+      try{
+        const fd=new FormData(); fd.append("foto",foto);
+        await api(`/api/aquarios/${salvo.id}/foto`,{method:"POST",body:fd});
+      }catch(_){ fotoErro=true; }
+    }
+    fecharModal(); carregar();
+    if(fotoErro) alert("Aquário salvo! Só não consegui enviar a foto agora — você pode adicioná-la depois pela edição.");
+  }catch(e){ alert("Não foi possível salvar o aquário agora. Tente novamente em instantes."); }finally{ b.disabled=false; }
+};
+
+carregar();
+
+/* ───────── HABITANTES ───────── */
+let habAsset=null, habSel=null, habTimer=null;
+const CATL={"agua-doce":"Água doce","marinho":"Marinho","coral":"Coral","planta":"Planta"};
+function escH(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function abrirHabitantes(assetId,nome){
+  habAsset=assetId; habSel=null;
+  $("habTitulo").textContent="Habitantes · "+(nome||"Aquário");
+  $("habBusca").value=""; $("habQtd").value="1"; $("habApelido").value=""; $("habObs").value="";
+  $("habMsg").textContent=""; $("habAC").style.display="none"; $("habAnalise").innerHTML="";
+  $("modalHab").classList.add("on");
+  carregarHabitantes();
+}
+async function carregarHabitantes(){
+  try{
+    const lista=await api("/api/aquarios/"+habAsset+"/habitantes");
+    const row=h=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--linha)">
+      <div>
+        <b>${escH(h.especie_nome)}</b>${h.especie_id?"":' <span style="font-size:11px;color:#B7791F">· sem ficha (em moderação)</span>'}
+        ${h.apelido?` <span style="color:var(--suave);font-size:12.5px">— ${escH(h.apelido)}</span>`:""}
+        ${h.nome_cientifico?`<div style="font-size:12px;color:var(--suave);font-style:italic">${escH(h.nome_cientifico)}</div>`:""}
+        ${h.categoria?`<div style="font-size:11.5px;color:var(--suave)">${CATL[h.categoria]||h.categoria}</div>`:""}
+        ${h.observacao?`<div style="font-size:12px;color:var(--suave);margin-top:2px">${escH(h.observacao)}</div>`:""}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <input class="inp" type="number" min="1" value="${h.quantidade}" style="width:70px;padding:6px 8px" data-qtd="${h.id}" title="Quantidade">
+        <span class="rm" data-habrm="${h.id}">remover</span>
+      </div></div>`;
+    $("habLista").innerHTML = lista.length
+      ? `<div class="cartao" style="padding:4px 18px">${lista.map(row).join("")}</div>`
+      : '<div class="vazio" style="padding:16px 0">Nenhum habitante cadastrado ainda.</div>';
+    $("habLista").querySelectorAll("[data-qtd]").forEach(el=>el.onchange=async()=>{
+      try{ await api("/api/habitantes/"+el.dataset.qtd,{method:"PUT",body:JSON.stringify({quantidade:parseInt(el.value)||1})}); carregarAnalise(); }catch(e){alert("Erro: "+e.message);}
+    });
+    $("habLista").querySelectorAll("[data-habrm]").forEach(el=>el.onclick=async()=>{
+      if(!confirm("Remover este habitante?"))return;
+      try{ await api("/api/habitantes/"+el.dataset.habrm,{method:"DELETE"}); carregarHabitantes(); }catch(e){alert("Erro: "+e.message);}
+    });
+    carregarAnalise();
+  }catch(e){ $("habLista").innerHTML='<div class="vazio">Não foi possível carregar.</div>'; }
+}
+async function carregarAnalise(){
+  const box=$("habAnalise");
+  try{
+    const a=await api("/api/aquarios/"+habAsset+"/analise");
+    if(!a.total){ box.innerHTML=""; return; }
+    let html="";
+    if(a.conflitos&&a.conflitos.length){
+      html+=`<div class="cartao" style="padding:12px 14px;border-left:4px solid var(--critico)"><b style="color:var(--critico)">⚠ Incompatibilidades (${a.conflitos.length})</b>`+
+        a.conflitos.map(c=>`<div style="font-size:12.5px;margin-top:5px"><b>${escH(c.a)}</b> × <b>${escH(c.b)}</b>${c.gravidade?` · ${escH(c.gravidade)}`:""}${c.motivo?`<br><span style="color:var(--suave)">${escH(c.motivo)}</span>`:""}</div>`).join("")+`</div>`;
+    }
+    if(a.cardume&&a.cardume.length){
+      html+=`<div class="cartao" style="padding:12px 14px;margin-top:8px;border-left:4px solid #B7791F"><b style="color:#B7791F">🐟 Cardume abaixo do recomendado</b>`+
+        a.cardume.map(c=>`<div style="font-size:12.5px;margin-top:4px">${escH(c.nome)}: ${c.atual} (mín. ${c.minimo})</div>`).join("")+`</div>`;
+    }
+    if(a.bioload&&a.bioload.excede){
+      html+=`<div class="cartao" style="padding:12px 14px;margin-top:8px;border-left:4px solid #B7791F"><b style="color:#B7791F">💧 Lotação</b><div style="font-size:12.5px;margin-top:4px">${escH(a.bioload.aviso||("Aquário de "+a.bioload.volume+" L abaixo do recomendado."))}</div></div>`;
+    }
+    const P=a.parametros||{}, linhas=[];
+    const fmt=(f,u)=>{ if(!f)return null; if(f.conflito)return '<span style="color:var(--critico)">faixas não se sobrepõem</span>'; const lo=f.min!=null?f.min:"—", hi=f.max!=null?f.max:"—"; return lo+"–"+hi+(u||""); };
+    [["temperatura","Temperatura","°C"],["ph","pH",""],["gh","GH",""],["kh","KH",""]].forEach(([k,lbl,u])=>{ const v=fmt(P[k],u); if(v) linhas.push(`<div style="font-size:12.5px"><b>${lbl}:</b> ${v}</div>`); });
+    if(linhas.length){
+      html+=`<div class="cartao" style="padding:12px 14px;margin-top:8px"><b>Faixa ideal combinada</b><div style="margin-top:5px;display:grid;grid-template-columns:1fr 1fr;gap:4px">${linhas.join("")}</div>${a.sem_ficha?`<div style="font-size:11.5px;color:var(--suave);margin-top:6px">${a.sem_ficha} habitante(s) sem ficha não entram no cálculo.</div>`:""}</div>`;
+    }
+    box.innerHTML=html;
+  }catch(e){ box.innerHTML=""; }
+}
+$("habBusca").addEventListener("input",function(){
+  habSel=null;
+  const q=this.value.trim();
+  clearTimeout(habTimer);
+  if(q.length<2){ $("habAC").style.display="none"; return; }
+  habTimer=setTimeout(async()=>{
+    try{
+      const r=await fetch("/api/especies?q="+encodeURIComponent(q)+"&limit=8",{headers:{authorization:"Bearer "+token}});
+      const lista=await r.json();
+      if(!Array.isArray(lista)||!lista.length){ $("habAC").innerHTML='<div style="padding:10px 12px;font-size:12.5px;color:var(--suave)">Sem ficha no Aquabook — adicione assim mesmo (vira sugestão para o admin).</div>'; $("habAC").style.display="block"; return; }
+      $("habAC").innerHTML=lista.map(e=>`<div class="hab-ac-item" data-id="${escH(e.id)}" data-nome="${escH(e.nome_comum)}" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--linha)">
+        <b style="font-size:13.5px">${escH(e.nome_comum)}</b> <span style="font-size:11.5px;color:var(--suave)">${escH(CATL[e.categoria]||e.categoria||"")}</span>
+        ${e.nome_cientifico?`<div style="font-size:11.5px;color:var(--suave);font-style:italic">${escH(e.nome_cientifico)}</div>`:""}</div>`).join("");
+      $("habAC").style.display="block";
+      $("habAC").querySelectorAll(".hab-ac-item").forEach(it=>it.onclick=()=>{
+        habSel={id:it.dataset.id,nome:it.dataset.nome};
+        $("habBusca").value=it.dataset.nome; $("habAC").style.display="none";
+      });
+    }catch(e){ $("habAC").style.display="none"; }
+  },250);
+});
+document.addEventListener("click",e=>{ if(!e.target.closest("#habBusca")&&!e.target.closest("#habAC")){ const ac=$("habAC"); if(ac) ac.style.display="none"; } });
+$("habAdd").onclick=async()=>{
+  const msg=$("habMsg"); msg.textContent=""; msg.style.color="var(--suave)";
+  const nome=$("habBusca").value.trim();
+  if(!nome){ msg.style.color="#B4232E"; msg.textContent="Informe a espécie."; return; }
+  const body={ quantidade:parseInt($("habQtd").value)||1, apelido:$("habApelido").value.trim(), observacao:$("habObs").value.trim() };
+  if(habSel&&habSel.nome===nome) body.especie_id=habSel.id; else body.nome=nome;
+  const b=$("habAdd"); b.disabled=true;
+  try{
+    await api("/api/aquarios/"+habAsset+"/habitantes",{method:"POST",body:JSON.stringify(body)});
+    $("habBusca").value=""; $("habQtd").value="1"; $("habApelido").value=""; $("habObs").value=""; habSel=null;
+    msg.style.color="#065F46"; msg.textContent="Adicionado!";
+    carregarHabitantes();
+  }catch(e){ msg.style.color="#B4232E"; msg.textContent=e.message; }finally{ b.disabled=false; }
+};
+document.getElementById("modalHab").addEventListener("click",e=>{ if(e.target.id==="modalHab") e.currentTarget.classList.remove("on"); });
+</script>
+</body>
+</html>
