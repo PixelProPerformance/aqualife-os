@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meu relatório de vendas — Aqualife</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+<style>
+.sec{padding:32px 0}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+@media(max-width:620px){.kpis{grid-template-columns:1fr}}
+.kpi{padding:16px 18px}
+.kpi .rot{font-size:12px;color:var(--suave);font-weight:600}
+.kpi .val{font-size:22px;font-weight:700;color:var(--tinta);margin-top:4px}
+.cupom-chip{display:inline-block;background:#E6F4F7;color:var(--agua-esc);font-weight:700;border-radius:20px;padding:4px 12px;margin:0 6px 6px 0;font-size:13px}
+.cupom-chip.off{background:#EEF2F7;color:#64748B;text-decoration:line-through}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--suave);font-size:12px;padding:8px}
+td{padding:9px 8px;border-top:1px solid var(--linha)}
+.per{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="wrap topo-in">
+    <div class="marca"><a href="/dashboard.html" title="Painel"><img src="/images/logo-azul.png" alt="Aqualife" style="height:36px;display:block" onerror="this.style.display='none'"></a></div>
+    <a href="/conta.html" class="btn btn-c btn-sm" style="margin-left:auto">Minha conta</a>
+  </div>
+</header>
+<main class="wrap sec" style="max-width:860px">
+  <h1 style="font-size:24px;margin-bottom:4px">Relatório de vendas</h1>
+  <p style="color:var(--suave);margin-bottom:18px" id="ola">Transparência total das vendas feitas com os seus cupons.</p>
+
+  <div id="semCupom" class="cartao bloco" style="display:none;padding:22px 24px">
+    Você ainda não tem cupons vinculados. Fale com a Aqualife para ativar o seu cupom de influencer.
+  </div>
+
+  <div id="conteudo" style="display:none">
+    <div class="cartao bloco" style="padding:18px 22px">
+      <div style="font-size:12px;color:var(--suave);font-weight:600;margin-bottom:8px">SEUS CUPONS</div>
+      <div id="cupons"></div>
+    </div>
+
+    <div class="per">
+      <div class="campo" style="margin:0"><label>De</label><input class="inp" id="de" type="date" style="width:160px"></div>
+      <div class="campo" style="margin:0"><label>Até</label><input class="inp" id="ate" type="date" style="width:160px"></div>
+      <button class="btn btn-p btn-sm" id="aplicar">Filtrar</button>
+    </div>
+
+    <div class="kpis">
+      <div class="cartao kpi"><div class="rot">Vendas no período</div><div class="val" id="kPedidos">—</div></div>
+      <div class="cartao kpi"><div class="rot">Receita gerada</div><div class="val" id="kReceita">—</div></div>
+      <div class="cartao kpi"><div class="rot">Desconto repassado</div><div class="val" id="kDesconto">—</div></div>
+    </div>
+
+    <div class="cartao bloco" style="padding:6px 16px;overflow-x:auto">
+      <table>
+        <thead><tr><th>Data</th><th>Cupom</th><th>Cliente</th><th style="text-align:right">Itens</th><th style="text-align:right">Subtotal</th><th style="text-align:right">Desconto</th><th style="text-align:right">Total</th></tr></thead>
+        <tbody id="linhas"><tr><td colspan="7" class="vazio" style="padding:18px">Carregando…</td></tr></tbody>
+      </table>
+    </div>
+    <p style="font-size:12px;color:var(--suave);margin-top:10px">Por privacidade, mostramos apenas o primeiro nome do cliente. Os valores consideram pedidos pagos.</p>
+  </div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const token=localStorage.getItem("aqualife_token");
+if(!token){ location.href="/entrar.html"; }
+const brl=c=>(Number(c||0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function api(c){
+  const r=await fetch(c,{headers:{authorization:"Bearer "+token}});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.erro||"HTTP "+r.status);}
+  return r.json();
+}
+function qs(){ const de=$("de").value, ate=$("ate").value, p=[]; if(de)p.push("de="+encodeURIComponent(de)); if(ate)p.push("ate="+encodeURIComponent(ate)); return p.length?("?"+p.join("&")):""; }
+async function carregar(){
+  let d;
+  try{ d=await api("/api/loja/influencer/relatorio"+qs()); }
+  catch(e){
+    if(String(e.message).indexOf("restrito")>-1){ document.querySelector("main").innerHTML='<div class="cartao bloco" style="padding:24px">Este relatório é exclusivo para influencers. Se você acha que deveria ter acesso, fale com a Aqualife.</div>'; return; }
+    $("linhas").innerHTML='<tr><td colspan="7" class="vazio" style="color:var(--critico);padding:18px">'+esc(e.message)+'</td></tr>'; return;
+  }
+  if(d.nome) $("ola").textContent="Olá, "+d.nome.split(" ")[0]+". Transparência total das vendas feitas com os seus cupons.";
+  if(!d.cupons.length){ $("semCupom").style.display=""; return; }
+  $("conteudo").style.display="";
+  $("cupons").innerHTML=d.cupons.map(function(c){
+    const inativo=!c.ativo || (c.fim_em && new Date(c.fim_em).getTime()<Date.now());
+    const val=c.tipo==="fixo"?brl(c.valor):(c.valor+"%");
+    return '<span class="cupom-chip'+(inativo?" off":"")+'">'+esc(c.codigo)+' · '+val+'</span>';
+  }).join("");
+  $("kPedidos").textContent=d.total.pedidos;
+  $("kReceita").textContent=brl(d.total.receita_cents);
+  $("kDesconto").textContent=brl(d.total.desconto_cents);
+  if(!d.vendas.length){ $("linhas").innerHTML='<tr><td colspan="7" class="vazio" style="padding:18px">Nenhuma venda no período.</td></tr>'; return; }
+  $("linhas").innerHTML=d.vendas.map(function(v){
+    return '<tr><td>'+new Date(v.data).toLocaleDateString("pt-BR")+'</td>'
+      +'<td><b>'+esc(v.cupom||"")+'</b></td>'
+      +'<td>'+esc(v.cliente)+'</td>'
+      +'<td style="text-align:right">'+v.itens+'</td>'
+      +'<td style="text-align:right">'+brl(v.subtotal_cents)+'</td>'
+      +'<td style="text-align:right;color:#176B42">'+brl(v.desconto_cents)+'</td>'
+      +'<td style="text-align:right;font-weight:600">'+brl(v.total_cents)+'</td></tr>';
+  }).join("");
+}
+$("aplicar").onclick=carregar;
+carregar();
+</script>
+</body>
+</html>
