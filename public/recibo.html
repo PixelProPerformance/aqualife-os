@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recibo de pagamento — Aqualife</title>
+<style>
+:root{--tinta:#12333F;--agua:#125265;--linha:#e5edf0;--suave:#5a7680}
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;color:var(--tinta);background:#eef2f4;margin:0;padding:24px}
+.acoes{max-width:760px;margin:0 auto 14px;display:flex;gap:8px;justify-content:flex-end}
+.btn{border:1px solid var(--agua);background:#fff;color:var(--agua);border-radius:8px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:14px;text-decoration:none}
+.btn.p{background:var(--agua);color:#fff}
+.folha{max-width:760px;margin:0 auto;background:#fff;border-radius:10px;box-shadow:0 2px 14px rgba(11,27,51,.08);padding:38px 44px}
+.cab{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--linha);padding-bottom:16px;margin-bottom:18px}
+.cab h1{font-size:20px;margin:0}
+.cab .sub{font-size:13px;color:var(--suave);margin-top:4px}
+.logo{height:40px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 30px;font-size:13.5px;margin-bottom:18px}
+.meta b{color:var(--suave);font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px}
+th{text-align:left;color:var(--suave);font-size:12px;border-bottom:1px solid var(--linha);padding:8px 6px}
+td{padding:9px 6px;border-bottom:1px solid var(--linha)}
+td.r,th.r{text-align:right}
+.total{display:flex;justify-content:flex-end;margin-top:4px}
+.total .cx{min-width:240px}
+.total .l{display:flex;justify-content:space-between;padding:4px 0;font-size:14px}
+.total .l.g{border-top:2px solid var(--linha);margin-top:6px;padding-top:10px;font-size:18px;font-weight:700}
+.pix{background:#f3f7f8;border-radius:8px;padding:12px 16px;font-size:13.5px;margin-top:18px}
+.rod{margin-top:26px;font-size:12px;color:var(--suave);text-align:center;border-top:1px solid var(--linha);padding-top:14px}
+.assin{display:flex;gap:40px;margin-top:40px}
+.assin div{flex:1;text-align:center;font-size:12px;color:var(--suave)}
+.assin .linha{border-top:1px solid #9aa;margin-bottom:6px;height:1px}
+@media print{ body{background:#fff;padding:0} .acoes{display:none} .folha{box-shadow:none;border-radius:0;max-width:none;padding:24px 28px} }
+</style>
+</head>
+<body>
+<div class="acoes">
+  <a href="/admin.html" class="btn">Voltar</a>
+  <button class="btn p" onclick="window.print()">Salvar como PDF / Imprimir</button>
+</div>
+<div class="folha" id="folha"><div style="color:var(--suave)">Carregando recibo…</div></div>
+<script>
+var token=localStorage.getItem("aqualife_token");
+if(!token){ location.href="/entrar.html"; }
+var esc=function(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});};
+var brl=function(c){return (Number(c||0)/100).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});};
+function pd(id){try{return new URLSearchParams(location.search).get(id);}catch(e){return null;}}
+function dt(s){try{return new Date(s).toLocaleDateString("pt-BR");}catch(e){return "";}}
+(async function(){
+  var id=pd("lote"); if(!id){ document.getElementById("folha").innerHTML="Recibo inválido."; return; }
+  var d;
+  try{ var r=await fetch("/api/pagamentos/lote/"+id,{headers:{authorization:"Bearer "+token}}); if(!r.ok) throw new Error((await r.json().catch(function(){return{};})).erro||"erro"); d=await r.json(); }
+  catch(e){ document.getElementById("folha").innerHTML='<div style="color:#B4232E">Não foi possível carregar: '+esc(e.message)+'</div>'; return; }
+  var linhasS=(d.servicos||[]).map(function(s){return '<tr><td>'+esc(s.titulo)+(s.is_retorno?' (retorno)':'')+(s.meia_diaria?' — meia diária':'')+'</td><td class="r">'+brl(s.valor_cents)+'</td></tr>';}).join("");
+  var linhasR=(d.reembolsos||[]).map(function(x){return '<tr><td>Reembolso: '+esc(x.descricao)+(x.comprovante_url?' (c/ comprovante)':'')+'</td><td class="r">'+brl(x.valor_cents)+'</td></tr>';}).join("");
+  var html=''
+    +'<div class="cab"><div><h1>Recibo de pagamento</h1><div class="sub">Aqualife Aquarismo · Prestação de serviços técnicos</div></div>'
+    +'<img src="/images/logo-azul.png" class="logo" alt="Aqualife" onerror="this.style.display=\'none\'"></div>'
+    +'<div class="meta"><span><b>Recibo nº:</b> '+esc((id||"").slice(0,8).toUpperCase())+'</span>'
+    +'<span><b>Referência:</b> '+esc(d.referencia||"—")+'</span>'
+    +'<span><b>Emitido em:</b> '+dt(d.criado_em)+'</span>'
+    +'<span><b>Técnico:</b> '+esc(d.tecnico_nome||"—")+'</span></div>'
+    +'<table><thead><tr><th>Descrição</th><th class="r">Valor</th></tr></thead><tbody>'
+    +(linhasS||linhasR?(linhasS+linhasR):'<tr><td colspan="2">Sem itens.</td></tr>')
+    +'</tbody></table>'
+    +'<div class="total"><div class="cx">'
+    +'<div class="l"><span>Serviços</span><span>'+brl(d.total_servicos_cents)+'</span></div>'
+    +(d.total_reembolsos_cents?'<div class="l"><span>Reembolsos</span><span>'+brl(d.total_reembolsos_cents)+'</span></div>':'')
+    +'<div class="l g"><span>Total</span><span>'+brl(d.total_cents)+'</span></div></div></div>'
+    +'<div class="pix"><b>Dados para pagamento (PIX)</b><br>'
+    +(d.pix_chave?('Chave: '+esc(d.pix_chave)+' ('+esc(d.pix_tipo||"")+')'+(d.pix_titular?(' — '+esc(d.pix_titular)):'')):'PIX não cadastrado pelo técnico')+'</div>'
+    +(d.observacao?'<p style="font-size:13px;color:var(--suave);margin-top:14px">Obs.: '+esc(d.observacao)+'</p>':'')
+    +'<div class="assin"><div><div class="linha"></div>Aqualife Aquarismo</div><div><div class="linha"></div>'+esc(d.tecnico_nome||"Técnico")+'</div></div>'
+    +'<div class="rod">Este recibo refere-se aos serviços e reembolsos listados acima, pagos via PIX conforme cronograma acordado. Pagamentos realizados em dias úteis.</div>';
+  document.getElementById("folha").innerHTML=html;
+  document.title="Recibo "+(d.referencia||id.slice(0,8))+" — "+(d.tecnico_nome||"");
+})();
+</script>
+</body>
+</html>
