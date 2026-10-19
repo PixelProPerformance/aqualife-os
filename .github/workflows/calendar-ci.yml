@@ -1,0 +1,22 @@
+name: Maintenance calendar checks
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: node --test tests/calendar.test.mjs
+      - run: |
+          node --check src/calendario.js
+          node --check src/server.js
+          node --check public/js/calendario.js
