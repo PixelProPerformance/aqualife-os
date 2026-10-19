@@ -3,7 +3,11 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { query } from "./db.js";
 
-const SECRET = (process.env.JWT_SECRET || "aqualife-dev-TROQUE-EM-PRODUCAO").trim();
+// Sem fallback previsível: a mesma chave tem de ser configurada em todas as instâncias.
+const SECRET = (process.env.JWT_SECRET || "").trim();
+if (!SECRET || SECRET.length < 32) {
+  throw new Error("JWT_SECRET obrigatório: configure pelo menos 32 caracteres aleatórios no ambiente.");
+}
 const EXPIRY  = "12h";
 
 export async function hashSenha(senha) {

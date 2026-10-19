@@ -2341,7 +2341,9 @@ app.delete("/api/aquarios/:id", exigeLogin, async (req, res) => {
 // Cliente (dono) e equipe (técnico/admin/gestor/aquarista) podem gerir.
 // Liga à ficha do Aquabook quando possível; nome livre vira sugestão.
 // ============================================================
-const _ehEquipe = (req) => ["tecnico", "admin", "gestor", "aquarista"].includes(req.usuario.role);
+// Aquarista é proprietário da conta, não membro da equipa com acesso global.
+// Técnicos conservam acesso transversal para visitas agendadas (validar atribuições separadamente).
+const _ehEquipe = (req) => ["tecnico", "admin", "gestor"].includes(req.usuario.role);
 async function assetAcessivel(req, assetId) {
   const r = _ehEquipe(req)
     ? await query("SELECT * FROM asset WHERE id=$1 AND ativo IS DISTINCT FROM false", [assetId])
