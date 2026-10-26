@@ -12,6 +12,7 @@
  */
 
 import nodemailer from "nodemailer";
+import { appUrl } from "./app-url.js";
 import { getConfig } from "./mp.js"; // reaproveita o leitor de integracao_config
 
 const AGUA = "#0E7490", TINTA = "#0B2A3A";
@@ -132,7 +133,7 @@ export function emailConfirmacaoPagamento({ nome, plano, valorCents, validade })
         <tr><td style="padding:6px 0;color:#94a3b8">Valor</td><td style="text-align:right"><b>${valor}</b></td></tr>
         ${val ? `<tr><td style="padding:6px 0;color:#94a3b8">Acesso válido até</td><td style="text-align:right"><b>${val}</b></td></tr>` : ""}
       </table>
-      <p>${botao("https://app.aqualifeaquarismo.com/dashboard.html", "Ir para o meu painel")}</p>`),
+      <p>${botao(appUrl("/dashboard.html"), "Ir para o meu painel")}</p>`),
   };
 }
 
@@ -151,7 +152,7 @@ export function emailBoasVindasFundador({ nome }) {
       </ul>
       <p style="color:#334155;font-size:15px;line-height:1.6">
         Obrigado por construir esse ecossistema com a gente. 🐠</p>
-      <p>${botao("https://app.aqualifeaquarismo.com/dashboard.html", "Explorar a plataforma")}</p>`),
+      <p>${botao(appUrl("/dashboard.html"), "Explorar a plataforma")}</p>`),
   };
 }
 

@@ -13,4 +13,4 @@ jobs:
         with:
           node-version: '22'
       - run: node --check src/marketplace/authorization.js
-      - run: node --test tests/marketplace-authorization.test.mjs
+      - run: node --test tests/*.test.mjs
