@@ -1668,18 +1668,18 @@ const NL_MODELOS={
     '<div style="background:#E6F4F7;color:#0E5566;font-weight:700;border-radius:10px;padding:12px 16px;text-align:center;margin:0 0 16px">📢 AVISO IMPORTANTE</div>'
     +'<p>Olá, {{nome}}!</p>'
     +'<p>Escreva aqui o aviso que deseja comunicar à sua base (mudança de horário, novidade, manutenção programada, etc.).</p>'
-    +'<p style="margin-top:16px"><a href="https://app.aqualifeaquarismo.com/loja.html" style="display:inline-block;background:#0E5566;color:#fff;text-decoration:none;padding:11px 20px;border-radius:9px;font-weight:600">Saiba mais</a></p>');},
+    +'<p style="margin-top:16px"><a href="'+location.origin+'/loja.html" style="display:inline-block;background:#0E5566;color:#fff;text-decoration:none;padding:11px 20px;border-radius:9px;font-weight:600">Saiba mais</a></p>');},
   newsletter:function(){return nlShell("Novidades da Aqualife",
     '<p>Olá, {{nome}}!</p>'
     +'<p>Aqui vão as novidades do mês para manter o seu aquário sempre saudável e bonito. 🐠</p>'
     +'<h3 style="color:#0E5566;margin:20px 0 6px">Destaque</h3><p>Conte aqui a principal novidade.</p>'
     +'<h3 style="color:#0E5566;margin:20px 0 6px">Dica rápida</h3><p>Uma dica prática de manutenção ou cuidado.</p>'
-    +'<p style="margin-top:16px;text-align:center"><a href="https://app.aqualifeaquarismo.com/loja.html" style="display:inline-block;background:#F97316;color:#fff;text-decoration:none;padding:11px 22px;border-radius:9px;font-weight:600">Visitar a loja</a></p>');},
+    +'<p style="margin-top:16px;text-align:center"><a href="'+location.origin+'/loja.html" style="display:inline-block;background:#F97316;color:#fff;text-decoration:none;padding:11px 22px;border-radius:9px;font-weight:600">Visitar a loja</a></p>');},
 };
 function nlShell(titulo,inner){
   return `<div style="background:#f4f7f8;padding:24px 0;font-family:Arial,Helvetica,sans-serif">
   <table width="600" cellpadding="0" cellspacing="0" align="center" style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5edf0">
-    <tr><td style="padding:22px 24px 6px;text-align:center"><img src="https://app.aqualifeaquarismo.com/images/logo-azul.png" alt="Aqualife Aquarismo" height="40" style="height:40px"></td></tr>
+    <tr><td style="padding:22px 24px 6px;text-align:center"><img src="${location.origin}/images/logo-azul.png" alt="Aqualife Aquarismo" height="40" style="height:40px"></td></tr>
     <tr><td style="padding:6px 24px 4px"><div style="font-size:20px;font-weight:700;color:#12333F">${titulo}</div></td></tr>
     <tr><td style="padding:8px 24px;color:#273f47;font-size:15px;line-height:1.6">${inner}</td></tr>
     <tr><td style="padding:20px 24px"><hr style="border:none;border-top:1px solid #e9eef0;margin:0 0 14px"><div style="font-size:12px;color:#9aa6ab;text-align:center">Aqualife Aquarismo — cuidando do seu ecossistema aquático.<br>Não deseja mais receber? <a href="{{descadastro}}" style="color:#9aa6ab">Descadastrar</a>.</div></td></tr>
