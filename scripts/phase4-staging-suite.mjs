@@ -5,6 +5,6 @@ async function node(args){const code=await new Promise((resolve,reject)=>{const 
 try{
  await node(['--test','tests/marketplace-cart.integration.test.mjs','tests/marketplace-catalog.integration.test.mjs']);
  let ready=false;for(let i=0;i<120;i++){const r=await fetch('https://aqualife-os-production-a81a.up.railway.app/api/marketplace/showcase').catch(()=>null);if(r?.ok&&(await r.json()).preparation_enabled===true){ready=true;break;}await new Promise(r=>setTimeout(r,5000));}assert.ok(ready);
- await node(['scripts/validate-marketplace-phase2-staging.mjs']);await node(['scripts/validate-staging.mjs']);await node(['scripts/validate-marketplace-phase3-staging.mjs']);if(process.env.QA_PASSWORD)await node(['scripts/visual-marketplace-phase3.mjs']);
+ await node(['scripts/validate-marketplace-phase2-staging.mjs']);await node(['scripts/validate-staging.mjs']);await node(['scripts/validate-marketplace-phase3-staging.mjs']);if(process.env.QA_PASSWORD)await node(['scripts/visual-marketplace-phase4.mjs']);
  console.log(JSON.stringify({result:'PASS',scope:'PHASE4_STAGING_SUITE',commerce_enabled:false}));
 }catch(e){console.error(JSON.stringify({result:'FAIL',scope:'PHASE4_STAGING_SUITE',code:e.code||e.name}));process.exitCode=1;}
