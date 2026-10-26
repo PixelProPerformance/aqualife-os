@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import {legacySnapshot} from '../src/marketplace/legacy-backfill.js';
 import {TERMS_VERSION} from '../src/marketplace/validation.js';
 import {checkShowcase} from '../tests/helpers/showcase-scenarios.mjs';
+import {checkPhase4Live} from './check-phase4-live.mjs';
 assert.equal(process.env.RAILWAY_PROJECT_ID,'f0a54aac-7782-432e-9339-77a261e2c4c8');
 const base='https://aqualife-os-production-a81a.up.railway.app',db=new pg.Client({connectionString:process.env.DATABASE_URL,ssl:{rejectUnauthorized:false}});
 const users=[],tokens=[],sellers=[],catalogs=[],run=randomUUID(),password=randomBytes(32).toString('base64url');let step='connect';
@@ -44,6 +45,7 @@ try{
  assert.equal((await db.query('SELECT count(*)::int n FROM marketplace_inventory_movement WHERE offer_id=$1',[oa.id])).rows[0].n,1);
  const other=(await request(route(sb.id,'offers'),{token:b.token})).find(o=>o.id===ob.id);assert.equal(other.available_qty,0);assert.equal(Number(other.price_cents),2990);
  await checkShowcase({request:(path,token,options={})=>request(path,{token,...options}),a:a.token,b:b.token,staff:staff.token,admin:admin.token,sa:sa.id,sb:sb.id,oa:oa.id,ob:ob.id,productId:approved.catalog_product_id});
+ if(process.env.MARKETPLACE_VALIDATE_PHASE4==='true')await checkPhase4Live({request,db,a:a.token,b:b.token,staff:staff.token,admin:admin.token,sa:sa.id,sb:sb.id,oa:oa.id,ob:ob.id});
  const race=await Promise.all([
   request(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/withdraw`,{token:admin.token,body:{note:'Retirada fictícia concorrente'}}),
   (async()=>{const r=await fetch(base+route(sb.id,`offers/${ob.id}`),{method:'PATCH',headers:{authorization:'Bearer '+b.token,'content-type':'application/json'},body:JSON.stringify({...payload,price_cents:2990,revision:1})});await r.json();return r.status;})()

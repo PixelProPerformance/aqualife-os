@@ -10,7 +10,7 @@ const eligible=`SELECT o.id,o.seller_id,o.catalog_product_id,o.price_cents,o.sel
  JOIN marketplace_seller s ON s.id=o.seller_id JOIN marketplace_catalog_product p ON p.id=o.catalog_product_id
  JOIN marketplace_offer_detail d ON d.offer_id=o.id JOIN marketplace_offer_presentation pr ON pr.offer_id=o.id AND pr.seller_id=o.seller_id
  JOIN marketplace_public_profile pf ON pf.seller_id=s.id JOIN marketplace_offer_inventory i ON i.offer_id=o.id`;
-function available(o){return o&&o.status==='draft'&&o.seller_status==='approved'&&!o.is_platform_owned&&!o.legacy_variation_id&&o.moderation_status==='approved'&&o.review_status==='approved'&&o.consent;}
+function available(o){return o&&o.status==='draft'&&o.seller_status==='approved'&&!o.is_platform_owned&&!o.legacy_variation_id&&o.moderation_status==='approved'&&o.review_status==='approved'&&o.consent&&Number.isSafeInteger(Number(o.price_cents))&&Number(o.price_cents)>0&&Number(o.price_cents)<=100000000;}
 export function registrarCarrinho({app,query,withTransaction,exigeLogin,rateLimit=()=>true,enabled=()=>process.env.MARKETPLACE_PREPARATION_ENABLED==='true',now=()=>new Date()}){
  const safe=fn=>async(req,res)=>{res.set('Cache-Control','no-store');try{await fn(req,res);}catch(e){if(e.status)return res.status(e.status).json({erro:e.message,...blocked});if(e.code==='23505')return res.status(409).json({erro:'Já existe uma preparação ativa; atualize a página',...blocked});console.error('[marketplace/cart]',e.code||'internal');res.status(500).json({erro:'Operação indisponível',...blocked});}};
  const gate=(req,res,next)=>{if(!enabled())return res.status(404).json({erro:'Carrinho em preparação',...blocked});next();};
@@ -47,12 +47,13 @@ export function registrarCarrinho({app,query,withTransaction,exigeLogin,rateLimi
   const list=(await c.query('SELECT order_id FROM marketplace_order_preparation WHERE closed_at IS NULL AND expires_at<=$1 ORDER BY expires_at,order_id LIMIT 1 FOR UPDATE SKIP LOCKED',[now()])).rows;
   for(const p of list)await release(c,p.order_id,'expired');return list.length;
  });if(!changed)break;count+=changed;}return count;}
- const auth=[exigeLogin,gate];
+ const auth=[exigeLogin];
  app.get('/api/marketplace/cart',...auth,safe(async(req,res)=>{
-  await expire();const result=await withTransaction(async c=>{await buyerLock(c,req.usuario.id);const p=await cart(c,req.usuario.id),items=(await rows(c,req.usuario.id)).map(projection);return {revision:p.revision,items,subtotal_cents:items.reduce((n,o)=>n+o.unit_price_cents*o.qty,0),...blocked};});res.json(result);
+  await expire();const result=await withTransaction(async c=>{await buyerLock(c,req.usuario.id);const p=await cart(c,req.usuario.id),items=(await rows(c,req.usuario.id)).map(projection);return {revision:p.revision,items,subtotal_cents:items.reduce((n,o)=>n+o.unit_price_cents*o.qty,0),preparation_enabled:enabled(),...blocked};});res.json(result);
  }));
  app.put('/api/marketplace/cart/items/:offerId',...auth,safe(async(req,res)=>{
   const qty=req.body?.qty;if(!Number.isInteger(qty)||qty<0||qty>99)fail(400,'Quantidade deve ser inteira entre 0 e 99');const offerId=id(req.params.offerId);
+  if(qty&&!enabled())fail(409,'Novas preparações estão temporariamente desabilitadas');
   const revision=await withTransaction(async c=>{await buyerLock(c,req.usuario.id);const p=await cart(c,req.usuario.id);expected(p.revision,req.body.revision);
    if(!qty)await c.query('DELETE FROM marketplace_cart_item WHERE buyer_user_id=$1 AND offer_id=$2',[req.usuario.id,offerId]);
    else{const o=(await c.query(eligible+' WHERE o.id=$1',[offerId])).rows[0];if(!available(o))fail(409,'Oferta não aprovada ou indisponível para preparação');if(qty>o.available_qty)fail(409,'Estoque disponível insuficiente');
@@ -61,7 +62,7 @@ export function registrarCarrinho({app,query,withTransaction,exigeLogin,rateLimi
    return touch(c,req.usuario.id);
   });res.json({revision,...blocked});
  }));
- app.post('/api/marketplace/cart/prepare',...auth,safe(async(req,res)=>{
+ app.post('/api/marketplace/cart/prepare',...auth,gate,safe(async(req,res)=>{
   throttle(req);const key=id(req.body?.idempotency_key);if(!Number.isInteger(req.body?.revision))fail(400,'Informe a revisão do carrinho');await expire();
   const result=await withTransaction(async c=>{
    await buyerLock(c,req.usuario.id);const old=(await c.query('SELECT order_id,cart_revision FROM marketplace_order_preparation WHERE buyer_user_id=$1 AND idempotency_key=$2',[req.usuario.id,key])).rows[0];if(old){if(old.cart_revision!==req.body.revision)fail(409,'Chave já utilizada para outra revisão');return {...await orderView(c,old.order_id,req.usuario.id),replayed:true};}
@@ -95,5 +96,5 @@ export function registrarCarrinho({app,query,withTransaction,exigeLogin,rateLimi
  app.get('/api/marketplace/sellers/:sellerId/preparations',...auth,safe(async(req,res)=>{await expire();await sellerScope(req,{query});const list=(await query('SELECT so.id,so.state,so.subtotal_cents,p.expires_at FROM marketplace_seller_order so JOIN marketplace_order_preparation p ON p.order_id=so.marketplace_order_id WHERE so.seller_id=$1 ORDER BY p.created_at DESC LIMIT 100',[req.params.sellerId])).rows;for(const child of list){child.items=(await query('SELECT product_snapshot,unit_price_cents,qty FROM marketplace_seller_order_item WHERE seller_order_id=$1 AND seller_id=$2',[child.id,req.params.sellerId])).rows;child.events=(await query('SELECT action,note,created_at FROM marketplace_preparation_event WHERE seller_order_id=$1 AND seller_id=$2 ORDER BY created_at,id',[child.id,req.params.sellerId])).rows;Object.assign(child,blocked);}res.json({suborders:list,...blocked});}));
  app.post('/api/marketplace/sellers/:sellerId/preparations/:childId/cancel',...auth,safe(async(req,res)=>{await expire();await withTransaction(async c=>{await sellerScope(req,c,true);const child=(await c.query('SELECT marketplace_order_id FROM marketplace_seller_order WHERE id=$1 AND seller_id=$2',[id(req.params.childId),req.params.sellerId])).rows[0];if(!child)fail(404,'Subpedido não encontrado');await release(c,child.marketplace_order_id,'cancelled',req.usuario.id,req.params.childId,'Reserva recusada pela loja; estoque devolvido e sem cobrança.');});res.json({ok:true,...blocked});}));
  for(const operation of ['pay','ship','confirm'])app.post('/api/marketplace/preparations/:orderId/'+operation,...auth,safe(async(req,res)=>{await orderView({query},req.params.orderId,req.usuario.id);fail(409,'Compra, pagamentos e expedição não estão liberados nesta fase');}));
- return {expire,startExpiration(){const timer=setInterval(()=>{expire().catch(e=>console.error('[marketplace/expiration]',e.code||'failed'));},60000);timer.unref();return ()=>clearInterval(timer);}};
+ return {expire,async drain(){let count=0;while(true){const changed=await withTransaction(async c=>{const parent=(await c.query('SELECT order_id FROM marketplace_order_preparation WHERE closed_at IS NULL ORDER BY order_id LIMIT 1 FOR UPDATE SKIP LOCKED')).rows[0];if(!parent)return false;const paid=(await c.query('SELECT 1 FROM marketplace_payment p JOIN marketplace_seller_order so ON so.id=p.seller_order_id WHERE so.marketplace_order_id=$1 LIMIT 1',[parent.order_id])).rowCount;if(paid)throw Error('REFUSE_FINANCIAL_ORDER');return release(c,parent.order_id,'cancelled',null,null,'Preparação encerrada por manutenção/rollback, sem cobrança.');});if(!changed)break;count++;}return count;},startExpiration(){const timer=setInterval(()=>{expire().catch(e=>console.error('[marketplace/expiration]',e.code||'failed'));},60000);timer.unref();return ()=>clearInterval(timer);}};
 }

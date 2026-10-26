@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+export async function checkPhase4Live({request,db,a,b,staff,admin,sa,sb,oa,ob}){
+ const base='https://aqualife-os-production-a81a.up.railway.app',created=[];
+ const route=(seller,part)=>`/api/marketplace/sellers/${seller}/catalog/${part}`,cart=user=>request('/api/marketplace/cart',{token:user});
+ const offer=async(seller,user,oid)=>(await request(route(seller,'offers'),{token:user})).find(o=>o.id===oid);
+ async function approve(seller,user,oid){const profile=await request(route(seller,'public-profile'),{token:user});await request(route(seller,'public-profile'),{token:user,method:'PUT',body:{biography:'Empresa fictícia, testes de carrinho e reserva.',city:'São Paulo',state:'SP',consent:true,revision:profile.revision}});const o=await offer(seller,user,oid),previous=(await request(route(seller,'presentations'),{token:user})).find(p=>p.offer_id===oid);const p=await request(route(seller,`offers/${oid}/presentation`),{token:user,method:'PUT',body:{warranty:'Garantia fictícia de homologação.',conditions:'Preparação de teste; pagamentos e expedição bloqueados.',handling_days:2,revision:previous?.revision||0,offer_revision:o.revision}});const sent=await request(route(seller,`offers/${oid}/review`),{token:user,body:{revision:p.revision,offer_revision:o.revision}});await request(`/api/admin/marketplace/catalog/offers/${oid}/decision`,{token:admin,method:'PATCH',body:{status:'approved',note:'Oferta fictícia de preparação.',revision:sent.revision}});}
+ const stock=async(seller,user,oid,qty)=>request(route(seller,`offers/${oid}/inventory`),{token:user,method:'PUT',body:{revision:(await offer(seller,user,oid)).revision,available_qty:qty,reason:'Saldo fictício Fase 4',idempotency_key:randomUUID()}});
+ const set=async(user,oid,qty)=>request('/api/marketplace/cart/items/'+oid,{token:user,method:'PUT',body:{qty,revision:(await cart(user)).revision}});
+ const cancel=(user,oid)=>request('/api/marketplace/preparations/'+oid+'/cancel',{token:user,body:{}});
+ try{
+  await approve(sa,a,oa);await approve(sb,b,ob);await stock(sa,a,oa,5);await stock(sb,b,ob,5);await set(a,oa,2);await set(a,ob,3);assert.equal((await cart(b)).items.length,0);
+  const before=await cart(a),key=randomUUID(),o=await request('/api/marketplace/cart/prepare',{token:a,status:201,body:{revision:before.revision,idempotency_key:key}});created.push([a,o.id]);assert.equal(o.suborders.length,2);assert.equal(o.commerce_enabled,false);assert.equal(o.shipping_quote,null);assert.equal(o.payment_status,'blocked');
+  const replay=await request('/api/marketplace/cart/prepare',{token:a,body:{revision:before.revision,idempotency_key:key}});assert.equal(replay.id,o.id);assert.equal(replay.replayed,true);
+  await request('/api/marketplace/preparations/'+o.id,{token:b,status:404});await request(`/api/marketplace/sellers/${sa}/preparations`,{token:b,status:403});
+  const seller=await request(`/api/marketplace/sellers/${sa}/preparations`,{token:staff});assert.equal(seller.suborders.length,1);assert.equal(seller.suborders[0].items.length,1);assert.equal(Object.hasOwn(seller.suborders[0],'buyer_user_id'),false);
+  await request(`/api/marketplace/sellers/${sa}/preparations/${seller.suborders[0].id}/cancel`,{token:staff,body:{},status:403});
+  for(const op of ['pay','ship','confirm'])await request('/api/marketplace/preparations/'+o.id+'/'+op,{token:a,body:{},status:409});
+  const own=await offer(sa,a,oa);await request(route(sa,`offers/${oa}`),{token:a,method:'PATCH',body:{seller_sku:own.seller_sku,price_cents:Number(own.price_cents)+10,variant_label:own.variant_label,revision:own.revision}});
+  const frozen=await request('/api/marketplace/preparations/'+o.id,{token:a});assert.equal(Number(frozen.suborders.find(s=>s.seller_id===sa).items[0].unit_price_cents),Number(own.price_cents));
+  await db.query("UPDATE marketplace_order_preparation SET expires_at=now()-interval '1 minute' WHERE order_id=$1 AND buyer_user_id=(SELECT buyer_user_id FROM marketplace_order WHERE id=$1)",[o.id]);assert.equal((await request('/api/marketplace/preparations/'+o.id,{token:a})).state,'expired');await cancel(a,o.id);
+  await approve(sa,a,oa);await stock(sa,a,oa,1);await set(a,oa,1);await set(b,oa,1);
+  const results=await Promise.all([a,b].map(async token=>{const current=await cart(token),r=await fetch(base+'/api/marketplace/cart/prepare',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify({revision:current.revision,idempotency_key:randomUUID()})});return {token,status:r.status,data:await r.json()};}));assert.deepEqual(results.map(r=>r.status).sort(),[201,409]);const win=results.find(r=>r.status===201);created.push([win.token,win.data.id]);await cancel(win.token,win.data.id);await cancel(win.token,win.data.id);
+  assert.deepEqual((await db.query('SELECT available_qty,reserved_qty FROM marketplace_offer_inventory WHERE offer_id=$1',[oa])).rows[0],{available_qty:1,reserved_qty:0});
+  for(const table of ['marketplace_payment','marketplace_shipping','marketplace_fiscal_document'])assert.equal((await db.query(`SELECT count(*)::int n FROM ${table} p JOIN marketplace_seller_order so ON so.id=p.seller_order_id WHERE so.seller_id=ANY($1::uuid[])`,[[sa,sb]])).rows[0].n,0);
+  console.log(JSON.stringify({result:'PASS',scope:'LIVE_PHASE4_SQL_API',twoStores:true,tenantIsolation:true,lastUnitConcurrency:true,idempotence:true,frozenPrices:true,expirationReturnedStock:true,commerce_enabled:false,paymentsExecuted:false,shippingExecuted:false}));
+ }finally{for(const [user,order] of created)await cancel(user,order).catch(()=>{});}
+}
