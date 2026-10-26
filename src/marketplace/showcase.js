@@ -14,8 +14,11 @@ export function registrarVitrine({app,query,withTransaction,exigeLogin,exigeAdmi
  app.post('/api/admin/marketplace/catalog/legacy/:productId/reconcile',exigeLogin,exigeAdmin,safe(async(req,res)=>{
   const evidence=textoCampo(req.body?.evidence,2000,{min:20});if(!evidence||req.body?.identifiers_checked!==true||req.body?.variants_checked!==true||req.body?.images_checked!==true)fail(400,'Confira identificadores, variações e imagens e registre a justificativa');
   await withTransaction(async c=>{
+   await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',['marketplace-legacy-review:'+uuid(req.params.productId)]);
    const source=(await c.query(legacyQuery+' WHERE p.id=$1',[uuid(req.params.productId)])).rows[0];if(!source)fail(404,'Produto legado não encontrado');
    if(JSON.stringify(source)!==JSON.stringify(req.body.expected_source))fail(409,'Origem alterada; atualize a conferência');
+   const previous=(await c.query('SELECT catalog_product_id FROM marketplace_legacy_catalog_review WHERE legacy_product_id=$1',[source.id])).rows[0];
+   if((previous?.catalog_product_id||null)!==(req.body.expected_catalog_product_id||null))fail(409,'Correspondência alterada; atualize a conferência');
    const target=(await c.query(`SELECT id FROM marketplace_catalog_product WHERE id=$1 AND moderation_status='approved' AND legacy_product_id IS NULL FOR SHARE`,[uuid(req.body.catalog_product_id)])).rows[0];if(!target)fail(400,'Selecione um produto novo aprovado e confira sua ficha');
    // Records correspondence only. Never rewrites IDs, original products, offers, images or historical items.
    await c.query(`INSERT INTO marketplace_legacy_catalog_review(legacy_product_id,catalog_product_id,source_snapshot,evidence,reviewed_by) VALUES($1,$2,$3::jsonb,$4,$5) ON CONFLICT(legacy_product_id) DO UPDATE SET catalog_product_id=$2,source_snapshot=$3::jsonb,evidence=$4,reviewed_by=$5,reviewed_at=now()`,[source.id,target.id,JSON.stringify(source),evidence,req.usuario.id]);

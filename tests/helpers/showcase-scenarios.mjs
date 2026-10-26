@@ -19,6 +19,7 @@ export async function checkShowcase({request,a,b,staff,admin,sa,sb,oa,ob,product
  assert.equal(publicData.offers.length,2);assert.equal(publicData.offers[0].offer_id,oa);assert.deepEqual(new Set(publicData.offers.map(o=>o.seller_id)),new Set([sa,sb]));
  for(const row of publicData.offers){assert.ok(row.sold_by);for(const key of ['cnpj','contact_email','street','seller_sku','actor_user_id','reserved_qty'])assert.equal(Object.hasOwn(row,key),false,key);}
  const repeat=await request('/api/marketplace/showcase?product='+productId,a);assert.deepEqual(repeat.offers.map(o=>o.offer_id),publicData.offers.map(o=>o.offer_id));
+ await request(`/api/marketplace/sellers/${sa}/offers/${oa}/publish`,a,{body:{},status:409});
  assert.equal((await request('/api/marketplace/showcase?seller='+sa,a)).offers.every(o=>o.seller_id===sa),true);
  const profile=await request(base(sb)+'/public-profile',b);await request(base(sb)+'/public-profile',b,{method:'PUT',body:{...publicProfile,consent:false,revision:profile.revision}});
  assert.equal((await request('/api/marketplace/showcase?product='+productId,a)).offers.length,1);
