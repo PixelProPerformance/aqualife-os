@@ -24,7 +24,16 @@ from boto3.s3.transfer import TransferConfig
 
 def command(args, env=None, timeout=900):
     # Suppress subprocess output: pg tools can include connection details/data.
-    subprocess.run(args, env=env, check=True, timeout=timeout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    result = subprocess.run(args, env=env, timeout=timeout, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    if result.returncode:
+        diagnostic = result.stderr.decode(errors="replace")
+        reason = "PG_TOOL_FAILED"
+        for fragment, code in [("permission denied", "PERMISSION_DENIED"), ("does not exist", "OBJECT_OR_DATABASE_MISSING"), ("password authentication failed", "AUTHENTICATION_FAILED"), ("connection", "CONNECTION_FAILED"), ("version mismatch", "PG_VERSION_MISMATCH"), ("invalid locale", "LOCALE_UNAVAILABLE")]:
+            if fragment in diagnostic:
+                reason = code
+                break
+        print(json.dumps({"step": Path(args[0]).name, "exit_code": result.returncode, "reason": reason}), flush=True)
+        raise subprocess.CalledProcessError(result.returncode, args)
 
 
 def digest_file(path):
@@ -116,7 +125,12 @@ def run(dsn):
     created = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     key = f"postgres/{expected_database}/{created}-{uuid.uuid4()}/database.dump"
     client = boto3.client("s3", endpoint_url=endpoint, config=Config(s3={"addressing_style": "virtual"}, retries={"max_attempts": 3}))
-    source_env = {**os.environ, "PGOPTIONS": "-c default_transaction_read_only=on -c statement_timeout=300000 -c lock_timeout=5000", "PGDATABASE": dsn}
+    tool_env = {k: os.environ[k] for k in ("PATH", "HOME", "LANG", "LC_ALL") if k in os.environ}
+    source_env = {**tool_env, "PGOPTIONS": "-c default_transaction_read_only=on -c statement_timeout=300000 -c lock_timeout=5000"}
+    connection_keys = {"host": "PGHOST", "port": "PGPORT", "dbname": "PGDATABASE", "user": "PGUSER", "password": "PGPASSWORD", "sslmode": "PGSSLMODE", "sslrootcert": "PGSSLROOTCERT", "sslcert": "PGSSLCERT", "sslkey": "PGSSLKEY"}
+    for name, value in parse_dsn(dsn).items():
+        if name in connection_keys:
+            source_env[connection_keys[name]] = value
     source = psycopg2.connect(dsn, options="-c default_transaction_read_only=on -c statement_timeout=300000 -c lock_timeout=5000 -c timezone=UTC -c extra_float_digits=3")
     try:
         source.set_session(isolation_level="REPEATABLE READ", readonly=True)
@@ -154,7 +168,7 @@ def run(dsn):
             data, socket = root / "pgdata", root / "socket"
             socket.mkdir()
             # Local-only PostgreSQL. It has no TCP listener and never uses source credentials.
-            local_env = {k: v for k, v in os.environ.items() if not k.startswith("PG") and k not in ("DATABASE_URL", "BACKUP_DATABASE_URL")}
+            local_env = dict(tool_env)
             local_env.update(PGHOST=str(socket), PGPORT="55432", PGUSER="postgres", PGDATABASE="postgres")
             command(["initdb", "-D", str(data), "-U", "postgres", "--no-locale", "--encoding=UTF8", "--auth=trust"], local_env)
             command(["pg_ctl", "-D", str(data), "-l", str(root / "restore.log"), "-o", f"-c listen_addresses='' -k {socket} -p 55432", "-w", "start"], local_env)
