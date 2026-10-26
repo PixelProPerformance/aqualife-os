@@ -23,6 +23,7 @@ import { diagnosticar, RULESET_VERSION, FAIXAS } from "./motor/engine.mjs";
 import { coletarEventos, visaoGeral, funil, secoes, alertas, contextoInsights, paisDosHeaders } from "./analytics_api.js";
 import { TERMO_VERSAO, TERMO_ATUALIZADO, TERMO_TITULO, TERMO_HTML } from "./termo.js";
 import { registrarLoja, LOJA_SCHEMA } from "./loja.js";
+import { registrarOnboarding } from "./marketplace/onboarding.js";
 import { registrarServicos, SERVICOS_SCHEMA } from "./servicos.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -3876,6 +3877,8 @@ app.post("/api/ia/chat", exigeLogin, async (req, res) => {
 // ============================================================
 // FALLBACK SPA
 // ============================================================
+registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
+
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api")) return res.status(404).json({ erro: "rota não encontrada" });
   // Se pediram um arquivo .html específico que NÃO existe (não foi servido pelo
@@ -4024,4 +4027,5 @@ async function start() {
   );
 }
 
-start();
+export { app };
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) start();
