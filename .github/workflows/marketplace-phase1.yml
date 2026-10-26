@@ -1,7 +1,6 @@
 name: Marketplace Phase 1
 on:
   pull_request:
-    branches: [main, feat/marketplace-fase1-foundation, fix/marketplace-environment-urls]
 permissions:
   contents: read
 jobs:
