@@ -84,6 +84,17 @@ test('catalog SQL/HTTP: real images, moderation, tenant isolation, money, invent
   await req(route(a,`offers/${oa.id}/inventory`),staff,{method:'PUT',body:{...movement,idempotency_key:randomUUID()},status:403});
   const racing=await Promise.all([11,12].map(async available_qty=>{const r=await fetch(base+route(a,`offers/${oa.id}/inventory`),{method:'PUT',headers:{authorization:ownerA,'content-type':'application/json'},body:JSON.stringify({...movement,revision:2,available_qty,idempotency_key:randomUUID()})});await r.json();return r.status;}));assert.deepEqual(racing.sort(),[200,409]);
   const offers=await req(route(a,'offers'),ownerA);assert.equal(offers[0].revision,3);
+  // Withdrawal's audit FK takes KEY SHARE. Seller serialization must allow it,
+  // even while a seller mutation waits for the product locked by withdrawal.
+  const sellerLock=await pool.connect(),withdrawLock=await pool.connect();
+  try{await sellerLock.query('BEGIN');await withdrawLock.query('BEGIN');
+   await withdrawLock.query('SELECT id FROM marketplace_catalog_product WHERE id=$1 FOR UPDATE',[approved.catalog_product_id]);
+   await sellerLock.query('SELECT id FROM marketplace_seller WHERE id=$1 FOR NO KEY UPDATE',[a]);
+   const waiting=sellerLock.query('SELECT id FROM marketplace_catalog_product WHERE id=$1 FOR SHARE',[approved.catalog_product_id]);
+   await withdrawLock.query("SET LOCAL statement_timeout='1500ms'");
+   await withdrawLock.query("INSERT INTO marketplace_audit_log(seller_id,actor_user_id,action,resource_type) VALUES($1,$2,'synthetic_lock_probe','catalog_product')",[a,admin]);
+   await withdrawLock.query('ROLLBACK');await waiting;await sellerLock.query('ROLLBACK');
+  }finally{await withdrawLock.query('ROLLBACK');await sellerLock.query('ROLLBACK');withdrawLock.release();sellerLock.release();}
   await req(`/api/marketplace/sellers/${a}/offers/${oa.id}/publish`,ownerA,{body:{},status:409});
   process.env.MARKETPLACE_CATALOG_PREVIEW_ENABLED='true';
   await checkShowcase({request:req,a:ownerA,b:ownerB,staff,admin,sa:a,sb:b,oa:oa.id,ob:ob.id,productId:approved.catalog_product_id});

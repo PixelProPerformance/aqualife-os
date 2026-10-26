@@ -71,7 +71,7 @@ export function registrarVitrine({app,query,withTransaction,exigeLogin,exigeAdmi
   const note=textoCampo(req.body?.note,1000,{min:3}),status=req.body?.status;if(!note||!['approved','rejected'].includes(status))fail(400,'Informe decisão e motivo');
   const result=await withTransaction(async c=>{
    const ref=(await c.query('SELECT seller_id,catalog_product_id FROM marketplace_offer WHERE id=$1',[uuid(req.params.offerId)])).rows[0];if(!ref)fail(404,'Oferta não encontrada');
-   const s=(await c.query('SELECT * FROM marketplace_seller WHERE id=$1 FOR UPDATE',[ref.seller_id])).rows[0];
+   const s=(await c.query('SELECT * FROM marketplace_seller WHERE id=$1 FOR NO KEY UPDATE',[ref.seller_id])).rows[0];
    if(status==='approved')await approvedProduct(c,ref.catalog_product_id);
    const o=await offer(c,s.id,req.params.offerId),p=(await c.query('SELECT * FROM marketplace_offer_presentation WHERE offer_id=$1 FOR UPDATE',[o.id])).rows[0];
    if(!p||p.revision!==req.body.revision||!['pending','approved'].includes(p.review_status))fail(409,'Revisão alterada ou oferta fora da fila');

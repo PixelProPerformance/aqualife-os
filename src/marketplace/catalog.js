@@ -22,7 +22,7 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
  async function scope(c,req,write=false){
   const sellerId=uuid(req.params.sellerId);
   const s=(await c.query(`SELECT s.id,s.status,s.is_platform_owned,su.role FROM marketplace_seller s JOIN marketplace_seller_user su ON su.seller_id=s.id
-   WHERE s.id=$1 AND su.user_id=$2 AND su.active=true ${write?'FOR UPDATE OF s,su':''}`,[sellerId,req.usuario.id])).rows[0];
+   WHERE s.id=$1 AND su.user_id=$2 AND su.active=true ${write?'FOR NO KEY UPDATE OF s,su':''}`,[sellerId,req.usuario.id])).rows[0];
   if(!s)refuse(403,'Acesso restrito à loja');
   if(write&&(s.role!=='owner'||s.status!=='approved'||s.is_platform_owned))refuse(403,'Alteração restrita ao proprietário de loja aprovada');
   return s;
@@ -106,7 +106,7 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
   const result=await withTransaction(async c=>{
    const id=uuid(req.params.submissionId),reference=(await c.query('SELECT seller_id FROM marketplace_catalog_submission WHERE id=$1',[id])).rows[0];if(!reference)refuse(404,'Produto não encontrado');
    // Lock seller first, as in seller mutations and suspension; prevents approval races.
-   const seller=(await c.query('SELECT * FROM marketplace_seller WHERE id=$1 FOR UPDATE',[reference.seller_id])).rows[0];
+   const seller=(await c.query('SELECT * FROM marketplace_seller WHERE id=$1 FOR NO KEY UPDATE',[reference.seller_id])).rows[0];
    const p=await submission(c,seller.id,id);expected(p,req.body);if(p.status!=='pending')refuse(409,'Produto não está aguardando análise');
    let catalogId=null;
    if(status==='approved'){
