@@ -25,6 +25,7 @@ import { TERMO_VERSAO, TERMO_ATUALIZADO, TERMO_TITULO, TERMO_HTML } from "./term
 import { registrarLoja, LOJA_SCHEMA } from "./loja.js";
 import { registrarOnboarding } from "./marketplace/onboarding.js";
 import { registrarCatalogo } from "./marketplace/catalog.js";
+import { registrarCarrinho } from "./marketplace/cart.js";
 import { registrarServicos, SERVICOS_SCHEMA } from "./servicos.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -3880,6 +3881,7 @@ app.post("/api/ia/chat", exigeLogin, async (req, res) => {
 // ============================================================
 registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
 registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
+const marketplacePreparation=registrarCarrinho({app,query,withTransaction,exigeLogin,rateLimit});
 
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api")) return res.status(404).json({ erro: "rota não encontrada" });
@@ -4024,6 +4026,7 @@ async function start() {
     process.exit(1);
   }
   await garantirSchema();
+  marketplacePreparation.startExpiration();
   app.listen(PORT, "0.0.0.0", () =>
     console.log(`🌊 Aqualife OS — Railway — porta ${PORT} — IA: ${Boolean(IA_KEY)}`)
   );
