@@ -4,7 +4,7 @@ assert.equal(process.env.RAILWAY_PROJECT_ID,'f0a54aac-7782-432e-9339-77a261e2c4c
 async function node(args){const code=await new Promise((resolve,reject)=>{const p=spawn(process.execPath,args,{stdio:'inherit',env:process.env});p.on('error',reject);p.on('exit',resolve);});assert.equal(code,0,args.join(' '));}
 try{
  await node(['--test','tests/marketplace-catalog.integration.test.mjs']);let ready=false;
- for(let i=0;i<180;i++){const r=await fetch('https://aqualife-os-production-a81a.up.railway.app/api/marketplace/catalog/products',{signal:AbortSignal.timeout(15000)}).catch(()=>null);if(r?.status===401){ready=true;break;}await new Promise(r=>setTimeout(r,5000));}
+ for(let i=0;i<180;i++){const r=await fetch('https://aqualife-os-production-a81a.up.railway.app/api/marketplace/showcase',{signal:AbortSignal.timeout(15000)}).catch(()=>null);if(r?.status===200&&(await r.json()).commerce_enabled===false){ready=true;break;}await new Promise(r=>setTimeout(r,5000));}
  assert.ok(ready,'PHASE3_STAGING_NOT_READY');
  await node(['scripts/validate-marketplace-phase2-staging.mjs']);
  await node(['scripts/validate-staging.mjs']);
