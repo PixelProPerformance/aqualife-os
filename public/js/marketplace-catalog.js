@@ -1,4 +1,5 @@
 // UI for private catalog preparation. Data is rendered exclusively as text/DOM nodes.
+import {attributeEditor,sellerPresentation,adminOfferQueue,adminClassification} from './marketplace-showcase-editor.js';
 export async function renderSellerCatalog(ctx){
  const {tab,sellerId,store,api,el,card,table,button,money,date,notice,refresh,notify}=ctx;
  const base=`/api/marketplace/sellers/${encodeURIComponent(sellerId)}/catalog`;
@@ -15,13 +16,14 @@ export async function renderSellerCatalog(ctx){
   function edit(product){
    const form=el('form',undefined,{className:'catalog-form'}),grid=el('div',undefined,{className:'fields'}),inputs={};
    for(const [key,label,max,type] of [['title','Nome do produto',180],['category','Categoria',80],['brand','Marca (opcional)',120],['model','Modelo (opcional)',120],['gtin','GTIN/EAN (opcional)',14],['description','Descrição do produto',3000,'textarea']]){inputs[key]=field(grid,label,key,product?.[key],type||'text',max);inputs[key].required=['title','category','description'].includes(key);}
+   const attributes=attributeEditor(el,product?.technical_attributes);grid.append(attributes.group);
    const file=field(grid,'Imagem JPEG, PNG ou WebP · até 5 MB','image','','file');file.accept='image/jpeg,image/png,image/webp';
    form.append(el('h3',product?'Editar rascunho':'Novo produto'),grid);
    if(product?.image_url)form.append(el('img',undefined,{src:product.image_url,alt:product.title,className:'catalog-image'}));
    form.append(el('p','As imagens de produto são públicas por URL. Envie apenas material autorizado do produto, sem documentos ou dados pessoais.',{className:'muted'}));
    const submit=el('button','Salvar rascunho',{type:'submit'}),actions=el('div',undefined,{className:'actions'});actions.append(submit,button('Cancelar',()=>editor.replaceChildren(),true));form.append(actions);
    form.addEventListener('submit',event=>{event.preventDefault();ctx.run(async()=>{
-    const body=Object.fromEntries(Object.entries(inputs).map(([k,input])=>[k,input.value]));body.image_asset_id=product?.image_asset_id||null;
+    const body=Object.fromEntries(Object.entries(inputs).map(([k,input])=>[k,input.value]));body.technical_attributes=attributes.read();body.image_asset_id=product?.image_asset_id||null;
     if(file.files?.[0]){const upload=new FormData();upload.append('image',file.files[0]);body.image_asset_id=(await api(base+'/assets',{method:'POST',body:upload})).id;}
     if(product)body.revision=product.revision;
     await api(base+'/submissions'+(product?'/'+product.id:''),{method:product?'PATCH':'POST',body});await refresh();notify('Rascunho salvo. Envie para análise quando estiver completo.');
@@ -34,7 +36,7 @@ export async function renderSellerCatalog(ctx){
    if(p.status==='approved')c.append(el('p',p.catalog_status==='approved'?'Produto aprovado. Crie sua oferta na aba Ofertas.':'Produto retirado do catálogo. As ofertas foram arquivadas.'));if(p.catalog_note)c.append(el('div',p.catalog_note,{className:'notice'}));c.append(actions);panel.append(c);
   }pager(rows,panel);
  }else if(tab==='offers'){
-  panel.append(el('p','Vincule um produto aprovado ao SKU da sua loja. As ofertas ficam em rascunho e ainda não aparecem na loja pública.'));
+  panel.append(el('p','Vincule um produto aprovado ao SKU da sua loja. Complete a apresentação e solicite revisão para a vitrine de consulta. As ofertas permanecem sem venda.'));
   const rows=await api(`${base}/offers?offset=${state.offset}`),editor=el('div');
   async function edit(offer){
    const form=el('form',undefined,{className:'catalog-form'}),grid=el('div',undefined,{className:'fields'});
@@ -60,6 +62,7 @@ export async function renderSellerCatalog(ctx){
   panel.append(el('h3','Histórico de movimentações'));
   if(movements.length)panel.append(table(['Data','SKU','Antes','Depois','Variação','Motivo'],movements.map(m=>[date(m.created_at),m.seller_sku,m.before_qty,m.after_qty,m.delta,m.reason])));else panel.append(el('p','Nenhuma movimentação registrada.'));pager(offers.length===100?offers:movements,panel);
  }
+ if(tab==='offers')await sellerPresentation(ctx,panel);
  return nodes;
 }
 const pages=new Map();
@@ -87,5 +90,5 @@ export async function renderAdminCatalog(ctx){
  if(offset)actions.append(button('Anterior',()=>{adminPages.set(filter,Math.max(0,offset-100));return refresh();},true));
  if(rows.length===100)actions.append(button('Próximos 100',()=>{adminPages.set(filter,offset+100);return refresh();},true));
  if(actions.children.length)grid.append(actions);
- return [grid];
+ return [await adminOfferQueue(ctx),grid,await adminClassification(ctx)];
 }

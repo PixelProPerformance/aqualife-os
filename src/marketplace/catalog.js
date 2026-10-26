@@ -6,6 +6,8 @@ import multer from 'multer';
 import sharp from 'sharp';
 import {sellerIdValido} from './authorization.js';
 import {produtoValido,ofertaValida,textoCampo} from './catalog-validation.js';
+import {attributesValid} from './showcase-validation.js';
+import {registrarVitrine} from './showcase.js';
 const refuse=(status,message)=>{const error=new Error(message);error.status=status;throw error;};
 const uuid=(v)=>{if(!sellerIdValido(v))refuse(400,'Identificador inválido');return v;};
 const revision=v=>{if(!Number.isInteger(v)||v<1)refuse(400,'Informe a revisão atual');return v;};
@@ -36,7 +38,7 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
  function expected(p,body){if(p.revision!==revision(body?.revision))refuse(409,'Registro alterado; atualize a tela');}
  app.get('/api/marketplace/catalog/products',exigeLogin,safe(async(req,res)=>{
   const search=textoCampo(req.query.search??'',100);if(search===null)refuse(400,'Busca inválida');
-  res.json((await query(`SELECT p.id,p.title,p.brand,p.model,p.gtin,d.description,d.category,
+  res.json((await query(`SELECT p.id,p.title,p.brand,p.model,p.gtin,d.description,d.category,d.technical_attributes,
    CASE WHEN a.id IS NOT NULL THEN '/uploads/marketplace/'||a.storage_key END AS image_url
    FROM marketplace_catalog_product p LEFT JOIN marketplace_catalog_detail d ON d.catalog_product_id=p.id LEFT JOIN marketplace_catalog_asset a ON a.id=d.image_asset_id
    WHERE p.moderation_status='approved' AND ($1='' OR p.title ILIKE '%'||$1||'%' OR p.gtin=$1)
@@ -70,7 +72,8 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
   const result=await withTransaction(async c=>{
    const s=await scope(c,req,true);const count=(await c.query('SELECT count(*)::int n FROM marketplace_catalog_submission WHERE seller_id=$1',[s.id])).rows[0].n;if(count>=500)refuse(409,'Limite de produtos atingido; contate o suporte');
    const asset=await ownAsset(c,s.id,req.body.image_asset_id);
-   const item=(await c.query(`INSERT INTO marketplace_catalog_submission(seller_id,title,description,category,brand,model,gtin,image_asset_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,[s.id,p.title,p.description,p.category,p.brand,p.model,p.gtin||null,asset])).rows[0];
+   const attrs=attributesValid(req.body.technical_attributes);if(!attrs)refuse(400,'Atributos técnicos inválidos');
+   const item=(await c.query(`INSERT INTO marketplace_catalog_submission(seller_id,title,description,category,brand,model,gtin,image_asset_id,technical_attributes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb) RETURNING *`,[s.id,p.title,p.description,p.category,p.brand,p.model,p.gtin||null,asset,JSON.stringify(attrs)])).rows[0];
    await audit(c,s.id,req.usuario.id,'catalog_draft_created','catalog_submission',item.id);return item;
   });res.status(201).json(result);
  }));
@@ -80,7 +83,8 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
    const s=await scope(c,req,true),old=await submission(c,s.id,req.params.submissionId);expected(old,req.body);
    if(!['draft','rejected'].includes(old.status))refuse(409,'Produto em análise ou aprovado não pode ser alterado');
    const asset=await ownAsset(c,s.id,req.body.image_asset_id);
-   const r=await c.query(`UPDATE marketplace_catalog_submission SET title=$2,description=$3,category=$4,brand=$5,model=$6,gtin=$7,image_asset_id=$8,status='draft',review_note='',reviewed_by=null,reviewed_at=null,revision=revision+1,updated_at=now() WHERE id=$1 RETURNING *`,[old.id,p.title,p.description,p.category,p.brand,p.model,p.gtin||null,asset]);
+   const attrs=attributesValid(req.body.technical_attributes);if(!attrs)refuse(400,'Atributos técnicos inválidos');
+   const r=await c.query(`UPDATE marketplace_catalog_submission SET title=$2,description=$3,category=$4,brand=$5,model=$6,gtin=$7,image_asset_id=$8,technical_attributes=$9::jsonb,status='draft',review_note='',reviewed_by=null,reviewed_at=null,revision=revision+1,updated_at=now() WHERE id=$1 RETURNING *`,[old.id,p.title,p.description,p.category,p.brand,p.model,p.gtin||null,asset,JSON.stringify(attrs)]);
    await audit(c,s.id,req.usuario.id,'catalog_draft_updated','catalog_submission',old.id,{revision:r.rows[0].revision});return r.rows[0];
   });res.json(result);
  }));
@@ -107,11 +111,11 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
    let catalogId=null;
    if(status==='approved'){
     if(seller.status!=='approved'||seller.is_platform_owned||!p.image_asset_id)refuse(409,'Loja ou imagem não elegível para aprovação');
-    if(req.body.catalog_product_id){catalogId=uuid(req.body.catalog_product_id);const existing=(await c.query(`SELECT id FROM marketplace_catalog_product WHERE id=$1 AND moderation_status='approved'`,[catalogId])).rows[0];if(!existing)refuse(400,'Produto compartilhado não aprovado');}
+    if(req.body.catalog_product_id){catalogId=uuid(req.body.catalog_product_id);const existing=(await c.query(`SELECT id,gtin FROM marketplace_catalog_product WHERE id=$1 AND moderation_status='approved' FOR SHARE`,[catalogId])).rows[0];if(!existing)refuse(400,'Produto compartilhado não aprovado');if(p.gtin&&existing.gtin&&p.gtin!==existing.gtin)refuse(409,'GTIN divergente; corrija a identificação antes de vincular');}
     else{
      if(p.gtin){await c.query('SELECT pg_advisory_xact_lock(hashtext($1))',['marketplace-gtin:'+p.gtin]);if((await c.query(`SELECT id FROM marketplace_catalog_product WHERE gtin=$1 AND moderation_status='approved'`,[p.gtin])).rows[0])refuse(409,'GTIN já aprovado; vincule ao produto existente');}
      catalogId=(await c.query(`INSERT INTO marketplace_catalog_product(title,brand,model,gtin,moderation_status) VALUES($1,$2,$3,$4,'approved') RETURNING id`,[p.title,p.brand,p.model,p.gtin])).rows[0].id;
-     await c.query('INSERT INTO marketplace_catalog_detail(catalog_product_id,description,category,image_asset_id) VALUES($1,$2,$3,$4)',[catalogId,p.description,p.category,p.image_asset_id]);
+     await c.query('INSERT INTO marketplace_catalog_detail(catalog_product_id,description,category,image_asset_id,technical_attributes) VALUES($1,$2,$3,$4,$5::jsonb)',[catalogId,p.description,p.category,p.image_asset_id,JSON.stringify(p.technical_attributes)]);
     }
    }
    const r=await c.query('UPDATE marketplace_catalog_submission SET status=$2,review_note=$3,reviewed_by=$4,reviewed_at=now(),catalog_product_id=$5,revision=revision+1,updated_at=now() WHERE id=$1 RETURNING *',[p.id,status,note,req.usuario.id,catalogId]);
@@ -179,4 +183,5 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
  app.get('/api/marketplace/sellers/:sellerId/catalog/inventory-movements',exigeLogin,safe(async(req,res)=>{
   const s=await scope(read,req);res.json((await query(`SELECT m.id,m.offer_id,o.seller_sku,m.before_qty,m.after_qty,m.delta,m.reason,m.created_at FROM marketplace_inventory_movement m JOIN marketplace_offer o ON o.id=m.offer_id AND o.seller_id=m.seller_id WHERE m.seller_id=$1 ORDER BY m.created_at DESC,m.id LIMIT 100 OFFSET $2`,[s.id,pagination(req)])).rows);
  }));
+ registrarVitrine({app,query,withTransaction,exigeLogin,exigeAdmin,safe,scope,offer,approvedProduct,expected,uuid,audit,limit,pagination});
 }

@@ -9,6 +9,7 @@ import pg from 'pg';
 import sharp from 'sharp';
 import {registrarCatalogo} from '../src/marketplace/catalog.js';
 import {registrarOnboarding} from '../src/marketplace/onboarding.js';
+import {checkShowcase} from './helpers/showcase-scenarios.mjs';
 
 test('catalog SQL/HTTP: real images, moderation, tenant isolation, money, inventory concurrency and replay', {skip:!process.env.PG_TEST_URL},async()=>{
  const target=new URL(process.env.PG_TEST_URL);assert.ok(['localhost','127.0.0.1'].includes(target.hostname)||process.env.RAILWAY_PROJECT_ID==='f0a54aac-7782-432e-9339-77a261e2c4c8','refuse production');
@@ -16,8 +17,8 @@ test('catalog SQL/HTTP: real images, moderation, tenant isolation, money, invent
  const db=new pg.Client({connectionString:process.env.PG_TEST_URL});await db.connect();let pool,server;
  try{
   await db.query(`CREATE SCHEMA ${schema}; SET search_path TO ${schema},public`);
-  await db.query('CREATE TABLE app_user(id uuid PRIMARY KEY,name text,email text,ativo boolean DEFAULT true); CREATE TABLE loja_produto(id uuid PRIMARY KEY); CREATE TABLE loja_variacao(id uuid PRIMARY KEY);');
-  for(const f of ['0001_foundation.sql','0003_onboarding.sql','0004_catalog.sql']){const sql=await readFile(new URL('../migrations/marketplace/'+f,import.meta.url),'utf8');await db.query(sql);await db.query(sql);}
+  await db.query('CREATE TABLE app_user(id uuid PRIMARY KEY,name text,email text,ativo boolean DEFAULT true); CREATE TABLE loja_produto(id uuid PRIMARY KEY,nome text,marca text,modelo text); CREATE TABLE loja_variacao(id uuid PRIMARY KEY,produto_id uuid,sku text,ativo boolean); CREATE TABLE loja_imagem(produto_id uuid,url text,capa boolean,ordem int);');
+  for(const f of ['0001_foundation.sql','0003_onboarding.sql','0004_catalog.sql','0005_showcase.sql']){const sql=await readFile(new URL('../migrations/marketplace/'+f,import.meta.url),'utf8');await db.query(sql);await db.query(sql);}
   pool=new pg.Pool({connectionString:process.env.PG_TEST_URL,options:`-c search_path=${schema},public`});const query=(...args)=>pool.query(...args);
   const withTransaction=async fn=>{const c=await pool.connect();try{await c.query('BEGIN');const r=await fn(c);await c.query('COMMIT');return r;}catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}};
   const [ownerA,ownerB,staff,admin,inactive]=Array.from({length:5},randomUUID),[a,b,pending]=Array.from({length:3},randomUUID);
@@ -48,6 +49,20 @@ test('catalog SQL/HTTP: real images, moderation, tenant isolation, money, invent
   await req('/api/admin/marketplace/catalog/submissions',ownerA,{status:403});
   await req(`/api/admin/marketplace/catalog/submissions/${draft.id}/decision`,admin,{method:'PATCH',body:{revision:1,status:'approved',note:'Synthetic'},status:409});
   const approved=await req(`/api/admin/marketplace/catalog/submissions/${draft.id}/decision`,admin,{method:'PATCH',body:{revision:submitted.revision,status:'approved',note:'Synthetic review'}});assert.ok(approved.catalog_product_id);
+  const classification={category:'Aquarismo',technical_attributes:{Volume:'100 litros'},expected_category:product.category,expected_attributes:{},note:'Conferência sintética da ficha técnica'};
+  await req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/classification`,ownerA,{method:'PATCH',body:classification,status:403});
+  await req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/classification`,admin,{method:'PATCH',body:classification});
+  await req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/classification`,admin,{method:'PATCH',body:classification,status:409});
+  const legacyId=randomUUID(),variantId=randomUUID();await query("INSERT INTO loja_produto VALUES($1,'Synthetic Product','Test','100g')",[legacyId]);await query("INSERT INTO loja_variacao VALUES($1,$2,'original-sku',true)",[variantId,legacyId]);
+  await query("INSERT INTO loja_imagem VALUES($1,'/uploads/synthetic-original.jpg',true,0)",[legacyId]);
+  const original=(await req('/api/admin/marketplace/catalog/legacy',admin)).products[0];
+  const mapping={catalog_product_id:approved.catalog_product_id,expected_source:original,evidence:'Identificadores, marca, modelo, imagem e variante conferidos no teste.',identifiers_checked:true,variants_checked:true,images_checked:true};
+  const expected_source=Object.fromEntries(['id','nome','marca','modelo','variations','images'].map(k=>[k,original[k]]));mapping.expected_source=expected_source;
+  await req(`/api/admin/marketplace/catalog/legacy/${legacyId}/reconcile`,ownerA,{body:mapping,status:403});
+  await req(`/api/admin/marketplace/catalog/legacy/${legacyId}/reconcile`,admin,{body:{...mapping,images_checked:false},status:400});
+  await req(`/api/admin/marketplace/catalog/legacy/${legacyId}/reconcile`,admin,{body:mapping});
+  assert.equal((await query('SELECT sku FROM loja_variacao WHERE id=$1',[variantId])).rows[0].sku,'original-sku');
+  assert.equal((await req('/api/admin/marketplace/catalog/legacy',admin)).products[0].reconciled_product_id,approved.catalog_product_id);
   await req(route(a,`submissions/${draft.id}`),ownerA,{method:'PATCH',body:{...product,revision:approved.revision},status:409});
   const dbDraft=await req(route(b,'submissions'),ownerB,{body:{...product,image_asset_id:assetB.id},status:201});const bSubmit=await req(route(b,`submissions/${dbDraft.id}/submit`),ownerB,{body:{revision:1}});
   await req(`/api/admin/marketplace/catalog/submissions/${dbDraft.id}/decision`,admin,{method:'PATCH',body:{revision:bSubmit.revision,status:'approved',note:'Duplicate GTIN'},status:409});
@@ -70,7 +85,10 @@ test('catalog SQL/HTTP: real images, moderation, tenant isolation, money, invent
   const racing=await Promise.all([11,12].map(async available_qty=>{const r=await fetch(base+route(a,`offers/${oa.id}/inventory`),{method:'PUT',headers:{authorization:ownerA,'content-type':'application/json'},body:JSON.stringify({...movement,revision:2,available_qty,idempotency_key:randomUUID()})});await r.json();return r.status;}));assert.deepEqual(racing.sort(),[200,409]);
   const offers=await req(route(a,'offers'),ownerA);assert.equal(offers[0].revision,3);
   await req(`/api/marketplace/sellers/${a}/offers/${oa.id}/publish`,ownerA,{body:{},status:409});
-  await req(route(a,`offers/${oa.id}/archive`),ownerA,{body:{revision:3}});
+  process.env.MARKETPLACE_CATALOG_PREVIEW_ENABLED='true';
+  await checkShowcase({request:req,a:ownerA,b:ownerB,staff,admin,sa:a,sb:b,oa:oa.id,ob:ob.id,productId:approved.catalog_product_id});
+  process.env.MARKETPLACE_CATALOG_PREVIEW_ENABLED='false';await req('/api/marketplace/showcase',ownerA,{status:404});
+  await req(route(a,`offers/${oa.id}/archive`),ownerA,{body:{revision:4}});
   await assert.rejects(query(`INSERT INTO marketplace_inventory_movement(offer_id,seller_id,before_qty,after_qty,delta,reason,idempotency_key,actor_user_id) VALUES($1,$2,0,1,1,'bad',$3,$4)`,[oa.id,b,randomUUID(),ownerB]),{code:'23503'});
   const before=(await req(route(b,'offers'),ownerB))[0];assert.equal(before.id,ob.id);assert.equal(Number(before.price_cents),2990);assert.equal(before.available_qty,0);
   await req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/withdraw`,ownerA,{body:{note:'bad'},status:403});

@@ -11,5 +11,8 @@ test('real server mounts marketplace API before its HTML/API fallback',async()=>
   }
   for(const path of ['/lojista.html','/marketplace-admin.html','/marketplace-catalog-admin.html','/js/marketplace.js','/js/marketplace-catalog.js','/css/marketplace.css'])assert.equal((await fetch(base+path)).status,200,path);
   assert.equal((await fetch(base+'/api/marketplace/unknown')).status,404);
+  assert.equal((await fetch(base+'/api/marketplace/showcase')).status,404);
+  for(const path of ['/marketplace.html','/js/marketplace-showcase.js','/js/marketplace-showcase-editor.js'])assert.equal((await fetch(base+path)).status,200,path);
+  for(const path of ['/api/admin/marketplace/catalog/offers','/api/admin/marketplace/catalog/legacy'])assert.equal((await fetch(base+path)).status,401,path);
  }finally{await new Promise(r=>server.close(r));}
 });
