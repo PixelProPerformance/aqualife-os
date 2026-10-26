@@ -42,6 +42,10 @@ try{
  await request(`/api/marketplace/sellers/${sa.id}/offers/${oa.id}/publish`,{token:a.token,body:{},status:409});
  assert.equal((await db.query('SELECT count(*)::int n FROM marketplace_inventory_movement WHERE offer_id=$1',[oa.id])).rows[0].n,1);
  const other=(await request(route(sb.id,'offers'),{token:b.token})).find(o=>o.id===ob.id);assert.equal(other.available_qty,0);assert.equal(Number(other.price_cents),2990);
+ const race=await Promise.all([
+  request(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/withdraw`,{token:admin.token,body:{note:'Retirada fictícia concorrente'}}),
+  (async()=>{const r=await fetch(base+route(sb.id,`offers/${ob.id}`),{method:'PATCH',headers:{authorization:'Bearer '+b.token,'content-type':'application/json'},body:JSON.stringify({...payload,price_cents:2990,revision:1})});await r.json();return r.status;})()
+ ]);assert.ok([200,409].includes(race[1]));assert.equal((await request(route(sb.id,'offers'),{token:b.token})).find(o=>o.id===ob.id).status,'suspended');
  assert.equal((await db.query('SELECT count(*)::int n FROM marketplace_seller_settings WHERE seller_id=ANY($1::uuid[]) AND accepting_orders=true',[sellers])).rows[0].n,0);
  assert.equal((await legacySnapshot(db)).fingerprint,legacy.fingerprint);
  console.log(JSON.stringify({result:'PASS',scope:'LIVE_PHASE3_SQL_API',twoShopsIsolated:true,ownerStaffVerified:true,imageReencodedAndPersisted:true,inventoryReplayVerified:true,legacyDataUnchanged:true,commerce_enabled:false,paymentsExecuted:false,run}));

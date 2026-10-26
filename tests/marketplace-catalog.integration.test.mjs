@@ -74,7 +74,11 @@ test('catalog SQL/HTTP: real images, moderation, tenant isolation, money, invent
   await assert.rejects(query(`INSERT INTO marketplace_inventory_movement(offer_id,seller_id,before_qty,after_qty,delta,reason,idempotency_key,actor_user_id) VALUES($1,$2,0,1,1,'bad',$3,$4)`,[oa.id,b,randomUUID(),ownerB]),{code:'23503'});
   const before=(await req(route(b,'offers'),ownerB))[0];assert.equal(before.id,ob.id);assert.equal(Number(before.price_cents),2990);assert.equal(before.available_qty,0);
   await req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/withdraw`,ownerA,{body:{note:'bad'},status:403});
-  await req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/withdraw`,admin,{body:{note:'Synthetic withdrawal'}});
+  const withdrawalRace=await Promise.all([
+   req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/withdraw`,admin,{body:{note:'Synthetic withdrawal'}}),
+   (async()=>{const r=await fetch(base+route(b,`offers/${ob.id}`),{method:'PATCH',headers:{authorization:ownerB,'content-type':'application/json'},body:JSON.stringify({...payload,price_cents:2990,revision:1})});await r.json();return r.status;})()
+  ]);
+  assert.ok([200,409].includes(withdrawalRace[1]));
   assert.equal((await req('/api/marketplace/catalog/products',ownerB)).length,0);
   assert.equal((await req(route(b,'offers'),ownerB))[0].status,'suspended');
   await req(route(b,'offers'),ownerB,{body:{...payload,seller_sku:'ANOTHER'},status:409});
