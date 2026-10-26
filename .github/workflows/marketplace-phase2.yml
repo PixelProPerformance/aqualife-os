@@ -35,3 +35,5 @@ jobs:
       - run: node --check src/server.js
       - run: node --check src/marketplace/onboarding.js
       - run: node --check public/js/marketplace.js
+      - run: node --check public/js/marketplace-catalog.js
+      - run: node --check src/marketplace/catalog.js

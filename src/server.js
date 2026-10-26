@@ -24,6 +24,7 @@ import { coletarEventos, visaoGeral, funil, secoes, alertas, contextoInsights, p
 import { TERMO_VERSAO, TERMO_ATUALIZADO, TERMO_TITULO, TERMO_HTML } from "./termo.js";
 import { registrarLoja, LOJA_SCHEMA } from "./loja.js";
 import { registrarOnboarding } from "./marketplace/onboarding.js";
+import { registrarCatalogo } from "./marketplace/catalog.js";
 import { registrarServicos, SERVICOS_SCHEMA } from "./servicos.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -3878,6 +3879,7 @@ app.post("/api/ia/chat", exigeLogin, async (req, res) => {
 // FALLBACK SPA
 // ============================================================
 registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
+registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
 
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api")) return res.status(404).json({ erro: "rota não encontrada" });
