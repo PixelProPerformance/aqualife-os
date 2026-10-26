@@ -1,7 +1,7 @@
 """One-shot read-only database backup, remote round-trip and isolated full restore.
 
-Never accepts administrator credentials. No credentials or rows are logged.
-Production execution requires a separately provisioned BACKUP_DATABASE_URL.
+Backup extraction never accepts administrator credentials. No secrets are logged.
+Explicitly authorized bootstrap uses admin only to create/retire a read-only role.
 """
 import hashlib
 import json
@@ -83,24 +83,29 @@ def readonly_dsn():
     dsn = os.environ.get("BACKUP_DATABASE_URL")
     bootstrap, temporary_role = None, None
     if not dsn:
-        # Synthetic staging rehearsal only. Production never receives admin credentials.
-        if os.environ.get("RAILWAY_PROJECT_ID") != "f0a54aac-7782-432e-9339-77a261e2c4c8":
+        project = os.environ.get("RAILWAY_PROJECT_ID")
+        staging = project == "f0a54aac-7782-432e-9339-77a261e2c4c8"
+        authorized_production = project == "5b0e93d9-9212-46ad-be57-90e4106a5452" and os.environ.get("BACKUP_BOOTSTRAP_AUTHORIZED") == "temporary-read-role-only-20261026"
+        if not staging and not authorized_production:
             raise RuntimeError("EXCLUSIVE_READONLY_CREDENTIAL_REQUIRED")
-        bootstrap = psycopg2.connect(os.environ["DATABASE_URL"])
+        bootstrap_dsn = os.environ["DATABASE_URL"] if staging else os.environ.pop("BACKUP_BOOTSTRAP_DSN")
+        bootstrap = psycopg2.connect(bootstrap_dsn)
         bootstrap.autocommit = True
     try:
         if bootstrap:
             with bootstrap.cursor() as cur:
                 cur.execute("SELECT current_database()")
-                if cur.fetchone()[0] != "aqualife_marketplace_staging":
-                    raise RuntimeError("STAGING_BOOTSTRAP_GUARD_FAILED")
-                role_name = "staging_backup_" + uuid.uuid4().hex
+                if cur.fetchone()[0] != os.environ["BACKUP_EXPECTED_DATABASE"]:
+                    raise RuntimeError("BOOTSTRAP_DATABASE_GUARD_FAILED")
+                cur.execute("SELECT count(*) FROM pg_roles WHERE rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND (rolname ILIKE '%backup%' OR rolname ILIKE '%read%')")
+                print(json.dumps({"existing_read_role_candidates": cur.fetchone()[0], "existing_accounts_modified": False}), flush=True)
+                role_name = ("staging_backup_" if staging else "aqualife_backup_") + uuid.uuid4().hex
                 password = uuid.uuid4().hex + uuid.uuid4().hex
                 cur.execute(sql.SQL("CREATE ROLE {} LOGIN PASSWORD {} NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 2 VALID UNTIL {}").format(sql.Identifier(role_name), sql.Literal(password), sql.Literal((datetime.now(timezone.utc) + timedelta(hours=1)).isoformat())))
                 temporary_role = role_name
                 cur.execute(sql.SQL("GRANT pg_read_all_data TO {}").format(sql.Identifier(temporary_role)))
                 cur.execute(sql.SQL("ALTER ROLE {} SET default_transaction_read_only=on").format(sql.Identifier(temporary_role)))
-            dsn = make_dsn(**{**parse_dsn(os.environ["DATABASE_URL"]), "user": temporary_role, "password": password})
+            dsn = make_dsn(**{**parse_dsn(bootstrap_dsn), "user": temporary_role, "password": password})
         yield dsn
     finally:
         if bootstrap:
@@ -108,6 +113,7 @@ def readonly_dsn():
                 if temporary_role:
                     with bootstrap.cursor() as cur:
                         cur.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(temporary_role)))
+                    print(json.dumps({"temporary_read_role_retired": True}), flush=True)
             finally:
                 bootstrap.close()
 
