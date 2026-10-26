@@ -3877,6 +3877,8 @@ app.post("/api/ia/chat", exigeLogin, async (req, res) => {
 // ============================================================
 // FALLBACK SPA
 // ============================================================
+registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
+
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api")) return res.status(404).json({ erro: "rota não encontrada" });
   // Se pediram um arquivo .html específico que NÃO existe (não foi servido pelo
@@ -4013,8 +4015,6 @@ async function garantirSchema() {
   } catch (e) { console.warn("[aquabook] atualização de fotos ignorada:", e.message.slice(0, 120)); }
 }
 
-registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
-
 async function start() {
   const ok = await testarConexao();
   if (!ok) {
@@ -4027,4 +4027,5 @@ async function start() {
   );
 }
 
-start();
+export { app };
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) start();

@@ -6,9 +6,12 @@ try{
  await node(['--test','--test-concurrency=1','tests/marketplace-onboarding.integration.test.mjs']);
  // Wait only for the staging app's real deployment; never treat build status as readiness.
  let ready=false;
- for(let i=0;i<60;i++){
+ for(let i=0;i<180;i++){
   const r=await fetch('https://aqualife-os-production-a81a.up.railway.app/lojista.html',{signal:AbortSignal.timeout(15000)}).catch(()=>null);
-  if(r?.status===200&&(await r.text()).includes('data-marketplace="seller"')){ready=true;break;}
+  if(r?.status===200&&(await r.text()).includes('data-marketplace="seller"')){
+   const api=await fetch('https://aqualife-os-production-a81a.up.railway.app/api/marketplace/my-sellers',{signal:AbortSignal.timeout(15000)}).catch(()=>null);
+   if(api?.status===401){ready=true;break;}
+  }
   await new Promise(r=>setTimeout(r,5000));
  }
  assert.ok(ready,'STAGING_APP_NOT_READY');
