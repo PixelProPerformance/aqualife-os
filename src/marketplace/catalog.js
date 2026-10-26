@@ -32,6 +32,7 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
  async function ownAsset(c,seller,id){if(!id)return null;uuid(id);const a=(await c.query('SELECT id FROM marketplace_catalog_asset WHERE id=$1 AND seller_id=$2',[id,seller])).rows[0];if(!a)refuse(400,'Imagem não pertence à loja');return id;}
  async function submission(c,seller,id){const p=(await c.query('SELECT * FROM marketplace_catalog_submission WHERE id=$1 AND seller_id=$2 FOR UPDATE',[uuid(id),seller])).rows[0];if(!p)refuse(404,'Produto não encontrado');return p;}
  async function offer(c,seller,id){const p=(await c.query(`SELECT o.*,d.revision,d.variant_label FROM marketplace_offer o JOIN marketplace_offer_detail d ON d.offer_id=o.id AND d.seller_id=o.seller_id WHERE o.id=$1 AND o.seller_id=$2 FOR UPDATE OF o,d`,[uuid(id),seller])).rows[0];if(!p)refuse(404,'Oferta não encontrada ou legada');return p;}
+ async function approvedProduct(c,id){const p=(await c.query(`SELECT id FROM marketplace_catalog_product WHERE id=$1 AND moderation_status='approved' FOR SHARE`,[uuid(id)])).rows[0];if(!p)refuse(409,'Produto não aprovado ou retirado do catálogo');return p;}
  function expected(p,body){if(p.revision!==revision(body?.revision))refuse(409,'Registro alterado; atualize a tela');}
  app.get('/api/marketplace/catalog/products',exigeLogin,safe(async(req,res)=>{
   const search=textoCampo(req.query.search??'',100);if(search===null)refuse(400,'Busca inválida');
@@ -62,7 +63,7 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
    }finally{if(written&&!committed)await unlink(filename).catch(()=>{});}
  }));
  app.get('/api/marketplace/sellers/:sellerId/catalog/submissions',exigeLogin,safe(async(req,res)=>{
-  const s=await scope(read,req);res.json((await query(`SELECT p.*,CASE WHEN a.id IS NOT NULL THEN '/uploads/marketplace/'||a.storage_key END AS image_url FROM marketplace_catalog_submission p LEFT JOIN marketplace_catalog_asset a ON a.id=p.image_asset_id AND a.seller_id=p.seller_id WHERE p.seller_id=$1 ORDER BY p.created_at DESC,p.id LIMIT 100 OFFSET $2`,[s.id,pagination(req)])).rows);
+  const s=await scope(read,req);res.json((await query(`SELECT p.*,cp.moderation_status AS catalog_status,d.withdrawal_note AS catalog_note,CASE WHEN a.id IS NOT NULL THEN '/uploads/marketplace/'||a.storage_key END AS image_url FROM marketplace_catalog_submission p LEFT JOIN marketplace_catalog_asset a ON a.id=p.image_asset_id AND a.seller_id=p.seller_id LEFT JOIN marketplace_catalog_product cp ON cp.id=p.catalog_product_id LEFT JOIN marketplace_catalog_detail d ON d.catalog_product_id=cp.id WHERE p.seller_id=$1 ORDER BY p.created_at DESC,p.id LIMIT 100 OFFSET $2`,[s.id,pagination(req)])).rows);
  }));
  app.post('/api/marketplace/sellers/:sellerId/catalog/submissions',exigeLogin,safe(async(req,res)=>{
   limit(req,'submission',30);const p=produtoValido(req.body);if(!p)refuse(400,'Confira título, descrição, categoria e GTIN');
@@ -94,7 +95,7 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
  }));
  app.get('/api/admin/marketplace/catalog/submissions',exigeLogin,exigeAdmin,safe(async(req,res)=>{
   const status=req.query.status||'pending';if(!['all','draft','pending','approved','rejected'].includes(status))refuse(400,'Estado inválido');
-  res.json((await query(`SELECT p.*,s.trade_name,s.status AS seller_status,CASE WHEN a.id IS NOT NULL THEN '/uploads/marketplace/'||a.storage_key END AS image_url FROM marketplace_catalog_submission p JOIN marketplace_seller s ON s.id=p.seller_id LEFT JOIN marketplace_catalog_asset a ON a.id=p.image_asset_id AND a.seller_id=p.seller_id WHERE ($1='all' OR p.status=$1) ORDER BY p.created_at,p.id LIMIT 100 OFFSET $2`,[status,pagination(req)])).rows);
+  res.json((await query(`SELECT p.*,s.trade_name,s.status AS seller_status,cp.moderation_status AS catalog_status,d.withdrawal_note AS catalog_note,CASE WHEN a.id IS NOT NULL THEN '/uploads/marketplace/'||a.storage_key END AS image_url FROM marketplace_catalog_submission p JOIN marketplace_seller s ON s.id=p.seller_id LEFT JOIN marketplace_catalog_asset a ON a.id=p.image_asset_id AND a.seller_id=p.seller_id LEFT JOIN marketplace_catalog_product cp ON cp.id=p.catalog_product_id LEFT JOIN marketplace_catalog_detail d ON d.catalog_product_id=cp.id WHERE ($1='all' OR p.status=$1) ORDER BY p.created_at,p.id LIMIT 100 OFFSET $2`,[status,pagination(req)])).rows);
  }));
  app.patch('/api/admin/marketplace/catalog/submissions/:submissionId/decision',exigeLogin,exigeAdmin,safe(async(req,res)=>{
   const {status}=req.body||{},note=textoCampo(req.body?.note,1000,{min:3});if(!['approved','rejected'].includes(status)||!note)refuse(400,'Informe decisão e motivo');
@@ -117,13 +118,25 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
    await audit(c,seller.id,req.usuario.id,'catalog_reviewed','catalog_submission',p.id,{status,note,catalog_product_id:catalogId});return r.rows[0];
   });res.json(result);
  }));
+ app.post('/api/admin/marketplace/catalog/products/:productId/withdraw',exigeLogin,exigeAdmin,safe(async(req,res)=>{
+  const id=uuid(req.params.productId),note=textoCampo(req.body?.note,1000,{min:3});if(!note)refuse(400,'Informe o motivo da retirada');
+  await withTransaction(async c=>{
+   const p=(await c.query('SELECT * FROM marketplace_catalog_product WHERE id=$1 AND legacy_product_id IS NULL FOR UPDATE',[id])).rows[0];
+   if(!p)refuse(404,'Produto novo não encontrado');if(p.moderation_status!=='approved')refuse(409,'Produto já retirado ou não aprovado');
+   await c.query(`UPDATE marketplace_catalog_product SET moderation_status='rejected' WHERE id=$1`,[id]);
+   await c.query('UPDATE marketplace_catalog_detail SET withdrawal_note=$2 WHERE catalog_product_id=$1',[id,note]);
+   await c.query(`UPDATE marketplace_offer SET status='suspended' WHERE catalog_product_id=$1 AND legacy_variation_id IS NULL`,[id]);
+   const sellers=(await c.query('SELECT DISTINCT seller_id FROM marketplace_offer WHERE catalog_product_id=$1 AND legacy_variation_id IS NULL',[id])).rows;
+   for(const s of sellers)await audit(c,s.seller_id,req.usuario.id,'catalog_withdrawn','catalog_product',id,{note});
+  });res.json({ok:true,moderation_status:'rejected',offers_suspended:true,commerce_enabled:false});
+ }));
  app.get('/api/marketplace/sellers/:sellerId/catalog/offers',exigeLogin,safe(async(req,res)=>{
-  const s=await scope(read,req);res.json((await query(`SELECT o.id,o.catalog_product_id,o.seller_sku,o.price_cents,o.status,p.title,d.variant_label,d.revision,i.available_qty,i.reserved_qty FROM marketplace_offer o JOIN marketplace_catalog_product p ON p.id=o.catalog_product_id LEFT JOIN marketplace_offer_detail d ON d.offer_id=o.id AND d.seller_id=o.seller_id LEFT JOIN marketplace_offer_inventory i ON i.offer_id=o.id WHERE o.seller_id=$1 ORDER BY o.created_at DESC,o.id LIMIT 100 OFFSET $2`,[s.id,pagination(req)])).rows);
+  const s=await scope(read,req);res.json((await query(`SELECT o.id,o.catalog_product_id,o.seller_sku,o.price_cents,o.status,p.title,p.moderation_status AS catalog_status,d.variant_label,d.revision,i.available_qty,i.reserved_qty FROM marketplace_offer o JOIN marketplace_catalog_product p ON p.id=o.catalog_product_id LEFT JOIN marketplace_offer_detail d ON d.offer_id=o.id AND d.seller_id=o.seller_id LEFT JOIN marketplace_offer_inventory i ON i.offer_id=o.id WHERE o.seller_id=$1 ORDER BY o.created_at DESC,o.id LIMIT 100 OFFSET $2`,[s.id,pagination(req)])).rows);
  }));
  app.post('/api/marketplace/sellers/:sellerId/catalog/offers',exigeLogin,safe(async(req,res)=>{
   limit(req,'offer',60);const p=ofertaValida(req.body);if(!p)refuse(400,'Confira SKU, variação e preço em centavos');
   const result=await withTransaction(async c=>{
-   const s=await scope(c,req,true),catalog=uuid(req.body.catalog_product_id);if(!(await c.query(`SELECT id FROM marketplace_catalog_product WHERE id=$1 AND moderation_status='approved'`,[catalog])).rows[0])refuse(400,'Selecione um produto aprovado');
+   const s=await scope(c,req,true),catalog=uuid(req.body.catalog_product_id);await approvedProduct(c,catalog);
    if((await c.query('SELECT count(*)::int n FROM marketplace_offer WHERE seller_id=$1',[s.id])).rows[0].n>=1000)refuse(409,'Limite de ofertas atingido');
    const o=(await c.query(`INSERT INTO marketplace_offer(seller_id,catalog_product_id,seller_sku,price_cents,status) VALUES($1,$2,$3,$4,'draft') RETURNING *`,[s.id,catalog,p.seller_sku,p.price_cents])).rows[0];
    await c.query('INSERT INTO marketplace_offer_detail(offer_id,seller_id,variant_label) VALUES($1,$2,$3)',[o.id,s.id,p.variant_label]);await c.query('INSERT INTO marketplace_offer_inventory(offer_id) VALUES($1)',[o.id]);
@@ -133,11 +146,13 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
  app.patch('/api/marketplace/sellers/:sellerId/catalog/offers/:offerId',exigeLogin,safe(async(req,res)=>{
   limit(req,'offer_edit');const p=ofertaValida(req.body);if(!p)refuse(400,'Confira SKU, variação e preço em centavos');
   const result=await withTransaction(async c=>{
-   const s=await scope(c,req,true),o=await offer(c,s.id,req.params.offerId);expected(o,req.body);
+   const s=await scope(c,req,true),reference=(await c.query('SELECT catalog_product_id FROM marketplace_offer WHERE id=$1 AND seller_id=$2',[uuid(req.params.offerId),s.id])).rows[0];
+   if(!reference)refuse(404,'Oferta não encontrada');await approvedProduct(c,reference.catalog_product_id);
+   const o=await offer(c,s.id,req.params.offerId);expected(o,req.body);
    if(o.status==='active')refuse(409,'Oferta ativa não pode ser alterada neste fluxo');
    await c.query(`UPDATE marketplace_offer SET seller_sku=$2,price_cents=$3,status='draft' WHERE id=$1 AND seller_id=$4`,[o.id,p.seller_sku,p.price_cents,s.id]);
    const d=(await c.query('UPDATE marketplace_offer_detail SET variant_label=$3,revision=revision+1,updated_at=now() WHERE offer_id=$1 AND seller_id=$2 RETURNING revision',[o.id,s.id,p.variant_label])).rows[0];
-   await audit(c,s.id,req.usuario.id,'offer_updated','offer',o.id,{revision:d.revision});return {id:o.id,...p,...d,status:'draft'};
+   await audit(c,s.id,req.usuario.id,'offer_updated','offer',o.id,{revision:d.revision,before:{seller_sku:o.seller_sku,price_cents:Number(o.price_cents),variant_label:o.variant_label},after:p});return {id:o.id,...p,...d,status:'draft'};
   });res.json(result);
  }));
  app.post('/api/marketplace/sellers/:sellerId/catalog/offers/:offerId/archive',exigeLogin,safe(async(req,res)=>{

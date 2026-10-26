@@ -73,6 +73,12 @@ test('catalog SQL/HTTP: real images, moderation, tenant isolation, money, invent
   await req(route(a,`offers/${oa.id}/archive`),ownerA,{body:{revision:3}});
   await assert.rejects(query(`INSERT INTO marketplace_inventory_movement(offer_id,seller_id,before_qty,after_qty,delta,reason,idempotency_key,actor_user_id) VALUES($1,$2,0,1,1,'bad',$3,$4)`,[oa.id,b,randomUUID(),ownerB]),{code:'23503'});
   const before=(await req(route(b,'offers'),ownerB))[0];assert.equal(before.id,ob.id);assert.equal(Number(before.price_cents),2990);assert.equal(before.available_qty,0);
+  await req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/withdraw`,ownerA,{body:{note:'bad'},status:403});
+  await req(`/api/admin/marketplace/catalog/products/${approved.catalog_product_id}/withdraw`,admin,{body:{note:'Synthetic withdrawal'}});
+  assert.equal((await req('/api/marketplace/catalog/products',ownerB)).length,0);
+  assert.equal((await req(route(b,'offers'),ownerB))[0].status,'suspended');
+  await req(route(b,'offers'),ownerB,{body:{...payload,seller_sku:'ANOTHER'},status:409});
+  await req(route(b,`offers/${ob.id}`),ownerB,{method:'PATCH',body:{...payload,revision:1},status:409});
   await query("UPDATE marketplace_seller SET status='suspended' WHERE id=$1",[a]);
   await req(route(a,`offers/${oa.id}`),ownerA,{method:'PATCH',body:{...payload,revision:4},status:403});
   assert.equal((await query("SELECT count(*)::int n FROM marketplace_offer WHERE status='active'")).rows[0].n,0);

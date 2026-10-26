@@ -30,7 +30,8 @@ CREATE INDEX IF NOT EXISTS idx_mp_submission_queue ON marketplace_catalog_submis
 CREATE TABLE IF NOT EXISTS marketplace_catalog_detail (
  catalog_product_id UUID PRIMARY KEY REFERENCES marketplace_catalog_product(id),
  description TEXT NOT NULL, category TEXT NOT NULL,
- image_asset_id UUID REFERENCES marketplace_catalog_asset(id)
+ image_asset_id UUID REFERENCES marketplace_catalog_asset(id),
+ withdrawal_note TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS marketplace_offer_detail (
  offer_id UUID PRIMARY KEY,

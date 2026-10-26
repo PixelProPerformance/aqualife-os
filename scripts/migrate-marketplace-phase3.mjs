@@ -14,9 +14,11 @@ try{
  db=new pg.Client({connectionString:process.env.DATABASE_URL,ssl:{rejectUnauthorized:false},options:'-c lock_timeout=5000 -c statement_timeout=30000'});await db.connect();
  assert.equal((await db.query('SELECT current_database() AS name')).rows[0].name,staging?'aqualife_marketplace_staging':'railway');
  const sql=(await readFile(new URL('../migrations/marketplace/0004_catalog.sql',import.meta.url),'utf8')).replace(/^BEGIN;\s*$/gm,'').replace(/^COMMIT;\s*$/gm,'');
+ for(const mode of (apply?['REHEARSAL_ROLLED_BACK','APPLIED']:['DRY_RUN_ROLLED_BACK'])){
  await db.query('BEGIN');await db.query("SELECT pg_advisory_xact_lock(hashtext('marketplace-phase3-migration'))");const before=await legacySnapshot(db);
  await db.query(sql);await db.query(sql);assert.equal((await legacySnapshot(db)).fingerprint,before.fingerprint);
  const names=['marketplace_catalog_asset','marketplace_catalog_submission','marketplace_catalog_detail','marketplace_offer_detail','marketplace_inventory_movement'];
  assert.equal((await db.query("SELECT count(*)::int n FROM information_schema.tables WHERE table_schema='public' AND table_name=ANY($1::text[])",[names])).rows[0].n,5);
- await db.query(apply?'COMMIT':'ROLLBACK');console.log(JSON.stringify({result:'PASS',mode:apply?'APPLIED':'DRY_RUN_ROLLED_BACK',migration:'0004_marketplace_catalog',legacyDataUnchanged:true,idempotenceVerified:true,commerce_enabled:false,migration_sha256:createHash('sha256').update(sql).digest('hex')}));
+ await db.query(mode==='APPLIED'?'COMMIT':'ROLLBACK');console.log(JSON.stringify({result:'PASS',mode,migration:'0004_marketplace_catalog',legacyDataUnchanged:true,idempotenceVerified:true,commerce_enabled:false,migration_sha256:createHash('sha256').update(sql).digest('hex')}));
+ }
 }catch(e){if(db)await db.query('ROLLBACK').catch(()=>{});console.error(JSON.stringify({result:'FAIL',code:e.code||e.name,details_redacted:true}));process.exitCode=1;}finally{if(db)await db.end();}
