@@ -145,6 +145,12 @@ def run(dsn):
             cur.execute("SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema') AND has_table_privilege(current_user, quote_ident(schemaname)||'.'||quote_ident(tablename), 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')")
             if cur.fetchone()[0]:
                 raise RuntimeError("WRITE_CAPABLE_BACKUP_ROLE_REFUSED")
+            cur.execute("SELECT count(*) FROM pg_namespace WHERE nspname NOT LIKE 'pg_%' AND nspname <> 'information_schema' AND has_schema_privilege(current_user,oid,'CREATE')")
+            if cur.fetchone()[0]:
+                raise RuntimeError("DDL_CAPABLE_BACKUP_ROLE_REFUSED")
+            cur.execute("SELECT has_database_privilege(current_user,current_database(),'CREATE')")
+            if cur.fetchone()[0]:
+                raise RuntimeError("DATABASE_CREATE_PRIVILEGE_REFUSED")
             cur.execute("SELECT pg_export_snapshot()")
             snapshot = cur.fetchone()[0]
         with tempfile.TemporaryDirectory(prefix="aqualife-backup-") as temp:
