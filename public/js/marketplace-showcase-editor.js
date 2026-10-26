@@ -20,7 +20,7 @@ export async function sellerPresentation(ctx,panel){
   }c.append(f);panel.append(c);
  }
 }
-let queueOffset=0;
+const queueOffsets=new Map();
 let legacyOffset=0;
 export async function adminClassification(ctx){
  const {api,el,card,button,refresh}=ctx,section=card('Classificação e correspondência com o catálogo antigo'),products=await api('/api/marketplace/catalog/products');
@@ -38,6 +38,7 @@ export async function adminClassification(ctx){
  if(legacyOffset)section.append(button('Legado anterior',()=>{legacyOffset=Math.max(0,legacyOffset-100);return refresh();},true));if(legacy.products.length===100)section.append(button('Próximos produtos do legado',()=>{legacyOffset+=100;return refresh();},true));return section;
 }
 export async function adminOfferQueue(ctx){
+ const queueOffset=queueOffsets.get(ctx.filter)||0;
  const {api,el,card,button,refresh}=ctx,c=card('Revisão de ofertas para a vitrine'),rows=await api('/api/admin/marketplace/catalog/offers?offset='+queueOffset+'&status='+encodeURIComponent(ctx.filter));
  c.append(el('p','Aprovar permite somente consulta pública quando a vitrine estiver habilitada. Compra, pagamento, reserva e expedição continuam bloqueados.'));
  if(!rows.length)c.append(el('p','Nenhuma oferta para revisar.'));
@@ -47,5 +48,5 @@ export async function adminOfferQueue(ctx){
    for(const [status,text] of [...(o.review_status==='pending'?[['approved','Aprovar para consulta']]:[]),['rejected',o.review_status==='approved'?'Retirar da vitrine':'Solicitar correção']])f.append(button(text,async()=>{if(!f.reportValidity())return;await api(`/api/admin/marketplace/catalog/offers/${o.offer_id}/decision`,{method:'PATCH',body:{status,note:note.value,revision:o.revision}});await refresh();ctx.notify('Decisão registrada; vendas bloqueadas.');},status==='rejected'));item.append(f);
   }c.append(item);
  }
- if(queueOffset)c.append(button('Ofertas anteriores',()=>{queueOffset=Math.max(0,queueOffset-100);return refresh();},true));if(rows.length===100)c.append(button('Próximas ofertas',()=>{queueOffset+=100;return refresh();},true));return c;
+ if(queueOffset)c.append(button('Ofertas anteriores',()=>{queueOffsets.set(ctx.filter,Math.max(0,queueOffset-100));return refresh();},true));if(rows.length===100)c.append(button('Próximas ofertas',()=>{queueOffsets.set(ctx.filter,queueOffset+100);return refresh();},true));return c;
 }
