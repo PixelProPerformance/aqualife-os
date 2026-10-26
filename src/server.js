@@ -23,6 +23,7 @@ import { diagnosticar, RULESET_VERSION, FAIXAS } from "./motor/engine.mjs";
 import { coletarEventos, visaoGeral, funil, secoes, alertas, contextoInsights, paisDosHeaders } from "./analytics_api.js";
 import { TERMO_VERSAO, TERMO_ATUALIZADO, TERMO_TITULO, TERMO_HTML } from "./termo.js";
 import { registrarLoja, LOJA_SCHEMA } from "./loja.js";
+import { registrarOnboarding } from "./marketplace/onboarding.js";
 import { registrarServicos, SERVICOS_SCHEMA } from "./servicos.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -4011,6 +4012,8 @@ async function garantirSchema() {
     }
   } catch (e) { console.warn("[aquabook] atualização de fotos ignorada:", e.message.slice(0, 120)); }
 }
+
+registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin});
 
 async function start() {
   const ok = await testarConexao();
