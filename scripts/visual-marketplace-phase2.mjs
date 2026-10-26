@@ -18,6 +18,12 @@ try{
  }else{
   assert.ok(process.env.QA_PASSWORD?.length>=24);
   for(const [index,email] of emails.entries()){
+   const existing=(await db.query('SELECT id,name,role FROM app_user WHERE email=$1',[email])).rows[0];
+   if(existing){
+    assert.equal(existing.name,'SYNTHETIC-MP2-VISUAL');assert.equal(existing.role,index?'admin':'cliente');
+    await db.query('UPDATE app_user SET senha_hash=$2,ativo=true WHERE id=$1',[existing.id,await bcrypt.hash(process.env.QA_PASSWORD,10)]);
+    continue;
+   }
    const org=randomUUID(),id=randomUUID();await db.query('INSERT INTO organization(id,name) VALUES($1,$2)',[org,'SYNTHETIC-MP2-VISUAL']);
    await db.query('INSERT INTO app_user(id,organization_id,name,email,senha_hash,role) VALUES($1,$2,$3,$4,$5,$6)',[id,org,'SYNTHETIC-MP2-VISUAL',email,await bcrypt.hash(process.env.QA_PASSWORD,10),index?'admin':'cliente']);
   }
