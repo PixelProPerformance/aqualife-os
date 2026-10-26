@@ -1,13 +1,13 @@
 # Aqualife Marketplace — Fase 1 (fundação, não ativada)
 
 ## Escopo
-Branch isolada, sem modificações ao checkout atual, rotas em produção, serviços Railway ou base real.
+Fundação aditiva: o checkout, catálogo, pedidos e livro-razão legados continuam a ser a fonte ativa. O lançamento aplica migrations controladas e não ativa uma vitrine multivendedor.
 A migration aditiva 0001 cria entidades de seller, associações de conta, endereços, settings, catálogo, ofertas, estoque por oferta, pedidos/subpedidos, pagamento, comissão, envio, fiscal e log.
 
 ## Dependências e limites
 - Tabelas existentes confirmadas no código: app_user, loja_produto, loja_variacao, loja_pedido, loja_pedido_item, estoque_mov.
 - NÃO executar a migração sem restaurar e verificar um backup do esquema real numa base isolada.
-- Nenhum script de backfill é executado automaticamente: a identidade do vendedor legado Aqualife, mapeamento de variantes e reconciliação do stock exigem validação antes da carga.
+- O backfill é operacional e explícito, sem execução no boot. `scripts/backfill-legacy.mjs` reconcilia os dados antes da carga e exige evidência de backup recuperado para produção.
 - O módulo de autorização é preparado para uso por novas rotas; não concede acesso por confiar apenas no role global.
 - Sem endpoints de vendedor, integração de pagamentos ou alteração da vitrine nesta fase.
 - O modelo de autorização exige seller_id na rota e associação ativa (owner/staff) de uma loja aprovada.
@@ -31,8 +31,10 @@ As tabelas são aditivas; desativar qualquer futura feature flag e reverter o c�
 `node --test tests/marketplace-authorization.test.mjs`.
 Estes testes exercitam a autorização com query simulada; não substituem testes end-to-end SQL com duas lojas.
 
-## Pendências antes de declarar a Fase 1 pronta
+## Critérios de conclusão
 - CI verde e testes PostgreSQL com duas lojas.
 - Auditoria de dados legados real e backfill não destrutivo controlado.
 - Homologação isolada e validação de reversão.
 - Auditoria de privilégios mínimos do papel de acesso ao banco.
+
+O procedimento atualizado e os limites da fundação estão em [OPERACAO-FASE1.md](OPERACAO-FASE1.md).

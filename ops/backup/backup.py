@@ -1,7 +1,7 @@
 """One-shot read-only database backup, remote round-trip and isolated full restore.
 
-Never accepts administrator credentials. No credentials or rows are logged.
-Production execution requires a separately provisioned BACKUP_DATABASE_URL.
+Backup extraction never accepts administrator credentials. No secrets are logged.
+Explicitly authorized bootstrap uses admin only to create/retire a read-only role.
 """
 import hashlib
 import json
@@ -83,24 +83,29 @@ def readonly_dsn():
     dsn = os.environ.get("BACKUP_DATABASE_URL")
     bootstrap, temporary_role = None, None
     if not dsn:
-        # Synthetic staging rehearsal only. Production never receives admin credentials.
-        if os.environ.get("RAILWAY_PROJECT_ID") != "f0a54aac-7782-432e-9339-77a261e2c4c8":
+        project = os.environ.get("RAILWAY_PROJECT_ID")
+        staging = project == "f0a54aac-7782-432e-9339-77a261e2c4c8"
+        authorized_production = project == "5b0e93d9-9212-46ad-be57-90e4106a5452" and os.environ.get("BACKUP_BOOTSTRAP_AUTHORIZED") == "temporary-read-role-only-20261026"
+        if not staging and not authorized_production:
             raise RuntimeError("EXCLUSIVE_READONLY_CREDENTIAL_REQUIRED")
-        bootstrap = psycopg2.connect(os.environ["DATABASE_URL"])
+        bootstrap_dsn = os.environ["DATABASE_URL"] if staging else os.environ.pop("BACKUP_BOOTSTRAP_DSN")
+        bootstrap = psycopg2.connect(bootstrap_dsn)
         bootstrap.autocommit = True
     try:
         if bootstrap:
             with bootstrap.cursor() as cur:
                 cur.execute("SELECT current_database()")
-                if cur.fetchone()[0] != "aqualife_marketplace_staging":
-                    raise RuntimeError("STAGING_BOOTSTRAP_GUARD_FAILED")
-                role_name = "staging_backup_" + uuid.uuid4().hex
+                if cur.fetchone()[0] != os.environ["BACKUP_EXPECTED_DATABASE"]:
+                    raise RuntimeError("BOOTSTRAP_DATABASE_GUARD_FAILED")
+                cur.execute("SELECT count(*) FROM pg_roles WHERE rolcanlogin AND NOT rolsuper AND NOT rolcreatedb AND NOT rolcreaterole AND NOT rolreplication AND NOT rolbypassrls AND (rolname ILIKE '%backup%' OR rolname ILIKE '%read%')")
+                print(json.dumps({"existing_read_role_candidates": cur.fetchone()[0], "existing_accounts_modified": False}), flush=True)
+                role_name = ("staging_backup_" if staging else "aqualife_backup_") + uuid.uuid4().hex
                 password = uuid.uuid4().hex + uuid.uuid4().hex
                 cur.execute(sql.SQL("CREATE ROLE {} LOGIN PASSWORD {} NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 2 VALID UNTIL {}").format(sql.Identifier(role_name), sql.Literal(password), sql.Literal((datetime.now(timezone.utc) + timedelta(hours=1)).isoformat())))
                 temporary_role = role_name
                 cur.execute(sql.SQL("GRANT pg_read_all_data TO {}").format(sql.Identifier(temporary_role)))
                 cur.execute(sql.SQL("ALTER ROLE {} SET default_transaction_read_only=on").format(sql.Identifier(temporary_role)))
-            dsn = make_dsn(**{**parse_dsn(os.environ["DATABASE_URL"]), "user": temporary_role, "password": password})
+            dsn = make_dsn(**{**parse_dsn(bootstrap_dsn), "user": temporary_role, "password": password})
         yield dsn
     finally:
         if bootstrap:
@@ -108,6 +113,7 @@ def readonly_dsn():
                 if temporary_role:
                     with bootstrap.cursor() as cur:
                         cur.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(temporary_role)))
+                    print(json.dumps({"temporary_read_role_retired": True}), flush=True)
             finally:
                 bootstrap.close()
 
@@ -207,10 +213,53 @@ def run(dsn):
         source.close()
 
 
+def legacy_preflight(dsn):
+    checks = {
+        "orphan_variations": "SELECT count(*) FROM loja_variacao v LEFT JOIN loja_produto p ON p.id=v.produto_id WHERE p.id IS NULL",
+        "invalid_variations": "SELECT count(*) FROM loja_variacao WHERE preco_cents<0 OR preco_promo_cents<0 OR estoque<0",
+        "invalid_order_items": "SELECT count(*) FROM loja_pedido_item WHERE qty<=0 OR preco_cents<0 OR subtotal_cents<>preco_cents::bigint*qty",
+        "orphan_order_items": "SELECT count(*) FROM loja_pedido_item i LEFT JOIN loja_pedido p ON p.id=i.pedido_id WHERE p.id IS NULL",
+        "order_total_mismatches": "SELECT count(*) FROM loja_pedido WHERE subtotal_cents::bigint+frete_cents-desconto_cents<>total_cents",
+        "order_subtotal_mismatches": "SELECT count(*) FROM loja_pedido p LEFT JOIN (SELECT pedido_id,sum(subtotal_cents)::bigint subtotal FROM loja_pedido_item GROUP BY pedido_id) i ON i.pedido_id=p.id WHERE p.subtotal_cents<>coalesce(i.subtotal,0)",
+        "inventory_ledger_mismatches": "SELECT count(*) FROM loja_variacao v LEFT JOIN (SELECT variacao_id,sum(qty)::bigint saldo FROM estoque_mov GROUP BY variacao_id) m ON m.variacao_id=v.id WHERE v.estoque<>coalesce(m.saldo,0)",
+        "orphan_movements": "SELECT count(*) FROM estoque_mov m LEFT JOIN loja_variacao v ON v.id=m.variacao_id WHERE v.id IS NULL",
+    }
+    connection = psycopg2.connect(dsn, options="-c default_transaction_read_only=on -c statement_timeout=60000 -c lock_timeout=5000")
+    try:
+        connection.set_session(isolation_level="REPEATABLE READ", readonly=True)
+        with connection.cursor() as cur:
+            cur.execute("SELECT current_database()")
+            if cur.fetchone()[0] != os.environ["BACKUP_EXPECTED_DATABASE"]:
+                raise RuntimeError("PREFLIGHT_DATABASE_GUARD_FAILED")
+            cur.execute("SELECT rolsuper,rolcreatedb,rolcreaterole,rolreplication,rolbypassrls FROM pg_roles WHERE rolname=current_user")
+            if any(cur.fetchone()):
+                raise RuntimeError("PREFLIGHT_ADMIN_REFUSED")
+            findings, counts = {}, {}
+            for name, statement in checks.items():
+                cur.execute(statement)
+                findings[name] = cur.fetchone()[0]
+            for name in ("loja_produto", "loja_variacao", "loja_pedido", "loja_pedido_item", "estoque_mov"):
+                cur.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(name)))
+                counts[name] = cur.fetchone()[0]
+            cur.execute("SELECT valor FROM integracao_config WHERE chave='nfe_config'")
+            row = cur.fetchone()
+            try:
+                emit = json.loads(row[0] if row else "{}").get("emit", {})
+                fiscal_identity_available = bool(emit.get("razao") and len(emit.get("cnpj", "")) == 14)
+            except (ValueError, TypeError):
+                fiscal_identity_available = False
+            print(json.dumps({"result": "PASS" if not any(findings.values()) else "RECONCILIATION_BLOCKED", "mode": "READ_ONLY_PREFLIGHT", "counts": counts, "findings": findings, "fiscal_identity_available": fiscal_identity_available}), flush=True)
+    finally:
+        connection.close()
+
+
 if __name__ == "__main__":
     try:
         with readonly_dsn() as dsn:
-            run(dsn)
+            if os.environ.get("BACKUP_ACTION") == "legacy-preflight":
+                legacy_preflight(dsn)
+            else:
+                run(dsn)
     except Exception as error:
         print(json.dumps({"result": "FAIL", "error_type": type(error).__name__, "sqlstate": getattr(error, "pgcode", None), "reason": str(error) if isinstance(error, RuntimeError) else None, "command": Path(error.cmd[0]).name if isinstance(error, subprocess.CalledProcessError) else None, "details_redacted": True}), flush=True)
         raise SystemExit(1)
