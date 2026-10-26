@@ -69,7 +69,7 @@ export async function backfillLegacy(client, identity) {
  for (const i of snapshot.data.items) await client.query('INSERT INTO marketplace_legacy_order_item(legacy_item_id,legacy_order_id,seller_id,offer_id,commercial_snapshot) VALUES($1,$2,$3,$4,$5)', [i.id,i.pedido_id,sellerId,offers.get(i.variacao_id) || null,JSON.stringify(i)]);
  for (const m of snapshot.data.movements) await client.query('INSERT INTO marketplace_legacy_stock_movement(legacy_movement_id,seller_id,offer_id,movement_snapshot) VALUES($1,$2,$3,$4)', [m.id,sellerId,offers.get(m.variacao_id),JSON.stringify(m)]);
  await client.query("INSERT INTO marketplace_legacy_import(source_key,seller_id,source_fingerprint,counts) VALUES('aqualife_legacy',$1,$2,$3)", [sellerId,snapshot.fingerprint,JSON.stringify(snapshot.counts)]);
- await client.query("INSERT INTO marketplace_audit_log(seller_id,action,resource_type,resource_id,metadata) VALUES($1,'legacy_snapshot_import','seller',$1,$2)", [sellerId,JSON.stringify({ fingerprint: snapshot.fingerprint, counts: snapshot.counts, legacyRemainsAuthoritative: true })]);
+ await client.query("INSERT INTO marketplace_audit_log(seller_id,action,resource_type,resource_id,metadata) VALUES($1,'legacy_snapshot_import','seller',$1,$2)", [sellerId,JSON.stringify({ fingerprint: snapshot.fingerprint, counts: snapshot.counts, legacyRemainsAuthoritative: true, legalIdentityVerified:false, onboardingRequiredBeforeActivation:true })]);
  if ((await legacySnapshot(client)).fingerprint !== snapshot.fingerprint) throw new Error('LEGACY_DATA_CHANGED_DURING_IMPORT');
  return { sellerId, counts: snapshot.counts, fingerprint: snapshot.fingerprint, alreadyImported: false };
 }

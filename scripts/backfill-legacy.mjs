@@ -29,8 +29,11 @@ try {
  else {
   const row = (await db.query("SELECT valor FROM integracao_config WHERE chave='nfe_config'")).rows[0];
   const emit = JSON.parse(row?.valor || '{}').emit;
-  assert.ok(emit?.razao?.trim() && /^\d{14}$/.test(emit?.cnpj || ''), 'Confirmed fiscal identity required');
-  identity = { legalName:emit.razao,tradeName:emit.fantasia || emit.razao,cnpj:emit.cnpj };
+  // Phase 1 archives the known platform brand. Legal onboarding remains pending;
+  // it cannot approve the seller, assign owners or activate commercial offers.
+  identity = emit?.razao?.trim() && /^\d{14}$/.test(emit?.cnpj || '')
+   ? { legalName:emit.razao,tradeName:emit.fantasia || emit.razao,cnpj:emit.cnpj }
+   : { legalName:'Aqualife Aquarismo',tradeName:'Aqualife Aquarismo' };
  }
  const before = await legacySnapshot(db);
  const result = await backfillLegacy(db,identity);
