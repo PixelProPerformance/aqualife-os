@@ -88,6 +88,7 @@ export function registrarVitrine({app,query,withTransaction,exigeLogin,exigeAdmi
  }));
  // Explicit projection: never return CNPJ, address, contact, members, SKU, audit or reservation data.
  const projection=`SELECT p.id AS product_id,p.title,p.brand,p.model,p.gtin,d.description,d.category,d.technical_attributes,
+ (SELECT r.legacy_product_id FROM marketplace_legacy_catalog_review r WHERE r.catalog_product_id=p.id ORDER BY r.legacy_product_id LIMIT 1) AS legacy_reference_id,
  CASE WHEN a.id IS NOT NULL THEN '/uploads/marketplace/'||a.storage_key END AS image_url,
  o.id AS offer_id,o.price_cents,od.variant_label,pr.warranty,pr.handling_days,pr.conditions,
  (i.available_qty>0) AS in_stock,s.id AS seller_id,s.trade_name AS sold_by,pf.biography,pf.city,pf.state

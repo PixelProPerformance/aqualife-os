@@ -1,5 +1,21 @@
 # Marketplace — Fase 3: catálogo, ofertas e estoque
 
+## Continuação do roteiro original — vitrine de consulta
+
+`/marketplace.html` reúne catálogo, ficha comparativa (`?product=UUID`) e página da loja (`?seller=UUID`). A API pública `/api/marketplace/showcase` fica desabilitada por padrão; exige `MARKETPLACE_CATALOG_PREVIEW_ENABLED=true`. A habilitação da prévia não altera os bloqueios comerciais. Cada linha identifica **Vendido por**, variação, preço do produto, disponibilidade, garantia, condições e dias de preparo (não prazo de transporte). Não há carrinho, reserva, pagamento, frete, reputação ou etiqueta fictícia.
+
+Ordenação pública: disponibilidade primeiro; menor preço do produto; menor prazo de preparo; UUID da oferta como desempate estável. Sem comissão, patrocínio ou preferência da plataforma. A consulta é paginada por 100 ofertas, com filtro de produto/loja e busca; a página informa a regra e o frete não calculado.
+
+O proprietário prepara uma apresentação pública separada dos dados cadastrais, com autorização explícita para nome da loja, biografia, cidade e UF opcionais. CNPJ, contato, endereço completo, equipe, SKU e reservas não são projetados na API pública. Somente loja aprovada, produto aprovado, apresentação autorizada e oferta aprovada para **consulta** são exibidos. A oferta continua `draft` e `accepting_orders=false`. Suspensão/retirada remove a oferta da consulta; alterar preço/SKU/variação/estado, condições ou apresentação exige nova moderação. Ajustar estoque mantém a aprovação, atualizando apenas disponibilidade.
+
+Produtos recebem até 20 atributos técnicos de texto. A administração corrige classificação/ficha com motivo e controle de concorrência, retornando ofertas à revisão. A fila de ofertas analisa preço, condições e apresentação da loja; aprovação e retirada têm motivo, revisão esperada e auditoria.
+
+`0005_showcase.sql` é adicional à 0004 já ensaiada/aplicada no staging. Adiciona apresentação, moderação de ofertas, atributos e correspondências do legado. O executor ensaia/aplica ambas, sem modificar o SQL 0004 publicado anteriormente. Nenhuma migração roda no arranque.
+
+A conferência do legado mostra IDs originais, marca/modelo, variações e imagens originais. O administrador registra correspondência com um produto novo aprovado somente após conferir os três grupos e justificar evidências; não há união por nome. A correspondência cria um vínculo reversível e auditado, sem reescrever produtos, IDs/URLs, imagens, ofertas/estoques ou pedidos antigos. A ficha da prévia pode remeter ao produto original para consulta das imagens/variações preservadas. Produtos reais exigem revisão humana de conteúdo antes de qualquer correspondência; fixtures comprovam o mecanismo, não certificam os produtos reais.
+
+Rollback: desabilitar `MARKETPLACE_CATALOG_PREVIEW_ENABLED` e retornar a aplicação da Fase 2. Preservar tabelas/arquivos aditivos e evidências. O trigger de invalidação afeta apenas a tabela nova de moderação; não ativa comércio nem altera as tabelas legadas.
+
 Escopo confirmado pelo utilizador: catálogo, ofertas e estoque do lojista com moderação. Vendas, publicação comercial, pagamentos e expedição continuam bloqueados.
 
 ## Fluxo real

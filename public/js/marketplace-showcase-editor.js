@@ -1,5 +1,6 @@
+let attributeId=0;
 export function attributeEditor(el,value={}){
- const group=el('div',undefined,{className:'field'}),label=el('label','Ficha técnica · uma característica por linha (ex.: Volume: 100 litros)'),input=el('textarea',undefined,{id:'technical-attributes',rows:5,maxLength:6000,value:Object.entries(value).map(([k,v])=>k+': '+v).join('\n')});label.htmlFor=input.id;group.append(label,input);
+ const group=el('div',undefined,{className:'field'}),label=el('label','Ficha técnica · uma característica por linha (ex.: Volume: 100 litros)'),input=el('textarea',undefined,{id:'technical-attributes-'+(++attributeId),rows:5,maxLength:6000,value:Object.entries(value).map(([k,v])=>k+': '+v).join('\n')});label.htmlFor=input.id;group.append(label,input);
  return {group,read(){const result={};for(const line of input.value.split('\n').filter(x=>x.trim())){const index=line.indexOf(':');if(index<1)throw Error('Use Característica: valor em cada linha da ficha técnica.');const key=line.slice(0,index).trim();if(Object.hasOwn(result,key))throw Error('Repita cada característica apenas uma vez.');Object.defineProperty(result,key,{value:line.slice(index+1).trim(),enumerable:true});}return result;}};
 }
 export async function sellerPresentation(ctx,panel){

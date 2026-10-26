@@ -2,7 +2,7 @@ const $=id=>document.getElementById(id),params=new URLSearchParams(location.sear
 function el(tag,text,props={}){const n=document.createElement(tag);if(text!==undefined)n.textContent=String(text);Object.assign(n,props);return n;}
 function card(title){const c=el('article',undefined,{className:'card'});c.append(el('h2',title));return c;}
 function link(text,key,id){return el('a',text,{href:'/marketplace.html?'+key+'='+encodeURIComponent(id)});}
-function productInfo(p,c){if(p.image_url)c.append(el('img',undefined,{src:p.image_url,alt:p.title,className:'catalog-image'}));c.append(el('p',p.description),el('p',[p.category,p.brand,p.model,p.gtin?'GTIN '+p.gtin:''].filter(Boolean).join(' · '),{className:'muted'}));const dl=el('dl');for(const [k,v] of Object.entries(p.technical_attributes||{}))dl.append(el('dt',k),el('dd',v));if(dl.children.length)c.append(dl);}
+function productInfo(p,c){if(p.image_url)c.append(el('img',undefined,{src:p.image_url,alt:p.title,className:'catalog-image'}));c.append(el('p',p.description),el('p',[p.category,p.brand,p.model,p.gtin?'GTIN '+p.gtin:''].filter(Boolean).join(' · '),{className:'muted'}));const dl=el('dl');for(const [k,v] of Object.entries(p.technical_attributes||{}))dl.append(el('dt',k),el('dd',v));if(dl.children.length)c.append(dl);if(p.legacy_reference_id)c.append(el('a','Consultar produto, variações e imagens originais na loja Aqualife',{href:'/produto.html?id='+encodeURIComponent(p.legacy_reference_id)}));}
 let offset=0;
 async function load(){content.setAttribute('aria-busy','true');$('message').textContent='';try{
  const q=new URLSearchParams({search:$('search').value,offset:String(offset)});for(const k of ['product','seller'])if(params.has(k))q.set(k,params.get(k));
