@@ -87,7 +87,7 @@ def readonly_dsn():
                     raise RuntimeError("STAGING_BOOTSTRAP_GUARD_FAILED")
                 role_name = "staging_backup_" + uuid.uuid4().hex
                 password = uuid.uuid4().hex + uuid.uuid4().hex
-                cur.execute(sql.SQL("CREATE ROLE {} LOGIN PASSWORD {} NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 2 VALID UNTIL {}").format(sql.Identifier(role_name), sql.Literal(password), sql.Literal(datetime.now(timezone.utc) + timedelta(hours=1))))
+                cur.execute(sql.SQL("CREATE ROLE {} LOGIN PASSWORD {} NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 2 VALID UNTIL {}").format(sql.Identifier(role_name), sql.Literal(password), sql.Literal((datetime.now(timezone.utc) + timedelta(hours=1)).isoformat())))
                 temporary_role = role_name
                 cur.execute(sql.SQL("GRANT pg_read_all_data TO {}").format(sql.Identifier(temporary_role)))
                 cur.execute(sql.SQL("ALTER ROLE {} SET default_transaction_read_only=on").format(sql.Identifier(temporary_role)))
@@ -137,6 +137,7 @@ def run(dsn):
             root = Path(temp)
             dump = root / "database.dump"
             command(["pg_dump", "--format=custom", "--compress=1", "--lock-wait-timeout=5s", f"--snapshot={snapshot}", "--file", str(dump)], source_env)
+            print(json.dumps({"step": "dump_complete"}), flush=True)
             command(["pg_dump", "--schema-only", "--no-owner", "--no-privileges", "--no-comments", f"--snapshot={snapshot}", "--file", str(root / "source-schema.sql")], source_env)
             before = manifest(source)
             source_sequences = sequences(source)
@@ -144,10 +145,12 @@ def run(dsn):
             sha = digest_file(dump)
             transfer = TransferConfig(max_concurrency=1, use_threads=False)
             client.upload_file(str(dump), bucket, key, ExtraArgs={"Metadata": {"sha256": sha}}, Config=transfer)
+            print(json.dumps({"step": "private_upload_complete"}), flush=True)
             downloaded = root / "downloaded.dump"
             client.download_file(bucket, key, str(downloaded), Config=transfer)
             if digest_file(downloaded) != sha:
                 raise RuntimeError("REMOTE_CHECKSUM_MISMATCH")
+            print(json.dumps({"step": "remote_checksum_verified"}), flush=True)
             data, socket = root / "pgdata", root / "socket"
             socket.mkdir()
             # Local-only PostgreSQL. It has no TCP listener and never uses source credentials.
@@ -157,6 +160,7 @@ def run(dsn):
             command(["pg_ctl", "-D", str(data), "-l", str(root / "restore.log"), "-o", f"-c listen_addresses='' -k {socket} -p 55432", "-w", "start"], local_env)
             try:
                 command(["pg_restore", "--create", "--exit-on-error", "--no-owner", "--no-privileges", "--dbname=postgres", str(downloaded)], local_env)
+                print(json.dumps({"step": "isolated_restore_complete"}), flush=True)
                 restored = psycopg2.connect(host=str(socket), port=55432, user="postgres", dbname=database, options="-c timezone=UTC -c extra_float_digits=3")
                 try:
                     after = manifest(restored)
@@ -188,5 +192,5 @@ if __name__ == "__main__":
         with readonly_dsn() as dsn:
             run(dsn)
     except Exception as error:
-        print(json.dumps({"result": "FAIL", "error_type": type(error).__name__, "details_redacted": True}), flush=True)
+        print(json.dumps({"result": "FAIL", "error_type": type(error).__name__, "sqlstate": getattr(error, "pgcode", None), "reason": str(error) if isinstance(error, RuntimeError) else None, "command": Path(error.cmd[0]).name if isinstance(error, subprocess.CalledProcessError) else None, "details_redacted": True}), flush=True)
         raise SystemExit(1)
