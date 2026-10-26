@@ -27,6 +27,8 @@
    const p=await api(route('profile'));result=[profileForm(p)];
   }else if(['products','offers','stock'].includes(next)){
    const catalog=await import('/js/marketplace-catalog.js');result=await catalog.renderSellerCatalog({tab:next,sellerId:selected,store:stores.find(s=>s.id===selected),api,el,card,table,button,money,date,notice,run,refresh:()=>show(next),notify:text=>message.textContent=text});
+  }else if(next==='orders'){
+   const preparation=await import('/js/marketplace-preparation.js');result=[await preparation.sellerPreparations({api,el,card,button,money,date,sellerId:selected,store:stores.find(s=>s.id===selected),refresh:()=>show('orders')})];
   }else if(next==='connections'){
    result=[notice(),card('Pagamentos','Nenhum provedor conectado. Não há cobranças, saldo ou repasses disponíveis.'),card('Expedição','Nenhuma transportadora conectada. Não há geração de etiquetas, cálculo de frete ou rastreio disponíveis.')];
   }else if(next==='members'){
