@@ -4013,7 +4013,7 @@ async function garantirSchema() {
   } catch (e) { console.warn("[aquabook] atualização de fotos ignorada:", e.message.slice(0, 120)); }
 }
 
-registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin});
+registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
 
 async function start() {
   const ok = await testarConexao();

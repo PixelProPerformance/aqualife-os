@@ -2,7 +2,7 @@ import { sellerIdValido } from './authorization.js';
 import { cnpjValido, perfilValido, TERMS_VERSION } from './validation.js';
 
 const fail=(status,message)=>{const e=new Error(message);e.status=status;throw e;};
-export function registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin}) {
+export function registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit=()=>true}) {
  const wrap=fn=>async(req,res)=>{res.set('Cache-Control','no-store');try{await fn(req,res);}catch(e){
   if(e.code==='23505')return res.status(409).json({erro:'Cadastro já existente'});
   if(e.status)return res.status(e.status).json({erro:e.message});
@@ -21,6 +21,7 @@ export function registrarOnboarding({app,query,withTransaction,exigeLogin,exigeA
   return s;
  }
  const read={query};
+ const throttle=(req,action,max)=>{if(!rateLimit(`marketplace:${action}:${req.usuario.id}`,max,3600000))fail(429,'Muitas tentativas. Tente novamente mais tarde.');};
  const audit=(c,id,user,action,metadata={})=>c.query(`INSERT INTO marketplace_audit_log
   (seller_id,actor_user_id,action,resource_type,resource_id,metadata)
   VALUES($1,$2,$3,'seller',$1,$4::jsonb)`,[id,user,action,JSON.stringify(metadata)]);
@@ -38,6 +39,7 @@ export function registrarOnboarding({app,query,withTransaction,exigeLogin,exigeA
   else await c.query(`INSERT INTO marketplace_seller_address(seller_id,zip_code,street,number,city,state,is_default) VALUES($1,$2,$3,$4,$5,$6,true)`,[id,p.zip_code,p.street,p.number,p.city,p.state]);
  }
  app.post('/api/marketplace/sellers/apply',exigeLogin,wrap(async(req,res)=>{
+  throttle(req,'apply',10);
   const p=perfilValido(req.body);
   if(!p||!cnpjValido(req.body?.cnpj)||req.body?.terms_version!==TERMS_VERSION||req.body?.terms_accepted!==true)fail(400,'Preencha empresa, CNPJ, contato, endereço e aceite os termos');
   const seller=await withTransaction(async c=>{
@@ -60,6 +62,7 @@ export function registrarOnboarding({app,query,withTransaction,exigeLogin,exigeA
   res.json({...s,...p,...address,terms_version:TERMS_VERSION});
  }));
  app.patch('/api/marketplace/sellers/:sellerId/profile',exigeLogin,wrap(async(req,res)=>{
+  throttle(req,'profile',20);
   const p=perfilValido(req.body);if(!p||req.body?.terms_version!==TERMS_VERSION||req.body?.terms_accepted!==true)fail(400,'Dados incompletos ou termos não aceitos');
   await withTransaction(async c=>{
    const s=await scope(c,req,{owner:true,write:true});
@@ -83,6 +86,7 @@ export function registrarOnboarding({app,query,withTransaction,exigeLogin,exigeA
   const s=await scope(read,req,{owner:module==='members'});res.json((await query(sql,[s.id])).rows);
  }));
  app.post('/api/marketplace/sellers/:sellerId/members',exigeLogin,wrap(async(req,res)=>{
+  throttle(req,'members',30);
   const email=typeof req.body?.email==='string'?req.body.email.trim().toLowerCase():'';
   if(!email||email.length>180||req.body?.role!=='staff')fail(400,'Informe o e-mail de uma conta existente e papel staff');
   await withTransaction(async c=>{
