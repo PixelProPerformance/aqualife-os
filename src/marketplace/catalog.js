@@ -135,7 +135,7 @@ export function registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdm
   });res.json({ok:true,moderation_status:'rejected',offers_suspended:true,commerce_enabled:false});
  }));
  app.get('/api/marketplace/sellers/:sellerId/catalog/offers',exigeLogin,safe(async(req,res)=>{
-  const s=await scope(read,req);res.json((await query(`SELECT o.id,o.catalog_product_id,o.seller_sku,o.price_cents,o.status,p.title,p.moderation_status AS catalog_status,d.variant_label,d.revision,i.available_qty,i.reserved_qty FROM marketplace_offer o JOIN marketplace_catalog_product p ON p.id=o.catalog_product_id LEFT JOIN marketplace_offer_detail d ON d.offer_id=o.id AND d.seller_id=o.seller_id LEFT JOIN marketplace_offer_inventory i ON i.offer_id=o.id WHERE o.seller_id=$1 ORDER BY o.created_at DESC,o.id LIMIT 100 OFFSET $2`,[s.id,pagination(req)])).rows);
+  const s=await scope(read,req);res.json((await query(`SELECT o.id,o.catalog_product_id,o.seller_sku,o.price_cents,o.status,p.title,p.moderation_status AS catalog_status,d.variant_label,d.revision,i.available_qty,i.reserved_qty,to_jsonb(pr) AS presentation FROM marketplace_offer o JOIN marketplace_catalog_product p ON p.id=o.catalog_product_id LEFT JOIN marketplace_offer_detail d ON d.offer_id=o.id AND d.seller_id=o.seller_id LEFT JOIN marketplace_offer_inventory i ON i.offer_id=o.id LEFT JOIN marketplace_offer_presentation pr ON pr.offer_id=o.id AND pr.seller_id=o.seller_id WHERE o.seller_id=$1 ORDER BY o.created_at DESC,o.id LIMIT 100 OFFSET $2`,[s.id,pagination(req)])).rows);
  }));
  app.post('/api/marketplace/sellers/:sellerId/catalog/offers',exigeLogin,safe(async(req,res)=>{
   limit(req,'offer',60);const p=ofertaValida(req.body);if(!p)refuse(400,'Confira SKU, variação e preço em centavos');

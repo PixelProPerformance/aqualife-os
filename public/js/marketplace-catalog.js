@@ -32,6 +32,7 @@ export async function renderSellerCatalog(ctx){
   if(writable)panel.append(button('Cadastrar produto',()=>edit()));panel.append(editor);
   if(!rows.length)panel.append(el('p','Nenhum produto enviado por esta loja.'));
   for(const p of rows){const c=card(p.title),actions=el('div',undefined,{className:'actions'});c.append(el('span',productStatus[p.status]||p.status,{className:'badge '+p.status}),el('p',p.description));if(p.image_url)c.append(el('img',undefined,{src:p.image_url,alt:p.title,className:'catalog-image'}));c.append(el('p',`${p.category} · ${p.brand||'Sem marca'} · ${p.model||'Sem modelo'}${p.gtin?' · GTIN '+p.gtin:''}`,{className:'muted'}));if(p.review_note)c.append(el('div',p.review_note,{className:'notice'}));
+   if(Object.keys(p.technical_attributes||{}).length){const dl=el('dl');for(const [key,value] of Object.entries(p.technical_attributes))dl.append(el('dt',key),el('dd',value));c.append(dl);}
    if(writable&&['draft','rejected'].includes(p.status)){actions.append(button('Editar',()=>edit(p),true),button('Enviar para análise',async()=>{await api(`${base}/submissions/${p.id}/submit`,{method:'POST',body:{revision:p.revision}});await refresh();notify('Produto enviado para análise administrativa.');}));}
    if(p.status==='approved')c.append(el('p',p.catalog_status==='approved'?'Produto aprovado. Crie sua oferta na aba Ofertas.':'Produto retirado do catálogo. As ofertas foram arquivadas.'));if(p.catalog_note)c.append(el('div',p.catalog_note,{className:'notice'}));c.append(actions);panel.append(c);
   }pager(rows,panel);
@@ -62,7 +63,7 @@ export async function renderSellerCatalog(ctx){
   panel.append(el('h3','Histórico de movimentações'));
   if(movements.length)panel.append(table(['Data','SKU','Antes','Depois','Variação','Motivo'],movements.map(m=>[date(m.created_at),m.seller_sku,m.before_qty,m.after_qty,m.delta,m.reason])));else panel.append(el('p','Nenhuma movimentação registrada.'));pager(offers.length===100?offers:movements,panel);
  }
- if(tab==='offers')await sellerPresentation(ctx,panel);
+ if(tab==='offers')await sellerPresentation({...ctx,offset:state.offset},panel);
  return nodes;
 }
 const pages=new Map();
@@ -74,6 +75,7 @@ export async function renderAdminCatalog(ctx){
  const rows=await api('/api/admin/marketplace/catalog/submissions?status='+encodeURIComponent(filter)+'&offset='+offset);
  const grid=el('div',undefined,{className:'store-grid'});let products;
  for(const p of rows){const c=card(p.title),dl=el('dl');c.append(el('span',productStatus[p.status],{className:'badge '+p.status}));if(p.image_url)c.append(el('img',undefined,{src:p.image_url,alt:p.title,className:'catalog-image'}));for(const [label,value] of [['Loja',p.trade_name],['Estado da loja',p.seller_status],['Categoria',p.category],['Marca / modelo',[p.brand,p.model].filter(Boolean).join(' · ')],['GTIN',p.gtin||'Não informado'],['Revisão',p.revision]])dl.append(el('dt',label),el('dd',value));c.append(dl,el('p',p.description));if(p.review_note)c.append(el('div',p.review_note,{className:'notice'}));
+  if(Object.keys(p.technical_attributes||{}).length){const dl=el('dl');for(const [key,value] of Object.entries(p.technical_attributes))dl.append(el('dt',key),el('dd',value));c.append(el('h3','Ficha técnica'),dl);}
   if(p.status==='pending'){
    const form=el('form',undefined,{className:'field'}),label=el('label','Motivo da decisão (visível à loja)'),note=el('textarea',undefined,{id:'decision-'+p.id,required:true,maxLength:1000,rows:3});label.htmlFor=note.id;form.append(label,note);
    const reuseLabel=el('label','Vincular a produto já aprovado (opcional)'),select=el('select',undefined,{id:'reuse-'+p.id});reuseLabel.htmlFor=select.id;select.append(el('option','Criar produto compartilhado novo',{value:''}));products??=await api('/api/marketplace/catalog/products');products.forEach(product=>select.append(el('option',product.title+(product.gtin?' · '+product.gtin:''),{value:product.id})));const search=el('input',undefined,{type:'search',placeholder:'Buscar produto existente por nome ou GTIN',ariaLabel:'Buscar produto existente',value:p.gtin||''});form.append(reuseLabel,select,search,button('Buscar produto existente',async()=>{const found=await api('/api/marketplace/catalog/products?search='+encodeURIComponent(search.value));select.replaceChildren(el('option','Criar produto compartilhado novo',{value:''}));found.forEach(item=>select.append(el('option',item.title+(item.gtin?' · '+item.gtin:''),{value:item.id})));},true),el('p','Confira imagem, descrição, categoria e identificação. A aprovação permite criar ofertas em rascunho, sem liberar vendas.',{className:'muted'}));const actions=el('div',undefined,{className:'actions'});
