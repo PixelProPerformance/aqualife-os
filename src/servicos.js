@@ -237,11 +237,11 @@ export function registrarServicos(deps) {
           await cx.query(`UPDATE oportunidade SET status='retorno', obs_admin=$2, atualizado_em=NOW() WHERE id=$1`, [op.id, obs]);
           const ins = await cx.query(
             `INSERT INTO oportunidade (titulo, regiao, descricao, necessita_retorno, is_retorno, retorno_de, valor_cents, status, tecnico_id, criado_por, publicada_em)
-             VALUES ($1,$2,$3,false,true,$4,$5,'aberta',$6,$7,NOW()) RETURNING *`,
-            ["[RETORNO] " + op.titulo, op.regiao, "Retorno da manutenção anterior. " + obs, op.id, op.valor_cents, op.tecnico_id, req.usuario.id]);
+             VALUES ($1,$2,$3,false,true,$4,$5,'rascunho',$6,$7,NULL) RETURNING *`,
+            ["[RETORNO] " + op.titulo, op.regiao, "Retorno da manutenção anterior. " + obs, op.id, 0, op.tecnico_id, req.usuario.id]);
           return ins.rows[0];
         });
-        notificarRetorno(nova, tec).catch(() => {});
+        // Retorno fica em rascunho até o Admin definir o valor e publicar.
         return res.json({ ok: true, resultado: "retorno", retorno_id: nova.id });
       }
 
@@ -376,7 +376,7 @@ export function registrarServicos(deps) {
       const observacao = txt(b.observacao, 4000);
       if (!observacao) return res.status(400).json({ erro: "descreva o que foi feito na manutenção" });
       const fotos = Array.isArray(b.fotos) ? b.fotos.filter((u) => typeof u === "string").slice(0, 8) : [];
-      const resolvido = null; // apenas o Admin decide após analisar o relatório
+      const resolvido = null; // relatório factual: apenas Admin decide após análise
       const reembolsos = Array.isArray(b.reembolsos) ? b.reembolsos.slice(0, 20) : [];
       await withTransaction(async (cx) => {
         await cx.query(
