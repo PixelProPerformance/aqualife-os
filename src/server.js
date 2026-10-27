@@ -26,6 +26,7 @@ import { registrarLoja, LOJA_SCHEMA } from "./loja.js";
 import { registrarOnboarding } from "./marketplace/onboarding.js";
 import { registrarCatalogo } from "./marketplace/catalog.js";
 import { registrarCarrinho } from "./marketplace/cart.js";
+import { registrarMercadoPagoOAuth } from "./marketplace/mp-oauth.js";
 import { registrarServicos, SERVICOS_SCHEMA } from "./servicos.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -3882,6 +3883,7 @@ app.post("/api/ia/chat", exigeLogin, async (req, res) => {
 registrarOnboarding({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
 registrarCatalogo({app,query,withTransaction,exigeLogin,exigeAdmin,rateLimit});
 const marketplacePreparation=registrarCarrinho({app,query,withTransaction,exigeLogin,rateLimit});
+registrarMercadoPagoOAuth({app,query,withTransaction,exigeLogin,rateLimit});
 
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api")) return res.status(404).json({ erro: "rota não encontrada" });
