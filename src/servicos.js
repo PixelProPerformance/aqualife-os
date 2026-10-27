@@ -70,7 +70,7 @@ export function registrarServicos(deps) {
     try {
       const b = req.body || {};
       const tipo = CONTRATOS.includes(b.contrato_tipo) ? b.contrato_tipo : "servico";
-      const valor = intNaoNeg(b.contrato_valor_cents);
+      const valor = tipo === "servico" ? 0 : intNaoNeg(b.contrato_valor_cents);
       const cidade = txt(b.cidade, 80);
       // estado anterior p/ saber se a tarifa mudou
       const antes = (await query(`SELECT name, email, COALESCE(contrato_tipo,'servico') AS contrato_tipo, COALESCE(contrato_valor_cents,0) AS contrato_valor_cents FROM app_user WHERE id=$1`, [req.params.id])).rows[0];
@@ -205,7 +205,7 @@ export function registrarServicos(deps) {
   async function sugerirValor(op, tecnico) {
     const tipo = tecnico.contrato_tipo || "servico";
     if (tipo === "fixo") return { valor: 0, meia_diaria: false, nota: "Contrato fixo mensal — dia de trabalho normal (sem valor avulso)." };
-    if (tipo === "servico") return { valor: op.valor_cents || 0, meia_diaria: false, nota: "Pagamento por serviço resolvido." };
+    if (tipo === "servico") return { valor: Number(op.valor_cents ?? 0), meia_diaria: false, nota: "Valor individual da oportunidade." };
     // diária
     const diaria = tecnico.contrato_valor_cents || 0;
     if (!op.is_retorno) return { valor: diaria, meia_diaria: false, nota: "Diária cheia." };
@@ -238,7 +238,7 @@ export function registrarServicos(deps) {
           const ins = await cx.query(
             `INSERT INTO oportunidade (titulo, regiao, descricao, necessita_retorno, is_retorno, retorno_de, valor_cents, status, tecnico_id, criado_por, publicada_em)
              VALUES ($1,$2,$3,false,true,$4,$5,'aberta',$6,$7,NOW()) RETURNING *`,
-            ["[RETORNO] " + op.titulo, op.regiao, "Retorno da manutenção anterior. " + obs, op.id, 0, op.tecnico_id, req.usuario.id]);
+            ["[RETORNO] " + op.titulo, op.regiao, "Retorno da manutenção anterior. " + obs, op.id, op.valor_cents, op.tecnico_id, req.usuario.id]);
           return ins.rows[0];
         });
         notificarRetorno(nova, tec).catch(() => {});
@@ -376,7 +376,7 @@ export function registrarServicos(deps) {
       const observacao = txt(b.observacao, 4000);
       if (!observacao) return res.status(400).json({ erro: "descreva o que foi feito na manutenção" });
       const fotos = Array.isArray(b.fotos) ? b.fotos.filter((u) => typeof u === "string").slice(0, 8) : [];
-      const resolvido = b.resolvido !== false; // técnico indica se resolveu
+      const resolvido = null; // apenas o Admin decide após analisar o relatório
       const reembolsos = Array.isArray(b.reembolsos) ? b.reembolsos.slice(0, 20) : [];
       await withTransaction(async (cx) => {
         await cx.query(
