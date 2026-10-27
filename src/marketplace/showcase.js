@@ -108,6 +108,6 @@ export function registrarVitrine({app,query,withTransaction,exigeLogin,exigeAdmi
   const search=textoCampo(req.query.search||'',100);if(search===null)fail(400,'Busca inválida');
   const product=req.query.product?uuid(req.query.product):null,seller=req.query.seller?uuid(req.query.seller):null;
   const rows=(await query(projection+` AND ($1='' OR p.title ILIKE '%'||$1||'%' OR p.gtin=$1) AND ($2::uuid IS NULL OR p.id=$2) AND ($3::uuid IS NULL OR s.id=$3) ORDER BY (i.available_qty>0) DESC,o.price_cents,pr.handling_days,o.id LIMIT 100 OFFSET $4`,[search,product,seller,pagination(req)])).rows;
-  res.json({commerce_enabled:false,ranking_policy:rankingPolicy,offers:rows,offset:pagination(req),limit:100});
+  res.json({commerce_enabled:false,preparation_enabled:process.env.MARKETPLACE_PREPARATION_ENABLED==='true',ranking_policy:rankingPolicy,offers:rows,offset:pagination(req),limit:100});
  }));
 }

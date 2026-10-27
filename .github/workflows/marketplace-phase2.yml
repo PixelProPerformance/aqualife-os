@@ -37,6 +37,9 @@ jobs:
       - run: node --check public/js/marketplace.js
       - run: node --check public/js/marketplace-catalog.js
       - run: node --check src/marketplace/catalog.js
+      - run: node --check src/marketplace/cart.js
+      - run: node --check public/js/marketplace-cart.js
+      - run: node --check public/js/marketplace-preparation.js
       - run: node --check src/marketplace/showcase.js
       - run: node --check public/js/marketplace-showcase.js
       - run: node --check public/js/marketplace-showcase-editor.js
