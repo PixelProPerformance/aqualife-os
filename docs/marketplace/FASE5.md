@@ -35,6 +35,8 @@ Não solicitar tokens manuais aos lojistas. Não habilitar no projeto de produç
 
 ## Demais critérios obrigatórios da Fase 5
 
+Proposta comercial recebida: comissão Aqualife de 10%, com taxas do Mercado Pago a cargo do lojista e conta individual vinculada por OAuth. Pesquisa e base de cálculo recomendada em [COMISSOES-FASE5.md](COMISSOES-FASE5.md). Proposta ainda sem cobrança ou ativação automática.
+
 Ainda pendentes: confirmar elegibilidade efetiva da conta/aplicação ao modelo de split; definir comissão comercial; pagamentos independentes por vendedor se 1:1; checkout e transições de reserva/estoque sem corrida com expiração; webhook autenticado e consulta ao provedor (não confiar no corpo/retorno de navegador); ledger de bruto/taxa/comissão/líquido reais; pagamentos parciais do carrinho; duplicidade e entrega fora de ordem; resultado ambíguo e recuperação após timeout; estorno total/parcial com idempotência e conciliação.
 
 Homologar com contas Mercado Pago reais de teste: duas lojas isoladas, aprovação, rejeição, pendência, expiração, reconexão, revogação, retry e estornos. Conferir collector, currency, amount, external_reference e live_mode do pagamento ao reconciliar; nenhum evento pode liquidar outro subpedido. Proibir pedido em expedição ou valor extra sem fluxo aprovado. Pagamento confirmado após expiração deve seguir tratamento financeiro explícito, jamais reacender estoque automaticamente ou fingir estorno concluído.
