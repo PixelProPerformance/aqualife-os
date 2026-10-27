@@ -2580,9 +2580,10 @@ async function carregarContratos(){
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input class="inp" data-ct-cidade="${t.id}" value="${escH(t.cidade||"")}" placeholder="Cidade" style="width:120px;padding:7px 10px" title="Cidade do técnico (para envio por cidade)">
           <select class="inp" data-ct-tipo="${t.id}" style="width:140px;padding:7px 10px"><option value="servico"${t.contrato_tipo==="servico"?" selected":""}>Por serviço</option><option value="diaria"${t.contrato_tipo==="diaria"?" selected":""}>Por diária</option><option value="fixo"${t.contrato_tipo==="fixo"?" selected":""}>Fixo mensal</option></select>
-          <input class="inp" data-ct-valor="${t.id}" type="number" min="0" step="0.01" value="${(t.contrato_valor_cents/100).toFixed(2)}" style="width:110px;padding:7px 10px" title="Valor de referência (serviço/diária/fixo)">
+          <input class="inp" data-ct-valor="${t.id}" type="number" min="0" step="0.01" value="${(t.contrato_valor_cents/100).toFixed(2)}" style="width:110px;padding:7px 10px" title="Valor apenas para contratos por diária ou fixo" ${t.contrato_tipo==="servico"?"disabled":""}>
           <button type="button" class="btn btn-c btn-sm" data-ct-salvar="${t.id}">Salvar</button>
         </div></div>`).join("")+'</div>';
+    box.querySelectorAll("[data-ct-tipo]").forEach(el=>el.onchange=()=>{ const campo=box.querySelector(`[data-ct-valor="${el.dataset.ctTipo}"]`); if(campo){campo.disabled=el.value==="servico";if(campo.disabled)campo.value="0.00";} });
     box.querySelectorAll("[data-ct-salvar]").forEach(b=>b.onclick=async()=>{
       const id=b.dataset.ctSalvar;
       const tipo=box.querySelector('[data-ct-tipo="'+id+'"]').value;
