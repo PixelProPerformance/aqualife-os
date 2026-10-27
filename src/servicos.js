@@ -144,6 +144,7 @@ export function registrarServicos(deps) {
       const d = montarOportunidade(req.body);
       if (!d.titulo) return res.status(400).json({ erro: "informe o título" });
       const publicar = (req.body && req.body.publicar) === true;
+      if (publicar && d.valor_cents <= 0) return res.status(400).json({ erro: "defina o valor da oportunidade antes de publicar" });
       const r = await query(
         `INSERT INTO oportunidade (titulo, regiao, descricao, data_servico, hora, necessita_retorno, valor_cents, deslocamento_cents, fotos, publico, cidades, tecnicos_alvo, status, criado_por, publicada_em)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11::jsonb,$12::jsonb,$13,$14,$15) RETURNING *`,
@@ -173,8 +174,8 @@ export function registrarServicos(deps) {
 
   app.post("/api/admin/oportunidades/:id/publicar", exigeLogin, exigeAdmin, async (req, res) => {
     try {
-      const r = await query(`UPDATE oportunidade SET status='aberta', publicada_em=NOW(), atualizado_em=NOW() WHERE id=$1 AND status='rascunho' RETURNING *`, [req.params.id]);
-      if (!r.rows[0]) return res.status(409).json({ erro: "oportunidade não está em rascunho" });
+      const r = await query(`UPDATE oportunidade SET status='aberta', publicada_em=NOW(), atualizado_em=NOW() WHERE id=$1 AND status='rascunho' AND valor_cents > 0 RETURNING *`, [req.params.id]);
+      if (!r.rows[0]) return res.status(409).json({ erro: "a oportunidade deve estar em rascunho e ter valor definido" });
       notificarTecnicosNova(r.rows[0]).catch(() => {});
       res.json({ ok: true });
     } catch (err) { console.error("[oportunidades:publicar]", err.message); res.status(500).json({ erro: "erro interno" }); }
@@ -185,6 +186,7 @@ export function registrarServicos(deps) {
     try {
       const b = req.body || {};
       const novo = intNaoNeg(b.valor_cents);
+      if (novo <= 0) return res.status(400).json({ erro: "valor deve ser maior que zero" });
       const motivo = txt(b.motivo, 500);
       if (!motivo) return res.status(400).json({ erro: "descreva o motivo da alteração de valor" });
       const at = await query(`SELECT valor_cents, valor_final_cents, status FROM oportunidade WHERE id=$1`, [req.params.id]);
@@ -340,7 +342,7 @@ export function registrarServicos(deps) {
         `UPDATE oportunidade SET status='aceita', tecnico_id=$2, aceito_em=NOW(), termos_aceitos=true,
            data_servico = COALESCE(data_servico, $3), hora = CASE WHEN $4<>'' THEN $4 ELSE hora END,
            lembrete_enviado=false, atualizado_em=NOW()
-         WHERE id=$1 AND status='aberta' AND (tecnico_id IS NULL OR tecnico_id=$2) RETURNING *`,
+         WHERE id=$1 AND status='aberta' AND valor_cents > 0 AND (tecnico_id IS NULL OR tecnico_id=$2) RETURNING *`,
         [req.params.id, uid, dataProposta, hora]);
       if (!r.rows[0]) return res.status(409).json({ erro: "esta oportunidade não está mais disponível" });
       res.json({ ok: true });
