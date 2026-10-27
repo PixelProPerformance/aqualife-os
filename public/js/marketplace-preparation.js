@@ -13,6 +13,6 @@ export async function sellerPreparations(ctx){
 }
 export async function addMarketplaceOffer(offerId){
  const token=localStorage.getItem('aqualife_token');if(!token){location.href='/marketplace-carrinho.html';return;}
- async function request(path,options={}){const r=await fetch(path,{...options,headers:{'content-type':'application/json',authorization:'Bearer '+token},body:options.body?JSON.stringify(options.body):undefined});const d=await r.json();if(!r.ok)throw Error(d.erro||'Carrinho indisponível');return d;}
+ async function request(path,options={}){const r=await fetch(path,{...options,headers:{'content-type':'application/json',authorization:'Bearer '+token},body:options.body?JSON.stringify(options.body):undefined});const d=await r.json();if(r.status===401){localStorage.removeItem('aqualife_token');location.href='/entrar.html';throw Error('Entre novamente para continuar');}if(!r.ok)throw Error(d.erro||'Carrinho indisponível');return d;}
  const cart=await request('/api/marketplace/cart'),old=cart.items.find(o=>o.offer_id===offerId);await request('/api/marketplace/cart/items/'+encodeURIComponent(offerId),{method:'PUT',body:{qty:(old?.qty||0)+1,revision:cart.revision}});location.href='/marketplace-carrinho.html';
 }
