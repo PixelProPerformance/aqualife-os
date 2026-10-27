@@ -5,3 +5,9 @@ test('o preço fica visível antes do aceite',()=>{assert.match(frontend,/Valor 
 test('relatório do técnico não determina conclusão',()=>{assert.doesNotMatch(frontend,/relResolvido/);assert.match(backend,/const resolvido = null/);assert.match(backend,/app.post\("\/api\/admin\/oportunidades\/:id\/finalizar", exigeLogin, exigeAdmin/)});
 test('valor por serviço vem da oportunidade',()=>{assert.match(backend,/tipo === "servico"\) return \{ valor: Number\(op.valor_cents \?\? 0\)/)});
 test('retorno exige definição de valor pelo admin antes da publicação',()=>{assert.match(backend,/false,true,\$4,\$5,'rascunho'/)});
+
+test('não é possível publicar nem aceitar oportunidade sem preço positivo',()=>{
+ assert.match(backend,/if \(publicar && d.valor_cents <= 0\)/);
+ assert.match(backend,/status='rascunho' AND valor_cents > 0/);
+ assert.match(backend,/status='aberta' AND valor_cents > 0/);
+});
