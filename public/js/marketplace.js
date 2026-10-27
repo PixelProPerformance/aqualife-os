@@ -4,6 +4,8 @@
  const content=$('content'), message=$('message'), adminCatalog=document.body.dataset.marketplace==='admin-catalog', admin=document.body.dataset.marketplace==='admin'||adminCatalog;
  const terms='marketplace-2026-10-26', labels={pending:'Em análise',approved:'Aprovada',rejected:'Correção necessária',suspended:'Suspensa',draft:'Rascunho',active:'Ativa',owner:'Proprietário',staff:'Funcionário'};
  let selected='',stores=[],tab='overview',generation=0;
+ const mpResult=new URLSearchParams(location.search).get('mp_connection');
+ if(['connected','invalid','denied','failed'].includes(mpResult)&&!admin)tab='connections';
  function el(tag,text,props={}){const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);Object.assign(node,props);return node;}
  function button(text,fn,secondary=false){const b=el('button',text,{type:'button',className:secondary?'secondary':''});b.addEventListener('click',()=>run(fn,b));return b;}
  async function run(fn,b){if(b)b.disabled=true;message.textContent='';try{await fn();}catch(e){message.textContent=e.message;if(content.getAttribute('aria-busy')==='true')content.replaceChildren(card('Acesso indisponível',e.message));}finally{if(b)b.disabled=false;content.setAttribute('aria-busy','false');}}
@@ -30,7 +32,7 @@
   }else if(next==='orders'){
    const preparation=await import('/js/marketplace-preparation.js');result=[await preparation.sellerPreparations({api,el,card,button,money,date,sellerId:selected,store:stores.find(s=>s.id===selected),refresh:()=>show('orders')})];
   }else if(next==='connections'){
-   result=[notice(),card('Pagamentos','Nenhum provedor conectado. Não há cobranças, saldo ou repasses disponíveis.'),card('Expedição','Nenhuma transportadora conectada. Não há geração de etiquetas, cálculo de frete ou rastreio disponíveis.')];
+   const payments=await import('/js/marketplace-payments.js');result=[await payments.sellerPayments({api,el,card,button,date,sellerId:selected,store:stores.find(s=>s.id===selected),refresh:()=>show('connections')}),card('Expedição','Nenhuma transportadora conectada. Não há geração de etiquetas, cálculo de frete ou rastreio disponíveis.')];
   }else if(next==='members'){
    const members=await api(route('members')),c=card('Equipe da loja','O proprietário pode adicionar contas Aqualife existentes como funcionários. Funcionários consultam os dados da loja, mas não alteram cadastro, equipe ou aprovação.');
    c.append(table(['Nome','E-mail','Papel','Acesso',''],members.map(m=>[m.name,m.email,labels[m.role],m.active?'Ativo':'Removido',m.role==='staff'&&m.active?button('Remover',async()=>{await api(route(`members/${m.user_id}`),{method:'PATCH',body:{active:false}});await show('members');},true):'—'])));
