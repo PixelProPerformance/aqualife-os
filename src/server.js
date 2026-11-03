@@ -27,6 +27,7 @@ import { registrarOnboarding } from "./marketplace/onboarding.js";
 import { registrarCatalogo } from "./marketplace/catalog.js";
 import { registrarCarrinho } from "./marketplace/cart.js";
 import { registrarServicos, SERVICOS_SCHEMA } from "./servicos.js";
+import { registrarCalendario, CALENDAR_SCHEMA } from "./calendario.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -3992,6 +3993,7 @@ async function garantirSchema() {
     ...LOJA_SCHEMA,
     // Serviços (oportunidades de manutenção técnico ↔ Aqualife)
     ...SERVICOS_SCHEMA,
+    ...CALENDAR_SCHEMA,
   ];
   let okc = 0;
   for (const sql of passos) {
@@ -4018,6 +4020,8 @@ async function garantirSchema() {
     }
   } catch (e) { console.warn("[aquabook] atualização de fotos ignorada:", e.message.slice(0, 120)); }
 }
+
+registrarCalendario({app,query,withTransaction,exigeLogin,exigeAdmin,enviarEmail});
 
 async function start() {
   const ok = await testarConexao();
