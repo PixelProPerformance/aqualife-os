@@ -80,7 +80,7 @@ export function registrarManutencoesManuais({app,query,withTransaction,exigeLogi
    });
    if(result.code)return res.status(result.code).json({erro:result.erro});
    res.status(201).json(result);
-  }catch(e){res.status(500).json({erro:'Erro ao lançar manutenção'});}
+  }catch(e){if(e.code==='23505')return res.status(409).json({erro:'Esta manutenção já foi lançada neste pacote'});res.status(500).json({erro:'Erro ao lançar manutenção'});}
  });
  app.delete('/api/admin/clientes/:orgId/manutencoes/pacotes/:pacoteId/usos/:usoId',...admin,async(req,res)=>{
   const {orgId,pacoteId,usoId}=req.params;
