@@ -1497,15 +1497,23 @@ app.get("/api/admin/clientes", exigeLogin, exigeAdmin, async (req, res) => {
 
 app.delete("/api/admin/clientes/:id", exigeLogin, exigeAdmin, async (req, res) => {
   try {
-    // Apaga em cascata: assets, readings, users, location, organization
-    await query("DELETE FROM reading WHERE organization_id=$1", [req.params.id]);
-    await query("DELETE FROM asset WHERE organization_id=$1", [req.params.id]);
-    await query("DELETE FROM location WHERE organization_id=$1", [req.params.id]);
-    await query("DELETE FROM app_user WHERE organization_id=$1 AND role NOT IN ('admin','gestor')", [req.params.id]);
-    await query("DELETE FROM organization WHERE id=$1", [req.params.id]);
+    await withTransaction(async (c) => {
+      // Nunca apagar ou modificar parcialmente um cliente que tem histórico contratual.
+      const temPacote = await c.query(
+        "SELECT 1 FROM manutencao_pacote_manual WHERE organization_id=$1 LIMIT 1", [req.params.id]);
+      if (temPacote.rows[0]) {
+        const err = new Error("Este cliente possui pacotes de manutenção. Preserve o histórico contratual.");
+        err.status = 409; throw err;
+      }
+      await c.query("DELETE FROM reading WHERE organization_id=$1", [req.params.id]);
+      await c.query("DELETE FROM asset WHERE organization_id=$1", [req.params.id]);
+      await c.query("DELETE FROM location WHERE organization_id=$1", [req.params.id]);
+      await c.query("DELETE FROM app_user WHERE organization_id=$1 AND role NOT IN ('admin','gestor')", [req.params.id]);
+      await c.query("DELETE FROM organization WHERE id=$1", [req.params.id]);
+    });
     res.json({ ok: true });
   } catch (err) {
-    res.status(500).json({ erro: err.message });
+    res.status(err.status || 500).json({ erro: err.status ? err.message : "Não foi possível apagar o cliente" });
   }
 });
 
