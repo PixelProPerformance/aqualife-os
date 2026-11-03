@@ -13,6 +13,7 @@ const res=()=>({code:200,data:null,status(c){this.code=c;return this},json(b){th
 let calls=[];
 const query=async(sql,params=[])=>{
  calls.push({sql,params});
+ if(sql.includes('FROM manutencao_pacote_manual p'))return {rows:[]};
  if(sql.includes('COUNT(*)::int'))return {rows:[{n:0}]};
  return {rows:[]};
 };
