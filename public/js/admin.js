@@ -42,7 +42,7 @@ async function carregarClientes(){
           <div><div class="cli-nome">${c.name}</div>
             <div class="cli-meta">${c.type==="corporate"?"Empresa":"Residência"} · ${c.country}</div></div>
           <div style="display:flex;gap:8px;align-items:center">
-            <button class="btn btn-c btn-sm" data-manutencoes-org="${c.id}" data-manutencoes-nome="${c.name}">Manutenções</button>
+            <button class="btn btn-c btn-sm" data-manutencoes-org="${c.id}">Manutenções</button>
             <button class="btn btn-c btn-sm" data-add-aq="${c.id}">+ Aquário</button>
             <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;cursor:pointer" data-del-cli="${c.id}" data-del-nome="${c.name}">Apagar</button>
           </div>
