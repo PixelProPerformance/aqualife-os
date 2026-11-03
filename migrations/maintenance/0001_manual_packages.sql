@@ -30,4 +30,6 @@ CREATE TABLE IF NOT EXISTS manutencao_uso_manual (
 );
 CREATE INDEX IF NOT EXISTS idx_manutencao_uso_manual_pacote
  ON manutencao_uso_manual(pacote_id,data_visita DESC) WHERE anulado_em IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_manutencao_uso_manual_duplicado
+ ON manutencao_uso_manual(pacote_id,data_visita,relatorio_url) WHERE anulado_em IS NULL;
 COMMIT;
