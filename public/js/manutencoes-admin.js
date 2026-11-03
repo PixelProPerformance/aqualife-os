@@ -41,7 +41,7 @@
  document.addEventListener('click',ev=>{
   const b=ev.target.closest('[data-manutencoes-org]');
   if(!b)return;
-  id=b.dataset.manutencoesOrg;name=b.dataset.manutencoesNome||'Cliente';
+  id=b.dataset.manutencoesOrg;name=b.closest('.cli-card')?.querySelector('.cli-nome')?.textContent||'Cliente';
   container.querySelector('#mmTitulo').textContent='Pacote e manutenções · '+name;
   container.classList.add('on');redraw();
  });
