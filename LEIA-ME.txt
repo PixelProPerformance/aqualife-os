@@ -18,7 +18,7 @@ Banco de dados PostgreSQL no Railway. Sem Supabase, sem Replit.
 5. Clique no banco → aba **"Query"** (ou "Data" > "Query")
 6. Cole TODO o conteúdo do arquivo **migration.sql** no campo de texto
 7. Clique em **"Run Query"**
-8. Deve aparecer mensagens de sucesso. Se der erro de "já existe", ignore — é normal rodar 2x.
+8. Confirme que todos os comandos foram executados com sucesso. **Não ignore erros:** registe a falha e corrija a migração antes de prosseguir.
 
 ---
 
@@ -55,7 +55,7 @@ No serviço Node.js do Railway:
 | Variável       | Valor                                    |
 |----------------|------------------------------------------|
 | DATABASE_URL   | (a URL que copiou no Passo 2)            |
-| JWT_SECRET     | (invente uma frase longa, ex: "Aqualife2024@RioLisboa!Secreto") |
+| JWT_SECRET     | Segredo aleatório de pelo menos 32 caracteres; gerar com `openssl rand -hex 32` e configurar apenas nas Variables do Railway |
 | PORT           | 3000                                     |
 | NODE_ENV       | production                               |
 | ANTHROPIC_API_KEY | (opcional — se tiver, ativa os laudos em linguagem simples) |
@@ -64,12 +64,9 @@ No serviço Node.js do Railway:
 
 ## PASSO 5 — Primeiro acesso
 
-**Login padrão criado pela migration:**
-- E-mail: `admin@aqualife.com.br`
-- Senha: `Aqualife@2024`
+**Segurança do primeiro acesso:** a instalação pode criar uma conta administrativa de arranque. Antes de publicar, altere a respetiva senha por um canal seguro e confirme que nenhuma credencial de instalação continua válida. Nunca documente senhas ativas no repositório.
 
-**IMPORTANTE:** Troque a senha imediatamente após entrar!
-(Painel Admin → sua conta → alterar senha)
+**Nota:** versões antigas desta documentação expunham uma senha de instalação. Remover o texto não elimina o histórico Git; a senha precisa de ser revogada/alterada no ambiente real.
 
 **Endereço do sistema:** aparece no Railway depois do deploy.
 Exemplo: `https://aqualife-os-production.up.railway.app`
