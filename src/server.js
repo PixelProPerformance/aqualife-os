@@ -27,6 +27,7 @@ import { registrarOnboarding } from "./marketplace/onboarding.js";
 import { registrarCatalogo } from "./marketplace/catalog.js";
 import { registrarCarrinho } from "./marketplace/cart.js";
 import { registrarServicos, SERVICOS_SCHEMA } from "./servicos.js";
+import { registrarManutencoesManuais } from "./manutencoes-manuais.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -1506,31 +1507,42 @@ app.delete("/api/admin/clientes/:id", exigeLogin, exigeAdmin, async (req, res) =
 });
 
 app.post("/api/admin/clientes", exigeLogin, exigeAdmin, async (req, res) => {
-  const { nome, tipo, pais, cidade, aquario } = req.body;
-  if (!nome) return res.status(400).json({ erro: "nome do cliente é obrigatório" });
+  const { nome, tipo, pais, cidade, aquario } = req.body || {};
+  if (!String(nome || "").trim()) return res.status(400).json({ erro: "nome do cliente é obrigatório" });
+  const total = req.body?.manutencoes_total == null || req.body.manutencoes_total === ""
+    ? 0 : Number(req.body.manutencoes_total);
+  if (!Number.isInteger(total) || total < 0 || total > 10000)
+    return res.status(400).json({ erro: "informe uma quantidade válida de manutenções (0 para avulsa)" });
 
   try {
-    const orgR = await query(
-      "INSERT INTO organization (name, type, country) VALUES ($1,$2,$3) RETURNING *",
-      [nome, tipo || "residential", pais || "BR"]
-    );
-    const org = orgR.rows[0];
-
-    const locR = await query(
-      "INSERT INTO location (organization_id, label, city) VALUES ($1,$2,$3) RETURNING id",
-      [org.id, nome, cidade || null]
-    );
-    const locId = locR.rows[0].id;
-
-    if (aquario?.water_type && aquario?.volume_liters) {
-      await query(
-        "INSERT INTO asset (organization_id, location_id, label, water_type, volume_liters, ativo) VALUES ($1,$2,$3,$4,$5,true)",
-        [org.id, locId, aquario.label || "Aquário", aquario.water_type, aquario.volume_liters]
+    const org = await withTransaction(async (c) => {
+      const orgR = await c.query(
+        "INSERT INTO organization (name, type, country) VALUES ($1,$2,$3) RETURNING *",
+        [String(nome).trim(), tipo || "residential", pais || "BR"]
       );
-    }
-    res.json(org);
+      const criado = orgR.rows[0];
+      const locR = await c.query(
+        "INSERT INTO location (organization_id, label, city) VALUES ($1,$2,$3) RETURNING id",
+        [criado.id, String(nome).trim(), cidade || null]
+      );
+      if (aquario?.water_type && aquario?.volume_liters) {
+        await c.query(
+          "INSERT INTO asset (organization_id, location_id, label, water_type, volume_liters, ativo) VALUES ($1,$2,$3,$4,$5,true)",
+          [criado.id, locR.rows[0].id, aquario.label || "Aquário", aquario.water_type, aquario.volume_liters]
+        );
+      }
+      if (total > 0) {
+        await c.query(
+          "INSERT INTO manutencao_pacote_manual (organization_id,descricao,total_visitas,criado_por) VALUES ($1,$2,$3,$4)",
+          [criado.id, "Pacote inicial", total, req.usuario.id]
+        );
+      }
+      return criado;
+    });
+    res.status(201).json(org);
   } catch (err) {
-    res.status(500).json({ erro: err.message });
+    console.error("[admin/clientes:criar]", err.code || err.message);
+    res.status(500).json({ erro: "não foi possível criar o cliente" });
   }
 });
 
@@ -4018,6 +4030,8 @@ async function garantirSchema() {
     }
   } catch (e) { console.warn("[aquabook] atualização de fotos ignorada:", e.message.slice(0, 120)); }
 }
+
+registrarManutencoesManuais({app,query,withTransaction,exigeLogin,exigeAdmin});
 
 async function start() {
   const ok = await testarConexao();
