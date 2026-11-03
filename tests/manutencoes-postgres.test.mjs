@@ -31,6 +31,7 @@ test('PostgreSQL real: migração idempotente, isolamento e saldo manual', {skip
    params:{orgId:org,pacoteId:pid},body:{data_visita:date,relatorio_url:'https://example.org/laudo.pdf'},usuario:{id:uid}});
   assert.equal((await use(orgB,'2026-10-01')).statusCode,404);
   assert.equal((await use(orgA,'2026-10-01')).statusCode,201);
+  assert.equal((await use(orgA,'2026-10-01')).statusCode,409);
   const second=await use(orgA,'2026-10-02');assert.equal(second.statusCode,201);
   assert.equal((await use(orgA,'2026-10-03')).statusCode,409);
   const a=await call('GET','/api/cliente/manutencoes',{usuario:{id:uid,organization_id:orgA}});
