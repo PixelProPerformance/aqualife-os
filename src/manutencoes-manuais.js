@@ -2,7 +2,11 @@
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const uuid=v=>typeof v==='string'&&UUID_RE.test(v);
 const txt=(v,max=250)=>typeof v==='string'?v.trim().slice(0,max):'';
-const dataValida=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'T12:00:00Z'))&&new Date(v+'T12:00:00Z').toISOString().slice(0,10)===v;
+function dataValida(v){
+ if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;
+ const d=new Date(v+'T12:00:00Z');
+ return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===v&&v<=new Date().toISOString().slice(0,10);
+}
 function linkValido(v){
  if(typeof v!=='string'||v.length>2048||!v.trim())return false;
  const link=v.trim();
