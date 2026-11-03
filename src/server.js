@@ -338,6 +338,9 @@ app.use(express.static(path.join(__dirname, "../public")));
 const loja = registrarLoja({ app, query, withTransaction, exigeLogin, exigeAdmin, getConfig, setConfig,
   baseUrl: (process.env.APP_BASE_URL || "https://app.aqualifeaquarismo.com").replace(/\/$/, ""), enviarEmail });
 
+// Pacotes e visitas manuais — rotas antes do fallback /api e wildcard.
+registrarManutencoesManuais({app,query,withTransaction,exigeLogin,exigeAdmin});
+
 // ── Serviços (oportunidades de manutenção: técnico ↔ Aqualife) ──
 const servicos = registrarServicos({ app, query, withTransaction, exigeLogin, exigeAdmin, enviarEmail,
   baseUrl: (process.env.APP_BASE_URL || "https://app.aqualifeaquarismo.com").replace(/\/$/, ""), upload, getConfig, setConfig });
@@ -4030,8 +4033,6 @@ async function garantirSchema() {
     }
   } catch (e) { console.warn("[aquabook] atualização de fotos ignorada:", e.message.slice(0, 120)); }
 }
-
-registrarManutencoesManuais({app,query,withTransaction,exigeLogin,exigeAdmin});
 
 async function start() {
   const ok = await testarConexao();
