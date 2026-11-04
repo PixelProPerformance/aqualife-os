@@ -2516,7 +2516,7 @@ async function abrirOportDetalhe(id){
   // relatórios
   if(d.relatorios&&d.relatorios.length){
     h+='<div style="margin-top:6px"><b>Relatórios do técnico</b>'+d.relatorios.map(r=>`<div style="border:1px solid var(--linha);border-radius:9px;padding:10px 12px;margin-top:6px">
-      <div style="font-size:12px;color:var(--suave)">${fmtDataHora(r.criado_em)} · ${r.resolvido?"✅ resolvido":"⚠️ não resolvido"}</div>
+      <div style="font-size:12px;color:var(--suave)">${fmtDataHora(r.criado_em)} · ${r.resolvido===null?"Aguardando decisão do Admin":r.resolvido?"✅ indicação histórica: resolvido":"⚠️ indicação histórica: não resolvido"}</div>
       <div style="white-space:pre-wrap;font-size:13.5px;margin-top:4px">${escH(r.observacao||"")}</div>
       ${(r.fotos&&r.fotos.length)?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+r.fotos.map(u=>`<a href="${escH(u)}" target="_blank"><img src="${escH(u)}" style="width:60px;height:60px;object-fit:cover;border-radius:6px"></a>`).join("")+'</div>':''}
     </div>`).join("")+'</div>';
