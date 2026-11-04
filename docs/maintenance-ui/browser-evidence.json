@@ -1,0 +1,47 @@
+{
+  "fixtureData": true,
+  "results": [
+    {
+      "page": "painel",
+      "width": 320,
+      "overflow": false,
+      "reportTextEscaped": true,
+      "escapeClosesDialog": true
+    },
+    {
+      "page": "painel",
+      "width": 390,
+      "overflow": false,
+      "reportTextEscaped": true,
+      "escapeClosesDialog": true
+    },
+    {
+      "page": "painel",
+      "width": 1280,
+      "overflow": false,
+      "reportTextEscaped": true,
+      "escapeClosesDialog": true
+    },
+    {
+      "page": "dashboard",
+      "width": 320,
+      "overflow": false,
+      "reportTextEscaped": true,
+      "escapeClosesDialog": true
+    },
+    {
+      "page": "dashboard",
+      "width": 390,
+      "overflow": false,
+      "reportTextEscaped": true,
+      "escapeClosesDialog": true
+    },
+    {
+      "page": "dashboard",
+      "width": 1280,
+      "overflow": false,
+      "reportTextEscaped": true,
+      "escapeClosesDialog": true
+    }
+  ]
+}
