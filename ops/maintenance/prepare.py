@@ -9,6 +9,9 @@ from pathlib import Path
 project = os.environ['RAILWAY_PROJECT_ID']
 staging = project == 'f0a54aac-7782-432e-9339-77a261e2c4c8'
 assert staging or project == '5b0e93d9-9212-46ad-be57-90e4106a5452'
+if os.environ.get('MANUAL_RELEASE_ACTION') in ('smoke','cleanup'):
+    assert not staging
+    os.execv('/usr/local/bin/node', ['node','ops/maintenance/production-smoke.mjs'])
 if not staging:
     evidence = json.loads(os.environ['MANUAL_RELEASE_EVIDENCE'])
     assert evidence['ci_commit'] == '26acb241cef349e88a3d8f0ed09e1ddfdb3a6869'
