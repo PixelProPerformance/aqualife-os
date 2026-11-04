@@ -21,7 +21,7 @@ test('HTTP real + JWT + PostgreSQL: relatórios isolados, revogação e anulaç�
   await db.query(readFileSync(new URL('../migrations/maintenance/0001_manual_packages.sql',import.meta.url),'utf8'));
   const url=new URL(process.env.MAINTENANCE_TEST_DATABASE_URL);url.searchParams.set('options',`-c search_path=${schema},public`);
   process.env.DATABASE_URL=url.href;
-  const {exigeLogin,exigeAdmin,gerarToken}=await import('../src/auth.js');
+  const {exigeLogin,exigeAdmin,gerarToken,verificarToken}=await import('../src/auth.js');
   const {query,withTransaction}=await import('../src/db.js');
   const a=randomUUID(),b=randomUUID(),user=randomUUID(),other=randomUUID(),asset=randomUUID(),reading=randomUUID(),pkg=randomUUID(),use=randomUUID();
   await db.query('INSERT INTO organization(id) VALUES($1),($2)',[a,b]);
@@ -47,6 +47,8 @@ test('HTTP real + JWT + PostgreSQL: relatórios isolados, revogação e anulaç�
    await db.query('UPDATE manutencao_uso_manual SET relatorio_url=$1 WHERE id=$2',[link,use]);assert.equal((await req(path)).status,404);
   }
   await db.query('UPDATE manutencao_uso_manual SET relatorio_url=$1,anulado_em=now() WHERE id=$2',[`/api/laudo/${reading}/cliente`,use]);assert.equal((await req(path)).status,404);
+  await db.query('INSERT INTO revoked_token(jti) VALUES($1)',[verificarToken(token).jti]);assert.equal((await req(path)).status,401);
+  await db.query('DELETE FROM revoked_token');
   await db.query('UPDATE app_user SET ativo=false WHERE id=$1',[user]);assert.equal((await req(path)).status,401);
  }finally{
   if(server)await new Promise(r=>server.close(r));
