@@ -268,14 +268,27 @@ export function registrarServicos(deps) {
     } catch (err) { console.error("[oportunidades:cancelar]", err.message); res.status(500).json({ erro: "erro interno" }); }
   });
 
-  // Reembolso: aprovar/recusar (admin)
+  // Reembolsos: Admin aprova ou anula (com motivo, sem apagar comprovante/histórico).
   app.patch("/api/admin/oportunidades/reembolso/:rid", exigeLogin, exigeAdmin, async (req, res) => {
     try {
-      const st = ["aprovado", "recusado"].includes(req.body && req.body.status) ? req.body.status : null;
+      const st = ["aprovado", "recusado", "anulado"].includes(req.body?.status) ? req.body.status : null;
       if (!st) return res.status(400).json({ erro: "status inválido" });
-      const r = await query(`UPDATE oportunidade_reembolso SET status=$2 WHERE id=$1 RETURNING *`, [req.params.rid, st]);
-      if (!r.rows[0]) return res.status(404).json({ erro: "não encontrado" });
-      res.json({ ok: true });
+      const motivo = txt(req.body?.motivo, 500);
+      if (st !== "aprovado" && motivo.length < 5)
+        return res.status(400).json({ erro: "informe o motivo da recusa/anulação (mínimo 5 caracteres)" });
+      // Nunca alterar linhas já pagas, de lote fechado ou previamente anuladas.
+      const r = await query(`UPDATE oportunidade_reembolso
+         SET status=$2,
+             anulacao_motivo=CASE WHEN $2 IN ('anulado','recusado') THEN $3 ELSE NULL END,
+             anulado_em=CASE WHEN $2 IN ('anulado','recusado') THEN NOW() ELSE NULL END,
+             anulado_por=CASE WHEN $2 IN ('anulado','recusado') THEN $4 ELSE NULL END
+         WHERE id=$1 AND pago_em IS NULL AND lote_id IS NULL
+           AND status IN ('pre_aprovado','aguardando','aprovado')
+           AND (status<>$2 OR $2='anulado')
+         RETURNING id,status`,
+        [req.params.rid, st, motivo || null, req.usuario.id]);
+      if (!r.rows[0]) return res.status(409).json({ erro: "reembolso já liquidado, anulado ou não encontrado" });
+      res.json({ ok: true, ...r.rows[0] });
     } catch (err) { console.error("[reembolso:patch]", err.message); res.status(500).json({ erro: "erro interno" }); }
   });
 
@@ -792,6 +805,9 @@ export const SERVICOS_SCHEMA = [
   `ALTER TABLE oportunidade ADD COLUMN IF NOT EXISTS lote_id UUID`,
   `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS pago_em TIMESTAMPTZ`,
   `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS lote_id UUID`,
+  `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS anulacao_motivo TEXT`,
+  `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS anulado_em TIMESTAMPTZ`,
+  `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS anulado_por UUID`,
   `CREATE TABLE IF NOT EXISTS pagamento_lote (
      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
      tecnico_id UUID NOT NULL,
