@@ -35,4 +35,4 @@ jobs:
           node --check src/manutencoes-manuais.js
           node --check public/js/manutencoes-admin.js
           node --check public/js/manutencoes-cliente.js
-          node --test tests/manutencoes-manuais.test.mjs tests/manutencoes-postgres.test.mjs
+          node --test tests/manutencoes-manuais.test.mjs tests/manutencoes-postgres.test.mjs tests/manutencoes-http.test.mjs tests/manutencoes-ui.test.mjs
