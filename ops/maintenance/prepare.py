@@ -9,6 +9,21 @@ from pathlib import Path
 project = os.environ['RAILWAY_PROJECT_ID']
 staging = project == 'f0a54aac-7782-432e-9339-77a261e2c4c8'
 assert staging or project == '5b0e93d9-9212-46ad-be57-90e4106a5452'
+if staging and os.environ.get('MANUAL_RELEASE_ACTION') == 'cleanup':
+    connection = psycopg2.connect(os.environ['DATABASE_URL'])
+    with connection:
+        with connection.cursor() as q:
+            q.execute('SELECT current_database()')
+            assert q.fetchone()[0] == 'aqualife_marketplace_staging'
+            emails = [prefix+'-manutencoes-20261104+7dbd6303@example.invalid' for prefix in ('admin','cliente','avulso','tecnico')]
+            q.execute("UPDATE app_user SET ativo=false WHERE email=ANY(%s) AND name='Teste Manutenções' RETURNING id",(emails,))
+            users = [str(row[0]) for row in q.fetchall()]
+            q.execute("UPDATE subscription SET status='cancelada' WHERE user_id=ANY(%s::uuid[])",(users,))
+            q.execute("UPDATE curso SET publicado=false WHERE id='49f54a61-2cc6-4f46-a901-710e20f37934' AND titulo='Curso fictício Manutenções 20261104'")
+            q.execute("UPDATE loja_produto SET ativo=false WHERE id='b114085a-de79-42f9-8726-c3f1e6083fdb' AND nome='Produto fictício Manutenções'")
+    connection.close()
+    print(json.dumps({'result':'PASS','scope':'STAGING_QA_RETIRED','accounts_disabled':len(users),'history_preserved':True}),flush=True)
+    raise SystemExit(0)
 if os.environ.get('MANUAL_RELEASE_ACTION') in ('smoke','cleanup'):
     assert not staging
     if os.environ['MANUAL_RELEASE_ACTION'] == 'smoke':
