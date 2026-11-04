@@ -8,6 +8,7 @@ const db=new pg.Client({connectionString:process.env.DATABASE_URL,ssl:{rejectUna
 await db.connect();
 assert.equal((await db.query('SELECT current_database() n')).rows[0].n,'aqualife_marketplace_staging');
 const server=app.listen(Number(process.env.PORT||8080),'0.0.0.0');
+await new Promise(resolve=>server.once('listening',resolve));
 const base='http://127.0.0.1:'+server.address().port;
 let step='init'; const run=randomUUID().slice(0,8);
 async function req(path,{token,method,body,status=200}={}){
