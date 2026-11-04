@@ -22,4 +22,3 @@ const assert=require('node:assert/strict');
  fs.writeFileSync('docs/maintenance-ui/ui-browser-evidence.json',JSON.stringify({fixtureData:true,results},null,2));console.log(JSON.stringify(results));
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
-

@@ -11,4 +11,3 @@ http.createServer((req,res)=>{res.writeHead(result.status==='pass'?200:503,{'con
 const child=spawn(process.execPath,['--test','tests/manutencoes-manuais.test.mjs','tests/manutencoes-ui.test.mjs','tests/manutencoes-http.test.mjs'],{env:{...process.env,MAINTENANCE_TEST_DATABASE_URL:url.href},stdio:['ignore','pipe','pipe']});
 child.stdout.on('data',b=>process.stdout.write(b));child.stderr.on('data',b=>process.stderr.write(b));
 child.on('exit',code=>{result={...result,status:code===0?'pass':'fail',exitCode:code};console.log(JSON.stringify(result));});
-
