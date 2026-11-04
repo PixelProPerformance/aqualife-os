@@ -70,7 +70,7 @@
   <h3>Relatório de manutenção</h3>
   <input type="hidden" id="relOpId">
   <div class="campo"><label>O que foi feito *</label><textarea class="inp" id="relObs" rows="4" placeholder="Descreva o serviço realizado, estado do aquário, recomendações…"></textarea></div>
-  <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin-bottom:10px"><input type="checkbox" id="relResolvido" checked style="width:auto"> A manutenção foi resolvida (não precisa de retorno)</label>
+  <p class="termos">A Aqualife avaliará o relatório e decidirá se o serviço foi resolvido ou precisa de retorno.</p>
   <div class="campo"><label>Fotos</label><input type="file" id="relFotos" accept="image/*" multiple style="font-size:13px"><div class="fotos" id="relFotosPrev"></div></div>
   <div class="campo"><label>Reembolsos de produtos (até R$ 100 no total é pré-aprovado)</label>
     <div id="relReemb"></div>
@@ -190,7 +190,7 @@ async function carregarRecebimentos(){
 // ---- Relatório ----
 let REL_FOTOS=[], REL_REEMB=[];
 function abrirRelatorio(id){
-  $("relOpId").value=id; $("relObs").value=""; $("relResolvido").checked=true; REL_FOTOS=[]; REL_REEMB=[];
+  $("relOpId").value=id; $("relObs").value=""; REL_FOTOS=[]; REL_REEMB=[];
   $("relFotos").value=""; $("relFotosPrev").innerHTML=""; $("relMsg").textContent=""; relRenderReemb();
   abrir("modalRel");
 }
@@ -226,7 +226,7 @@ $("relEnviar").onclick=async()=>{
   const b=$("relEnviar"); b.disabled=true;
   try{
     await api("/api/tecnico/oportunidades/"+$("relOpId").value+"/relatorio",{method:"POST",body:JSON.stringify({
-      observacao:obs, resolvido:$("relResolvido").checked, fotos:REL_FOTOS,
+      observacao:obs, fotos:REL_FOTOS,
       reembolsos:REL_REEMB.filter(r=>r.descricao&&r.valor_cents)})});
     fechar("modalRel"); carregarOportunidades();
   }catch(e){ $("relMsg").style.color="#B4232E"; $("relMsg").textContent=e.message; }
