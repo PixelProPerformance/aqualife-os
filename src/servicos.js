@@ -268,14 +268,27 @@ export function registrarServicos(deps) {
     } catch (err) { console.error("[oportunidades:cancelar]", err.message); res.status(500).json({ erro: "erro interno" }); }
   });
 
-  // Reembolso: aprovar/recusar (admin)
+  // Reembolsos: Admin aprova ou anula (com motivo, sem apagar comprovante/histórico).
   app.patch("/api/admin/oportunidades/reembolso/:rid", exigeLogin, exigeAdmin, async (req, res) => {
     try {
-      const st = ["aprovado", "recusado"].includes(req.body && req.body.status) ? req.body.status : null;
+      const st = ["aprovado", "recusado", "anulado"].includes(req.body?.status) ? req.body.status : null;
       if (!st) return res.status(400).json({ erro: "status inválido" });
-      const r = await query(`UPDATE oportunidade_reembolso SET status=$2 WHERE id=$1 RETURNING *`, [req.params.rid, st]);
-      if (!r.rows[0]) return res.status(404).json({ erro: "não encontrado" });
-      res.json({ ok: true });
+      const motivo = txt(req.body?.motivo, 500);
+      if (st !== "aprovado" && motivo.length < 5)
+        return res.status(400).json({ erro: "informe o motivo da recusa/anulação (mínimo 5 caracteres)" });
+      // Nunca alterar linhas já pagas, de lote fechado ou previamente anuladas.
+      const r = await query(`UPDATE oportunidade_reembolso
+         SET status=$2,
+             anulacao_motivo=CASE WHEN $2 IN ('anulado','recusado') THEN $3 ELSE NULL END,
+             anulado_em=CASE WHEN $2 IN ('anulado','recusado') THEN NOW() ELSE NULL END,
+             anulado_por=CASE WHEN $2 IN ('anulado','recusado') THEN $4::uuid ELSE NULL END
+         WHERE id=$1 AND pago_em IS NULL AND lote_id IS NULL
+           AND status IN ('pre_aprovado','aguardando','aprovado')
+           AND (status<>$2 OR $2='anulado')
+         RETURNING id,status`,
+        [req.params.rid, st, motivo || null, req.usuario.id]);
+      if (!r.rows[0]) return res.status(409).json({ erro: "reembolso já liquidado, anulado ou não encontrado" });
+      res.json({ ok: true, ...r.rows[0] });
     } catch (err) { console.error("[reembolso:patch]", err.message); res.status(500).json({ erro: "erro interno" }); }
   });
 
@@ -370,19 +383,21 @@ export function registrarServicos(deps) {
     try {
       const uid = req.usuario.id;
       const b = req.body || {};
-      const op = (await query(`SELECT * FROM oportunidade WHERE id=$1 AND tecnico_id=$2`, [req.params.id, uid])).rows[0];
-      if (!op) return res.status(404).json({ erro: "oportunidade não encontrada" });
-      if (!["aceita", "relatorio_enviado"].includes(op.status)) return res.status(409).json({ erro: "não é possível enviar relatório agora" });
       const observacao = txt(b.observacao, 4000);
       if (!observacao) return res.status(400).json({ erro: "descreva o que foi feito na manutenção" });
       const fotos = Array.isArray(b.fotos) ? b.fotos.filter((u) => typeof u === "string").slice(0, 8) : [];
-      const resolvido = b.resolvido !== false; // técnico indica se resolveu
       const reembolsos = Array.isArray(b.reembolsos) ? b.reembolsos.slice(0, 20) : [];
-      await withTransaction(async (cx) => {
+      const outcome = await withTransaction(async (cx) => {
+        // Atomic status transition prevents duplicate reports/refunds from retries.
+        const changed = await cx.query(
+          `UPDATE oportunidade SET status='relatorio_enviado', atualizado_em=NOW()
+           WHERE id=$1 AND tecnico_id=$2 AND status='aceita' RETURNING *`, [req.params.id, uid]);
+        const op = changed.rows[0];
+        if (!op) return null;
+        // Legacy field remains null: only Admin decides whether the work is resolved.
         await cx.query(
           `INSERT INTO oportunidade_relatorio (oportunidade_id, tecnico_id, resolvido, observacao, fotos)
-           VALUES ($1,$2,$3,$4,$5::jsonb)`, [op.id, uid, resolvido, observacao, JSON.stringify(fotos)]);
-        // reembolsos: até R$100 no total = pré-aprovado; acima disso aguarda admin
+           VALUES ($1,$2,NULL,$3,$4::jsonb)`, [op.id, uid, observacao, JSON.stringify(fotos)]);
         let acumulado = 0;
         for (const it of reembolsos) {
           const v = intNaoNeg(it && it.valor_cents);
@@ -393,9 +408,10 @@ export function registrarServicos(deps) {
           await cx.query(`INSERT INTO oportunidade_reembolso (oportunidade_id, tecnico_id, descricao, valor_cents, status, comprovante_url)
              VALUES ($1,$2,$3,$4,$5,$6)`, [op.id, uid, desc, v, st, txt(it && it.comprovante_url, 400) || null]);
         }
-        await cx.query(`UPDATE oportunidade SET status='relatorio_enviado', atualizado_em=NOW() WHERE id=$1`, [op.id]);
+        return op;
       });
-      notificarRelatorioAdmin(op).catch(() => {});
+      if (!outcome) return res.status(409).json({ erro: "relatório já enviado ou indisponível; nenhum reembolso novo foi criado" });
+      notificarRelatorioAdmin(outcome).catch(() => {});
       res.json({ ok: true });
     } catch (err) { console.error("[tec/relatorio]", err.message); res.status(500).json({ erro: "erro interno" }); }
   });
@@ -487,10 +503,12 @@ export function registrarServicos(deps) {
        WHERE o.status='concluida' AND o.pago_em IS NULL
        ORDER BY u.name, o.previsao_pagamento`)).rows;
     const reembolsos = (await query(
-      `SELECT r.id, r.oportunidade_id, r.descricao, r.valor_cents, r.tecnico_id
-       FROM oportunidade_reembolso r
+      `SELECT r.id, r.oportunidade_id, r.descricao, r.valor_cents, r.tecnico_id,
+              u.name AS tecnico_nome, u.email AS tecnico_email,
+              u.pix_chave, u.pix_tipo, u.pix_titular
+       FROM oportunidade_reembolso r JOIN app_user u ON u.id=r.tecnico_id
        WHERE r.status IN ('pre_aprovado','aprovado') AND r.pago_em IS NULL
-       ORDER BY r.criado_em`)).rows;
+       ORDER BY u.name, r.criado_em`)).rows;
     const mapa = new Map();
     const get = (tid, base) => {
       if (!mapa.has(tid)) mapa.set(tid, { tecnico_id: tid, tecnico_nome: base.tecnico_nome, tecnico_email: base.tecnico_email,
@@ -505,8 +523,8 @@ export function registrarServicos(deps) {
       if (s.previsao_pagamento && (!g.previsao || s.previsao_pagamento > g.previsao)) g.previsao = s.previsao_pagamento;
     }
     for (const r of reembolsos) {
-      if (!mapa.has(r.tecnico_id)) continue; // só mostra reembolso de quem tem serviço pendente; senão fica para o próximo
-      const g = mapa.get(r.tecnico_id);
+      // Include standalone pending reimbursements even when no service awaits payment.
+      const g = get(r.tecnico_id, r);
       g.reembolsos.push({ id: r.id, descricao: r.descricao, valor_cents: Number(r.valor_cents) || 0 });
       g.total_reembolsos_cents += Number(r.valor_cents) || 0;
     }
@@ -787,6 +805,9 @@ export const SERVICOS_SCHEMA = [
   `ALTER TABLE oportunidade ADD COLUMN IF NOT EXISTS lote_id UUID`,
   `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS pago_em TIMESTAMPTZ`,
   `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS lote_id UUID`,
+  `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS anulacao_motivo TEXT`,
+  `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS anulado_em TIMESTAMPTZ`,
+  `ALTER TABLE oportunidade_reembolso ADD COLUMN IF NOT EXISTS anulado_por UUID`,
   `CREATE TABLE IF NOT EXISTS pagamento_lote (
      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
      tecnico_id UUID NOT NULL,

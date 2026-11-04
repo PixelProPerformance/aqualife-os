@@ -2516,7 +2516,7 @@ async function abrirOportDetalhe(id){
   // relatórios
   if(d.relatorios&&d.relatorios.length){
     h+='<div style="margin-top:6px"><b>Relatórios do técnico</b>'+d.relatorios.map(r=>`<div style="border:1px solid var(--linha);border-radius:9px;padding:10px 12px;margin-top:6px">
-      <div style="font-size:12px;color:var(--suave)">${fmtDataHora(r.criado_em)} · ${r.resolvido?"✅ resolvido":"⚠️ não resolvido"}</div>
+      <div style="font-size:12px;color:var(--suave)">${fmtDataHora(r.criado_em)} · ${r.resolvido===null?"Aguardando decisão do Admin":r.resolvido?"✅ indicação histórica: resolvido":"⚠️ indicação histórica: não resolvido"}</div>
       <div style="white-space:pre-wrap;font-size:13.5px;margin-top:4px">${escH(r.observacao||"")}</div>
       ${(r.fotos&&r.fotos.length)?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">'+r.fotos.map(u=>`<a href="${escH(u)}" target="_blank"><img src="${escH(u)}" style="width:60px;height:60px;object-fit:cover;border-radius:6px"></a>`).join("")+'</div>':''}
     </div>`).join("")+'</div>';
@@ -2524,10 +2524,10 @@ async function abrirOportDetalhe(id){
   // reembolsos
   if(d.reembolsos&&d.reembolsos.length){
     h+='<div style="margin-top:12px"><b>Reembolsos</b>'+d.reembolsos.map(x=>{
-      const stt={pre_aprovado:["Pré-aprovado","#065F46"],aguardando:["Aguardando admin","#92400E"],aprovado:["Aprovado","#065F46"],recusado:["Recusado","#991B1B"]}[x.status]||[x.status,"#374151"];
+      const stt={pre_aprovado:["Pré-aprovado","#065F46"],aguardando:["Aguardando admin","#92400E"],aprovado:["Aprovado","#065F46"],recusado:["Recusado","#991B1B"],anulado:["Anulado","#991B1B"]}[x.status]||[x.status,"#374151"];
       return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--linha);font-size:13.5px">
         <span>${x.comprovante_url?`<a href="${escH(x.comprovante_url)}" target="_blank" title="Ver comprovante"><img src="${escH(x.comprovante_url)}" style="width:28px;height:28px;object-fit:cover;border-radius:5px;vertical-align:middle;margin-right:6px"></a>`:'<span title="sem comprovante" style="color:#B4232E;margin-right:4px">⚠</span>'}${escH(x.descricao)} — <b>${brl(x.valor_cents)}</b> <span style="color:${stt[1]}">(${stt[0]})</span></span>
-        ${x.status==="aguardando"?`<span style="display:flex;gap:6px"><button type="button" class="btn btn-c btn-sm" data-reemb-ok="${x.id}">Aprovar</button><button type="button" class="btn btn-c btn-sm" data-reemb-no="${x.id}">Recusar</button></span>`:""}
+        ${x.pago_em||x.lote_id?'<small style="color:var(--suave)">Pago / fechado</small>':["pre_aprovado","aguardando","aprovado"].includes(x.status)?`<span style="display:flex;gap:6px"><button type="button" class="btn btn-c btn-sm" data-reemb-void="${x.id}">Anular</button>${x.status==="aguardando"?`<button type="button" class="btn btn-c btn-sm" data-reemb-ok="${x.id}">Aprovar</button>`:""}</span>`:""}
       </div>`;}).join("")+'</div>';
   }
   // log de valor
@@ -2554,7 +2554,17 @@ async function abrirOportDetalhe(id){
     catch(e){ alert("Erro: "+e.message); }
   };
   document.querySelectorAll("[data-reemb-ok]").forEach(b=>b.onclick=async()=>{ try{ await api("/api/admin/oportunidades/reembolso/"+b.dataset.reembOk,{method:"PATCH",body:JSON.stringify({status:"aprovado"})}); abrirOportDetalhe(id); }catch(e){ alert(e.message); } });
-  document.querySelectorAll("[data-reemb-no]").forEach(b=>b.onclick=async()=>{ try{ await api("/api/admin/oportunidades/reembolso/"+b.dataset.reembNo,{method:"PATCH",body:JSON.stringify({status:"recusado"})}); abrirOportDetalhe(id); }catch(e){ alert(e.message); } });
+  document.querySelectorAll("[data-reemb-void]").forEach(b=>b.onclick=async()=>{
+    const motivo=prompt("Motivo da anulação (obrigatório). O comprovante e o histórico serão mantidos:","");
+    if(motivo==null) return;
+    if(motivo.trim().length<5){alert("Descreva o motivo (mínimo 5 caracteres).");return;}
+    if(!confirm("Anular este reembolso NÃO PAGO? Ele deixará de contar no fechamento."))return;
+    b.disabled=true;
+    try{
+      await api("/api/admin/oportunidades/reembolso/"+b.dataset.reembVoid,{method:"PATCH",body:JSON.stringify({status:"anulado",motivo:motivo.trim()})});
+      await abrirOportDetalhe(id); carregarFechamento();
+    }catch(e){alert("Falha na anulação: "+e.message);b.disabled=false;}
+  });
   if(q("odConcluir")) q("odConcluir").onclick=async()=>{
     if(!confirm("Marcar como concluída? O valor e a previsão de pagamento serão calculados.")) return;
     try{ const r=await api("/api/admin/oportunidades/"+id+"/finalizar",{method:"POST",body:JSON.stringify({resultado:"concluida",obs:($("odObs")?$("odObs").value:"" )})});
