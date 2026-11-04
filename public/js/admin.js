@@ -42,6 +42,7 @@ async function carregarClientes(){
           <div><div class="cli-nome">${c.name}</div>
             <div class="cli-meta">${c.type==="corporate"?"Empresa":"Residência"} · ${c.country}</div></div>
           <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-c btn-sm" data-manutencoes-org="${c.id}">Manutenções</button>
             <button class="btn btn-c btn-sm" data-add-aq="${c.id}">+ Aquário</button>
             <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;cursor:pointer" data-del-cli="${c.id}" data-del-nome="${c.name}">Apagar</button>
           </div>
@@ -62,12 +63,13 @@ Esta acção não pode ser desfeita.`)) return;
     });
   }catch(e){$("listaClientes").innerHTML=`<div class="vazio">Erro: ${e.message}</div>`;}
 }
-$("novoCliente").onclick=()=>{["cNome","cCidade","cAqNome","cAqVol"].forEach(i=>$(i).value="");abrir("modalCliente");};
+$("novoCliente").onclick=()=>{["cNome","cCidade","cAqNome","cAqVol"].forEach(i=>$(i).value="");$("cManTotal").value="0";abrir("modalCliente");};
 $("salvarCliente").onclick=async()=>{
   const b=$("salvarCliente");b.disabled=true;
   try{
     await api("/api/admin/clientes",{method:"POST",body:JSON.stringify({
       nome:$("cNome").value,tipo:$("cTipo").value,cidade:$("cCidade").value,
+      manutencoes_total:Number($("cManTotal").value),
       aquario:$("cAqTipo").value?{label:$("cAqNome").value,water_type:$("cAqTipo").value,volume_liters:parseFloat($("cAqVol").value)||null}:null,
     })});
     fecharModal("modalCliente");carregarClientes();

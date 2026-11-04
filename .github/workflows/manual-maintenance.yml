@@ -1,0 +1,38 @@
+name: Manual maintenance packages
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  unit-and-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: maintenance_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d maintenance_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    env:
+      MAINTENANCE_TEST_DATABASE_URL: postgresql://test:test@localhost:5432/maintenance_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Syntax and isolated tests
+        run: |
+          node --check src/server.js
+          node --check src/manutencoes-manuais.js
+          node --check public/js/manutencoes-admin.js
+          node --check public/js/manutencoes-cliente.js
+          node --test tests/manutencoes-manuais.test.mjs tests/manutencoes-postgres.test.mjs

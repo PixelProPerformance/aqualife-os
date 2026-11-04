@@ -1065,6 +1065,9 @@
         <option value="pond">Lago</option></select></div>
     <div class="campo"><label>Volume (L)</label><input class="inp" id="cAqVol" type="number"></div>
   </div>
+  <div class="campo"><label>Manutenções incluídas no pacote</label>
+    <input class="inp" id="cManTotal" type="number" min="0" max="10000" step="1" value="0" placeholder="0 = manutenção avulsa">
+    <small style="color:var(--suave)">Pode ajustar e lançar visitas manualmente depois. Zero = cliente avulso.</small></div>
   <div class="modal-acoes">
     <button class="btn btn-c" onclick="fecharModal('modalCliente')">Cancelar</button>
     <button class="btn btn-p" id="salvarCliente">Criar cliente</button></div>
@@ -1268,5 +1271,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="/js/laudo-bars.js"></script>
 <script src="/js/admin.js"></script>
+<script src="/js/manutencoes-admin.js"></script>
 </body>
 </html>
