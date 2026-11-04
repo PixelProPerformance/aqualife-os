@@ -281,7 +281,7 @@ export function registrarServicos(deps) {
          SET status=$2,
              anulacao_motivo=CASE WHEN $2 IN ('anulado','recusado') THEN $3 ELSE NULL END,
              anulado_em=CASE WHEN $2 IN ('anulado','recusado') THEN NOW() ELSE NULL END,
-             anulado_por=CASE WHEN $2 IN ('anulado','recusado') THEN $4 ELSE NULL END
+             anulado_por=CASE WHEN $2 IN ('anulado','recusado') THEN $4::uuid ELSE NULL END
          WHERE id=$1 AND pago_em IS NULL AND lote_id IS NULL
            AND status IN ('pre_aprovado','aguardando','aprovado')
            AND (status<>$2 OR $2='anulado')
