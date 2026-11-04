@@ -9,15 +9,15 @@ await db.connect();
 assert.equal((await db.query('SELECT current_database() n')).rows[0].n,'aqualife_marketplace_staging');
 const server=app.listen(Number(process.env.PORT||8080),'0.0.0.0');
 const base='http://127.0.0.1:'+server.address().port;
-let step='init';
+let step='init'; const run=randomUUID().slice(0,8);
 async function req(path,{token,method,body,status=200}={}){
  step=(method|| (body?'POST':'GET'))+' '+path;
  const r=await fetch(base+path,{method:method||(body?'POST':'GET'),headers:{...(token?{authorization:'Bearer '+token}:{}),...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
  assert.equal(r.status,status,step);const d=await r.json();console.log(JSON.stringify({pass:step,status}));return d;
 }
 async function user(org,role,email){
- const id=randomUUID();await db.query('INSERT INTO app_user(id,organization_id,name,email,senha_hash,role) VALUES($1,$2,$3,$4,$5,$6)',[id,org,'Teste Manutenções',email,await bcrypt.hash(process.env.QA_PASSWORD,10),role]);
- const d=await req('/api/login',{body:{email,senha:process.env.QA_PASSWORD}});return {id,org,token:d.token};
+ email=email.replace('@','+'+run+'@'); const id=randomUUID();await db.query('INSERT INTO app_user(id,organization_id,name,email,senha_hash,role) VALUES($1,$2,$3,$4,$5,$6)',[id,org,'Teste Manutenções',email,await bcrypt.hash(process.env.QA_PASSWORD,10),role]);
+ const d=await req('/api/login',{body:{email,senha:process.env.QA_PASSWORD}});console.log(JSON.stringify({fixture_role:role,email}));return {id,org,token:d.token};
 }
 try{
  const org=randomUUID();await db.query('INSERT INTO organization(id,name) VALUES($1,$2)',[org,'Admin Fictício Manutenções']);
@@ -56,7 +56,7 @@ try{
  const tech=await user(org,'tecnico','tecnico-manutencoes-20261104@example.invalid');
  for(const p of ['/api/tecnico/oportunidades','/api/tecnico/recebimentos','/api/tecnico/aquarios'])await req(p,{token:tech.token});
  await req('/api/admin/oportunidades',{token:admin.token});
- const product=await req('/api/admin/loja/produtos',{token:admin.token,body:{nome:'Produto fictício Manutenções',ativo:false,preco_cents:1234,estoque:5}});
+ const product=await req('/api/admin/loja/produtos',{token:admin.token,body:{nome:'Produto fictício Manutenções',ativo:true,preco_cents:1234,estoque:5}});
  const detail=await req('/api/admin/loja/produtos/'+product.id,{token:admin.token});
  const cart=await req('/api/loja/carrinho',{body:{itens:[{variacao_id:detail.variacoes[0].id,qty:2}]}});
  assert.ok(cart);
@@ -65,4 +65,5 @@ try{
 }catch(e){console.error(JSON.stringify({result:'FAIL',step,code:e.code||e.name,expected:e.expected,actual:e.actual}));process.exitCode=1;server.close();await db.end();process.exit(1);}
 await db.end();
 console.log(JSON.stringify({ready_for_browser:true}));
+
 
