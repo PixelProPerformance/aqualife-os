@@ -11,6 +11,17 @@ staging = project == 'f0a54aac-7782-432e-9339-77a261e2c4c8'
 assert staging or project == '5b0e93d9-9212-46ad-be57-90e4106a5452'
 if os.environ.get('MANUAL_RELEASE_ACTION') in ('smoke','cleanup'):
     assert not staging
+    if os.environ['MANUAL_RELEASE_ACTION'] == 'smoke':
+        import boto3
+        assert os.environ['BACKUP_BUCKET'] == os.environ['EXPECTED_BACKUP_BUCKET']
+        client = boto3.client('s3',endpoint_url=os.environ['AWS_ENDPOINT_URL'])
+        key = os.environ['RELEASE_BACKUP_KEY']
+        head = client.head_object(Bucket=os.environ['EXPECTED_BACKUP_BUCKET'],Key=key)
+        assert head['Metadata']['sha256'] == os.environ['RELEASE_BACKUP_SHA256']
+        manifest = json.loads(client.get_object(Bucket=os.environ['EXPECTED_BACKUP_BUCKET'],Key=key+'.manifest.json')['Body'].read())
+        assert manifest['sha256'] == os.environ['RELEASE_BACKUP_SHA256']
+        assert manifest['full_isolated_restore_verified'] and manifest['remote_download_verified']
+        print(json.dumps({'result':'PASS','scope':'EXPECTED_PRODUCTION_BUCKET_VERIFIED','bucket_resource':'aqualife-production-backups','sha256':manifest['sha256']}),flush=True)
     os.execv('/usr/local/bin/node', ['node','ops/maintenance/production-smoke.mjs'])
 if not staging:
     evidence = json.loads(os.environ['MANUAL_RELEASE_EVIDENCE'])
