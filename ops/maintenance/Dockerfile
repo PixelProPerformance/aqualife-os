@@ -8,5 +8,6 @@ COPY --from=node /usr/local/bin/node /usr/local/bin/node
 WORKDIR /app
 COPY --from=node /app/node_modules ./node_modules
 COPY . .
+RUN mkdir -p /app/public/uploads && chown -R postgres:postgres /app/public/uploads
 USER postgres
 ENTRYPOINT ["python3", "ops/maintenance/prepare.py"]
