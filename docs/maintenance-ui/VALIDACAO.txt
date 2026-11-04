@@ -1,0 +1,60 @@
+Aqualife — revisão visual e funcional de manutenções, 04/11/2026
+
+Base verificada: main b296111876c53bd013b76099e4374d0c6489e2cb; PR #14 integrado.
+PR de correção: https://github.com/PixelProPerformance/aqualife-os/pull/15
+
+Implementado: cartões de saldo; tabela com espaçamento e representação móvel em blocos;
+estados avulso, sem visitas, saldo esgotado, erro recuperável e sessão expirada;
+foco visível, botões de pelo menos 44px e dialog nativo; calendário sem conversão de timezone;
+escape de texto/números e relatório exibido via textContent.
+
+Relatórios: o cliente consulta GET /api/cliente/manutencoes/usos/:usoId/relatorio com Bearer.
+O backend verifica a organização da visita, pacote ativo, visita não anulada e organização
+do aquário do laudo. Não redireciona, não faz fetch de URLs arbitrárias e envia no-store.
+Apenas /api/laudo/<UUID>/cliente pode abrir. Links externos/legados permanecem armazenados,
+mas ficam indisponíveis ao cliente até associação a um laudo interno autorizado.
+O formulário Admin aceita essa referência e explica a limitação. Não há migração nova.
+
+Validação local: node --test tests/*.test.mjs — 33 testes, 27 aprovados, 6 ignorados por
+falta dos bancos de integração locais, zero falhas. Não confundir os skips com aprovação.
+Navegador Edge/Playwright: painel.html e dashboard.html em 320, 390 e 1280 px.
+Seis cenários aprovados, sem overflow no componente; conteúdo HTML malicioso no relatório
+exibido como texto; Escape fecha o dialog. Dados/API simulados nestes testes de UI.
+Capturas desktop.png/mobile.png e browser-evidence.json estão nesta pasta.
+Reproduzir na raiz do repo com Playwright e Edge disponíveis:
+  node scripts/check-maintenance-ui.cjs
+PLAYWRIGHT_MODULE pode apontar para a instalação do Playwright.
+
+Staging: clever-youth f0a54aac-7782-432e-9339-77a261e2c4c8; ambiente Railway chamado production
+551a32bd-06c0-4899-bdb0-f3c8b255c092 (é o projeto de staging, não a aplicação de produção).
+Somente o serviço dedicado aqualife-manual-maintenance-qa foi reconfigurado.
+Runner cria schema qa_maintenance_<UUID> com tabelas e dados fictícios, usa middleware JWT
+real, SQL e servidor Express real; remove esse schema ao terminar. Não migra o schema público.
+A execução anterior b1b33d4b-e886-4ad4-8e0d-de9e5307d230 falhou antes dos testes devido ao
+certificado PostgreSQL; o runner foi corrigido para a configuração TLS usada neste ambiente.
+
+Produção: nenhuma alteração, merge, migration ou publicação desta revisão. O backup anterior
+relatado em maintenance-validation/RELATORIO-FINAL.txt pertence à publicação prévia do PR #14;
+não foi criado nem restaurado um novo backup de produção neste trabalho. Antes de publicar
+esta revisão, confirmar CI do head, regressões e backup/restauro atual.
+Rollback da revisão: voltar apenas a aplicação ao commit anterior; não apagar tabelas/dados.
+
+RESULTADO FINAL DA HOMOLOGAÇÃO
+Commit funcional: 7f5fdd01bc2d51efed92d27a0a98b63a26b0631c.
+Railway deploy 0723debb-1888-4a96-a425-4288f095bbeb: SUCCESS.
+Runner: 8 testes aprovados, zero falhas, schema temporário removido no finally.
+HTTP real aprovou 401 sem sessão, 404 de outra organização e de laudo cujo aquário pertence
+à outra organização, 403 de cliente em rota Admin, saldo 3/1/2, data exata YYYY-MM-DD,
+rejeição de URL externa/JavaScript/legada, visita anulada, token revogado e utilizador inativo.
+Consulta pública do runner retornou status=pass, exitCode=0 e o commit acima.
+Endpoint: https://aqualife-manual-maintenance-qa-production.up.railway.app
+Logs e contagens: staging-evidence.json. O runner é de QA; não é um deploy do portal completo.
+A UI foi validada localmente com respostas simuladas, não contra contas reais de clientes.
+
+CI do commit funcional: três workflows aprovados:
+https://github.com/PixelProPerformance/aqualife-os/actions/runs/41905917225 (manutenções)
+https://github.com/PixelProPerformance/aqualife-os/actions/runs/41905917256 (Marketplace Phase 1)
+https://github.com/PixelProPerformance/aqualife-os/actions/runs/41905917396 (Marketplace Phase 2)
+O workflow de manutenções inclui PostgreSQL 18 e o teste HTTP real.
+O commit posterior de documentação só acrescenta evidências e remove linhas vazias no EOF
+dos scripts de QA; não altera o comportamento funcional homologado.

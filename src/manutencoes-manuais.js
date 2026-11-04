@@ -21,7 +21,7 @@ export function registrarManutencoesManuais({app,query,withTransaction,exigeLogi
      (SELECT COUNT(*)::int FROM manutencao_uso_manual u WHERE u.pacote_id=p.id AND u.anulado_em IS NULL) AS utilizadas
      FROM manutencao_pacote_manual p WHERE p.organization_id=$1 AND p.ativo=true
      ORDER BY p.criado_em DESC`,[orgId])).rows.map(p=>({...p,utilizadas:Number(p.utilizadas),restantes:Math.max(0,p.total_visitas-Number(p.utilizadas))}));
-  const usos=(await query(`SELECT u.id,u.pacote_id,u.data_visita,u.relatorio_url,u.observacao
+  const usos=(await query(`SELECT u.id,u.pacote_id,to_char(u.data_visita,'YYYY-MM-DD') AS data_visita,u.relatorio_url,u.observacao
      FROM manutencao_uso_manual u JOIN manutencao_pacote_manual p ON p.id=u.pacote_id
      WHERE u.organization_id=$1 AND p.organization_id=$1 AND p.ativo=true AND u.anulado_em IS NULL
      ORDER BY u.data_visita DESC,u.criado_em DESC LIMIT 300`,[orgId])).rows;
@@ -30,6 +30,26 @@ export function registrarManutencoesManuais({app,query,withTransaction,exigeLogi
  app.get('/api/cliente/manutencoes',exigeLogin,async(req,res)=>{
   try{res.json(await resumo(req.usuario.organization_id));}
   catch(e){console.error('[manutencoes/cliente]',e.code||e.message);res.status(500).json({erro:'Não foi possível carregar o pacote'});}
+ });
+ // Nunca redireciona para URLs arbitrárias; verifica a organização da visita e do laudo.
+ app.get('/api/cliente/manutencoes/usos/:usoId/relatorio',exigeLogin,async(req,res)=>{
+  if(!uuid(req.params.usoId)||!uuid(req.usuario.organization_id))return res.status(404).json({erro:'Relatório indisponível'});
+  res.set('Cache-Control','no-store');
+  try{
+   const uso=(await query(`SELECT u.relatorio_url FROM manutencao_uso_manual u
+     JOIN manutencao_pacote_manual p ON p.id=u.pacote_id AND p.organization_id=u.organization_id
+     WHERE u.id=$1 AND u.organization_id=$2 AND u.anulado_em IS NULL AND p.ativo=true`,
+     [req.params.usoId,req.usuario.organization_id])).rows[0];
+   const match=uso?.relatorio_url?.match(/^\/api\/laudo\/([0-9a-f-]{36})\/cliente$/i);
+   if(!match||!uuid(match[1]))return res.status(404).json({erro:'Peça à equipa um relatório interno autorizado para esta manutenção.'});
+   const laudo=(await query(`SELECT r.health_score,r.diagnostico,a.label FROM reading r
+     JOIN asset a ON a.id=r.asset_id WHERE r.id=$1 AND a.organization_id=$2`,
+     [match[1],req.usuario.organization_id])).rows[0];
+   if(!laudo)return res.status(404).json({erro:'Relatório indisponível para este cliente.'});
+   const acoes=laudo.diagnostico?.acoes;
+   res.json({aquario:laudo.label,nota:laudo.health_score,
+     texto:Array.isArray(acoes)?acoes.map(a=>a.hobby||a.tecnico||'').filter(Boolean).join(' '):'Sem observações registadas.'});
+  }catch(e){res.status(500).json({erro:'Não foi possível consultar o relatório.'});}
  });
  app.get('/api/admin/clientes/:orgId/manutencoes',...admin,async(req,res)=>{
   if(!uuid(req.params.orgId))return res.status(400).json({erro:'Cliente inválido'});

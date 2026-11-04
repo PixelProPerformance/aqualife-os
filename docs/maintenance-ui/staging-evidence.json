@@ -1,0 +1,513 @@
+{
+  "projectId": "f0a54aac-7782-432e-9339-77a261e2c4c8",
+  "environmentId": "551a32bd-06c0-4899-bdb0-f3c8b255c092",
+  "deploymentId": "0723debb-1888-4a96-a425-4288f095bbeb",
+  "commit": "7f5fdd01bc2d51efed92d27a0a98b63a26b0631c",
+  "status": "SUCCESS",
+  "isolatedSchema": true,
+  "tests": 8,
+  "pass": 8,
+  "fail": 0,
+  "logs": [
+    {
+      "timestamp": "2026-11-04T20:23:21.231992905Z",
+      "severity": "info",
+      "message": "Starting Container",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:22.127742942Z",
+      "severity": "info",
+      "message": "TAP version 13",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:22.127746386Z",
+      "severity": "info",
+      "message": "# Subtest: HTTP real + JWT + PostgreSQL: relatórios isolados, revogação e anulação",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:22.127749963Z",
+      "severity": "info",
+      "message": "ok 1 - HTTP real + JWT + PostgreSQL: relatórios isolados, revogação e anulação",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:22.127754370Z",
+      "severity": "info",
+      "message": "  ---",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:22.127757395Z",
+      "severity": "info",
+      "message": "  duration_ms: 348.48293",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:22.127762184Z",
+      "severity": "info",
+      "message": "  type: 'test'",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:22.127765487Z",
+      "severity": "info",
+      "message": "  ...",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938495377Z",
+      "severity": "info",
+      "message": "  ---",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938509539Z",
+      "severity": "info",
+      "message": "# Subtest: painel do cliente utiliza organization_id do JWT, não ID vindo do navegador",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938513310Z",
+      "severity": "info",
+      "message": "  type: 'test'",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938519341Z",
+      "severity": "info",
+      "message": "  ...",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938524059Z",
+      "severity": "info",
+      "message": "  ---",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938529417Z",
+      "severity": "info",
+      "message": "  duration_ms: 0.687753",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938531264Z",
+      "severity": "info",
+      "message": "ok 6 - saldo manual independe de agendamentos e de leituras automáticas",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938537219Z",
+      "severity": "info",
+      "message": "  ...",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938540112Z",
+      "severity": "info",
+      "message": "# Subtest: apenas rotas Admin permitem criar e lançar visitas",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938555303Z",
+      "severity": "info",
+      "message": "  type: 'test'",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938561360Z",
+      "severity": "info",
+      "message": "# Subtest: lançamento sem data ou link válido é rejeitado antes de escrever",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938564583Z",
+      "severity": "info",
+      "message": "ok 4 - lançamento sem data ou link válido é rejeitado antes de escrever",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938567703Z",
+      "severity": "info",
+      "message": "  ---",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938573066Z",
+      "severity": "info",
+      "message": "  type: 'test'",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938575669Z",
+      "severity": "info",
+      "message": "  ...",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.938578332Z",
+      "severity": "info",
+      "message": "# Subtest: criação de pacote rejeita quantidades fracionárias e negativas",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939729043Z",
+      "severity": "info",
+      "message": "  type: 'test'",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939732958Z",
+      "severity": "info",
+      "message": "  ...",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939743029Z",
+      "severity": "info",
+      "message": "ok 7 - UI: saldo 3/1/2, escape de texto e números e datas inválidas",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939743673Z",
+      "severity": "info",
+      "message": "# duration_ms 30443.357041",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939749002Z",
+      "severity": "info",
+      "message": "  ---",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939752287Z",
+      "severity": "info",
+      "message": "  duration_ms: 2.33684",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939753079Z",
+      "severity": "info",
+      "message": "",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        },
+        {
+          "key": "status",
+          "value": "\"pass\""
+        },
+        {
+          "key": "scope",
+          "value": "\"maintenance-ui-isolated-schema\""
+        },
+        {
+          "key": "commit",
+          "value": "\"7f5fdd01bc2d51efed92d27a0a98b63a26b0631c\""
+        },
+        {
+          "key": "exitCode",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939759435Z",
+      "severity": "info",
+      "message": "  type: 'test'",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939763203Z",
+      "severity": "info",
+      "message": "# cancelled 0",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939765284Z",
+      "severity": "info",
+      "message": "  type: 'test'",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939770537Z",
+      "severity": "info",
+      "message": "# todo 0",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939773509Z",
+      "severity": "info",
+      "message": "  ...",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939773599Z",
+      "severity": "info",
+      "message": "  ...",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939781056Z",
+      "severity": "info",
+      "message": "1..8",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939784109Z",
+      "severity": "info",
+      "message": "# fail 0",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939785896Z",
+      "severity": "info",
+      "message": "# pass 8",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939787390Z",
+      "severity": "info",
+      "message": "# Subtest: UI: sem pacote, sem visitas, erro e sessão ausente",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939789442Z",
+      "severity": "info",
+      "message": "# suites 0",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939795056Z",
+      "severity": "info",
+      "message": "ok 8 - UI: sem pacote, sem visitas, erro e sessão ausente",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-11-04T20:23:51.939800422Z",
+      "severity": "info",
+      "message": "  ---",
+      "attributes": [
+        {
+          "key": "level",
+          "value": "\"info\""
+        }
+      ]
+    }
+  ]
+}

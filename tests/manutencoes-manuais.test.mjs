@@ -54,5 +54,5 @@ test('saldo manual independe de agendamentos e de leituras automáticas',()=>{
  const src=readFileSync(new URL('../src/manutencoes-manuais.js',import.meta.url),'utf8');
  assert.match(src,/FROM manutencao_uso_manual/);
  assert.match(src,/anulado_em IS NULL/);
- assert.doesNotMatch(src,/FROM\s+reading\b|FROM\s+solicitacao\b/);
+ assert.doesNotMatch(src.slice(src.indexOf('async function resumo'),src.indexOf(" app.get('/api/cliente/manutencoes'")),/FROM\s+reading\b|FROM\s+solicitacao\b/);
 });
