@@ -70,7 +70,7 @@
   <h3>Relatório de manutenção</h3>
   <input type="hidden" id="relOpId">
   <div class="campo"><label>O que foi feito *</label><textarea class="inp" id="relObs" rows="4" placeholder="Descreva o serviço realizado, estado do aquário, recomendações…"></textarea></div>
-  <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;margin-bottom:10px"><input type="checkbox" id="relResolvido" checked style="width:auto"> A manutenção foi resolvida (não precisa de retorno)</label>
+  <p class="termos">A administração avaliará o relatório e decidirá se o serviço foi resolvido ou necessita retorno.</p>
   <div class="campo"><label>Fotos</label><input type="file" id="relFotos" accept="image/*" multiple style="font-size:13px"><div class="fotos" id="relFotosPrev"></div></div>
   <div class="campo"><label>Reembolsos de produtos (até R$ 100 no total é pré-aprovado)</label>
     <div id="relReemb"></div>
@@ -103,7 +103,7 @@ let CONTRATO=null;
 function termosTexto(){
   const t=CONTRATO?CONTRATO.contrato_tipo:"servico";
   const base="Pagamentos a cada 7 dias úteis após a manutenção (fechamento toda segunda, somando a semana anterior). Reembolso de produtos ligados à manutenção até R$ 100 é pré-aprovado; acima disso, consultar a Aqualife antes. Recebimentos sempre em dias úteis, via PIX cadastrado.";
-  if(t==="servico") return "Contrato por serviço: o pagamento é pelo serviço resolvido, portanto retornos fazem parte da entrega. "+base;
+  if(t==="servico") return "O valor é definido por oportunidade antes do aceite. A administração decide se ficou resolvido ou necessita de retorno. "+base;
   if(t==="diaria") return "Contrato por diária: em caso de retorno sem outra manutenção paga no mesmo dia, recebe-se meia diária. "+base;
   if(t==="fixo") return "Contrato fixo mensal: um dia de trabalho normal, sem valor avulso por manutenção. "+base;
   return base;
@@ -129,6 +129,7 @@ function opCard(o,minha){
   let h='<div class="op"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><h3>'+esc(o.titulo)+(o.is_retorno?' 🔁':'')+'</h3>'
     +'<div style="font-size:12.5px;color:var(--suave)">'+(o.regiao?esc(o.regiao)+" · ":"")+(o.data_servico?("🗓️ "+o.data_servico):"sem data")+(o.hora?(" "+esc(o.hora)):"")+'</div></div>'
     +'<span class="pill" style="background:'+st[2]+';color:'+st[1]+'">'+st[0]+'</span></div>';
+  h+='<div style="margin-top:9px;font-size:16px;font-weight:700;color:#176B42">Valor desta oportunidade: '+brl(o.valor_cents??0)+'</div>';
   if(o.descricao) h+='<div style="white-space:pre-wrap;font-size:13.5px;margin-top:8px">'+esc(o.descricao)+'</div>';
   if(o.deslocamento_cents) h+='<div style="font-size:12.5px;color:#176B42;margin-top:6px">🚗 Deslocamento pago: '+brl(o.deslocamento_cents)+'</div>';
   if(o.fotos&&o.fotos.length) h+='<div class="fotos">'+o.fotos.map(u=>'<a href="'+esc(u)+'" target="_blank"><img src="'+esc(u)+'"></a>').join("")+'</div>';
@@ -190,7 +191,7 @@ async function carregarRecebimentos(){
 // ---- Relatório ----
 let REL_FOTOS=[], REL_REEMB=[];
 function abrirRelatorio(id){
-  $("relOpId").value=id; $("relObs").value=""; $("relResolvido").checked=true; REL_FOTOS=[]; REL_REEMB=[];
+  $("relOpId").value=id; $("relObs").value=""; REL_FOTOS=[]; REL_REEMB=[];
   $("relFotos").value=""; $("relFotosPrev").innerHTML=""; $("relMsg").textContent=""; relRenderReemb();
   abrir("modalRel");
 }
@@ -226,7 +227,7 @@ $("relEnviar").onclick=async()=>{
   const b=$("relEnviar"); b.disabled=true;
   try{
     await api("/api/tecnico/oportunidades/"+$("relOpId").value+"/relatorio",{method:"POST",body:JSON.stringify({
-      observacao:obs, resolvido:$("relResolvido").checked, fotos:REL_FOTOS,
+      observacao:obs, fotos:REL_FOTOS,
       reembolsos:REL_REEMB.filter(r=>r.descricao&&r.valor_cents)})});
     fechar("modalRel"); carregarOportunidades();
   }catch(e){ $("relMsg").style.color="#B4232E"; $("relMsg").textContent=e.message; }
