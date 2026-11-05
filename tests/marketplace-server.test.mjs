@@ -16,5 +16,10 @@ test('real server mounts marketplace API before its HTML/API fallback',async()=>
   assert.equal((await fetch(base+'/api/marketplace/showcase')).status,404);
   for(const path of ['/marketplace.html','/js/marketplace-showcase.js','/js/marketplace-showcase-editor.js'])assert.equal((await fetch(base+path)).status,200,path);
   for(const path of ['/api/admin/marketplace/catalog/offers','/api/admin/marketplace/catalog/legacy'])assert.equal((await fetch(base+path)).status,401,path);
+  const connection='/api/marketplace/sellers/11111111-1111-4111-8111-111111111111/payments/connection';
+  assert.equal((await fetch(base+connection)).status,401);
+  for(const action of ['authorize','refresh','disconnect'])assert.equal((await fetch(base+connection+'/'+action,{method:'POST'})).status,401,action);
+  const callback=await fetch(base+'/api/marketplace/mp/oauth/callback',{redirect:'manual'});assert.equal(callback.status,303);assert.equal(callback.headers.get('location'),'/lojista.html?mp_connection=failed');
+  assert.equal((await fetch(base+'/js/marketplace-payments.js')).status,200);
  }finally{await new Promise(r=>server.close(r));}
 });
